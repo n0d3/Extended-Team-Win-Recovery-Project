@@ -215,8 +215,8 @@ int GUIAction::doActions() {
 	// For multi-action, we always use a thread
 	pthread_t t;
 	pthread_attr_t tattr;
-	pthread_create(&t, NULL, thread_start, this);
-/*	if (pthread_attr_init(&tattr)) {
+	//pthread_create(&t, NULL, thread_start, this);
+	if (pthread_attr_init(&tattr)) {
 		LOGE("Unable to pthread_attr_init\n");
 		return -1;
 	}
@@ -236,11 +236,11 @@ int GUIAction::doActions() {
 	int ret = pthread_create(&t, &tattr, thread_start, this);
 	LOGI("after thread creation\n");
 	if (ret) {
-		LOGE("Unable to create more threads for actions... continuing in same thread! %i\n", ret);
+		LOGI("Unable to create more threads for actions... continuing in same thread! %i\n", ret);
 		thread_start(this);
 	} else {
 		if (pthread_join(t, NULL)) {
-			LOGE("Error joining threads\n");
+			LOGI("Error joining threads\n");
 		} else {
 			LOGI("Thread joined\n");
 		}
@@ -248,7 +248,7 @@ int GUIAction::doActions() {
 	if (pthread_attr_destroy(&tattr)) {
 		LOGE("Failed to pthread_attr_destroy\n");
 		return -1;
-	}*/
+	}
 
 	return 0;
 }
@@ -616,6 +616,24 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 	}
 //Threaded functions
 	if (isThreaded)	{
+		if (function == "getfilesize") {
+			float Size = 0;
+
+			operation_start("FileSize");
+			Size = ((float)TWFunc::Get_File_Size(arg) / (float)1048576LLU);
+			DataManager::SetValue("tw_filename1_size", Size);
+			operation_end(0, simulate);
+		}
+
+		if (function == "getfoldersize") {
+			float Size = 0;
+
+			operation_start("FolderSize");
+			Size = ((float)TWFunc::Get_Folder_Size(arg, false) / (float)1048576LLU);
+			DataManager::SetValue("tw_filename1_size", Size);
+			operation_end(0, simulate);
+		}
+
 		if (function == "fileexists") {
 			struct stat st;
 			string newpath = arg + "/.";

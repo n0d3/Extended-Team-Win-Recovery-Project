@@ -4567,7 +4567,7 @@
 			<object type="action">
 				<condition var1="tw_filename1" op="modified" />
 				<actions>
-					<action function="page">filemanageroptions</action>
+					<action function="page">filemanagersizecalc</action>
 				</actions>
 			</object>
 
@@ -4580,11 +4580,25 @@
 					<action function="set">tw_filename1=tw_file_location1</action>
 					<action function="set">tw_fm_isfolder=1</action>
 					<action function="set">tw_fm_type=Folder</action>
-					<action function="page">filemanageroptions</action>
+					<action function="page">filemanagersizecalc</action>
 				</actions>
 			</object>
 
 			<object type="template" name="footer" />
+		</page>
+
+		<page name="filemanagersizecalc">			
+			<object type="action">
+				<condition var1="tw_fm_isfolder" var2="0" />
+				<action function="getfilesize">%tw_filename1%</action>
+				<action function="page">filemanageroptions</function>
+			</object>
+
+			<object type="action">
+				<condition var1="tw_fm_isfolder" var2="1" />
+				<action function="getfoldersize">%tw_filename1%</action>
+				<action function="page">filemanageroptions</function>
+			</object>
 		</page>
 
 		<page name="filemanageroptions">
@@ -4600,6 +4614,18 @@
 				<font resource="font" />
 				<placement x="%center_x%" y="%row2_text_y%" placement="5"/>
 				<text>%tw_filename1%</text>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%row3_text_y%" placement="5"/>
+				<text>Size:</text>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%row4_text_y%" placement="5"/>
+				<text>%tw_filename1_size% MB</text>
 			</object>
 
 			<object type="button">
