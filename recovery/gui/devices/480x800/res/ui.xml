@@ -182,7 +182,7 @@
 			<object type="text" color="%text_color%">
 				<font resource="font" />
 				<placement x="90" y="10" />
-				<text>ExtendedTWRP v%tw_version%.r1</text>
+				<text>ExtendedTWRP v%tw_version%.r2</text>
 			</object>
 
 			<object type="text" color="%text_success_color%">
@@ -1112,10 +1112,10 @@
 			</object>
 
 			<object type="button">
-				<placement x="%col1_x%" y="%row2_y%" />
+				<placement x="%col1_x%" y="%row6_text_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Factory Reset</text>
-				<image resource="main_button" />
+				<image resource="ml_button" />
 				<actions>
 					<action function="set">tw_back=wipe</action>
 					<action function="set">tw_action=wipe</action>
@@ -1124,6 +1124,24 @@
 					<action function="set">tw_text2=(Wipes Data and Cache)</action>
 					<action function="set">tw_action_text1=Factory Reset...</action>
 					<action function="set">tw_complete_text1=Factory Reset Complete</action>
+					<action function="set">tw_slider_text=Swipe to Wipe</action>
+					<action function="page">confirm_action</action>
+				</actions>
+			</object>
+
+			<object type="button">
+				<placement x="%col1_x%" y="%row8_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Wipe All but SD</text>
+				<image resource="ml_button" />
+				<actions>
+					<action function="set">tw_back=wipe</action>
+					<action function="set">tw_action=wipe</action>
+					<action function="set">tw_action_param=all</action>
+					<action function="set">tw_text1=Wipe all partitions?</action>
+					<action function="set">tw_text2=(Wipes Cache,Boot,System,Data,SDExt,And-Sec)</action>
+					<action function="set">tw_action_text1=Wiping main partitions...</action>
+					<action function="set">tw_complete_text1=Wipping Complete</action>
 					<action function="set">tw_slider_text=Swipe to Wipe</action>
 					<action function="page">confirm_action</action>
 				</actions>
@@ -3400,9 +3418,12 @@
 			<object type="template" name="sort_options" />
 
 			<object type="action">
-				<condition var1="sd_kernel" op="modified" />
+				<conditions>
+					<condition var1="sd_kernel" op="modified" />
+					<condition var1="notemptystr" var2="%tw_sdboot_partition%" />
+				</conditions>
 				<actions>
-					<action function="set">tw_back=nativesdmanager</action>
+					<action function="set">tw_back=nativekernel</action>
 					<action function="set">tw_action=nativekernel_run</action>
 					<action function="set">tw_action_param=</action>
 					<action function="set">tw_text1=Update Kernel?</action>
@@ -3526,7 +3547,7 @@
 			<object type="action">
 				<condition var1="sd_rom" op="modified" />
 				<actions>
-					<action function="set">tw_back=nativesdmanager</action>
+					<action function="set">tw_back=nativebackup</action>
 					<action function="set">tw_action=nativebackup_run</action>
 					<action function="set">tw_action_param=</action>
 					<action function="set">tw_text1=Backup Rom?</action>
@@ -3573,7 +3594,7 @@
 			<object type="action">
 				<condition var1="sd_rom2" op="modified" />
 				<actions>
-					<action function="set">tw_back=nativesdmanager</action>
+					<action function="set">tw_back=nativerestore</action>
 					<action function="set">tw_action=nativerestore_run</action>
 					<action function="set">tw_action_param=</action>
 					<action function="set">tw_text1=Restore Rom?</action>
@@ -3620,7 +3641,7 @@
 			<object type="action">
 				<condition var1="sd_rom3" op="modified" />
 				<actions>
-					<action function="set">tw_back=nativesdmanager</action>
+					<action function="set">tw_back=nativedelete</action>
 					<action function="set">tw_action=nativedelete_run</action>
 					<action function="set">tw_action_param=</action>
 					<action function="set">tw_text1=Delete Rom?</action>
@@ -3667,7 +3688,7 @@
 			<object type="action">
 				<condition var1="sd_rom4" op="modified" />
 				<actions>
-					<action function="set">tw_back=nativesdmanager</action>
+					<action function="set">tw_back=nativeperm</action>
 					<action function="set">tw_action=nativeperm_run</action>
 					<action function="set">tw_action_param=</action>
 					<action function="set">tw_text1=Fix Permissions?</action>
@@ -3714,7 +3735,7 @@
 			<object type="action">
 				<condition var1="sd_rom5" op="modified" />
 				<actions>
-					<action function="set">tw_back=nativesdmanager</action>
+					<action function="set">tw_back=nativewipedata</action>
 					<action function="set">tw_action=nativewipedata_run</action>
 					<action function="set">tw_action_param=</action>
 					<action function="set">tw_text1=Wipe Data?</action>
@@ -3761,7 +3782,7 @@
 			<object type="action">
 				<condition var1="sd_rom5" op="modified" />
 				<actions>
-					<action function="set">tw_back=nativesdmanager</action>
+					<action function="set">tw_back=nativewipedalvik</action>
 					<action function="set">tw_action=nativewipedalvik_run</action>
 					<action function="set">tw_action_param=</action>
 					<action function="set">tw_text1=Wipe Dalvik-Cache?</action>
@@ -5098,25 +5119,12 @@
 				<text>Cancel</text>
 				<image resource="main_button" />
 				<actions>
+					<action function="set">tw_page_done=1</action>
 					<action function="page">main</action>
 				</actions>
 			</object>
 
 			<object type="template" name="keyboardtemplate" />
-
-			<object type="action">
-				<touch key="home" />
-				<actions>
-					<action function="page">main</action>
-				</actions>
-			</object>
-
-			<object type="action">
-				<touch key="back" />
-				<actions>
-					<action function="page">main</action>
-				</actions>
-			</object>
 
 			<object type="template" name="footer" />
 		</page>
@@ -5154,7 +5162,10 @@
 					<condition var1="tw_operation_state" var2="1" />
 					<condition var1="tw_operation_status" op="=" var2="0" />
 				</conditions>
-				<action function="page">main</action>
+				<actions>
+					<action function="set">tw_page_done=1</action>
+					<action function="page">main</action>
+				</actions>
 			</object>
 		</page>
 

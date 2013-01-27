@@ -212,9 +212,18 @@
 //   tw_sp2_is_mountable
 //   tw_sp3_is_mountable
 
-// Max archive size for tar backups before we split (4GB)
-#define MAX_ARCHIVE_SIZE 		4294967296LLU
-//536870912LLU =512MB 
-//1610612736LLU =1.5GB
+#ifndef CUSTOM_LUN_FILE
+#define CUSTOM_LUN_FILE "/sys/devices/platform/usb_mass_storage/lun%d/file"
+#endif
+
+// For OpenRecoveryScript
+#define SCRIPT_FILE_CACHE "/cache/recovery/openrecoveryscript"
+#define SCRIPT_FILE_TMP "/tmp/openrecoveryscript"
+
+// Max archive size for tar backups before we split
+//536870912LLU	= 512MB 
+//1610612736LLU = 1.5GB
+//4294967296LLU	= 4.0GB
+#define MAX_ARCHIVE_SIZE 		1610612736LLU
 
 #endif  // _VARIABLES_HEADER_

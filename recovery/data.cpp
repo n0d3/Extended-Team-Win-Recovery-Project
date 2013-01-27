@@ -622,6 +622,7 @@ void DataManager::SetDefaultValues()
 	if (Detect_BLDR() == 1) // cLK detected
 		get_boot_partitions();
 
+	mValues.insert(make_pair(TW_SDBOOT_PARTITION, make_pair("", 1)));
 	mValues.insert(make_pair(TW_BACKUP_NAND_DATA, make_pair("0", 1)));
     	mValues.insert(make_pair(TW_DATA_PATH, make_pair("/sd-ext", 1)));
 	mValues.insert(make_pair(TW_DATA_ON_EXT, make_pair("0", 1)));
@@ -847,7 +848,20 @@ void DataManager::SetDefaultValues()
 #ifdef TW_NO_USB_STORAGE
 	mConstValues.insert(make_pair(TW_HAS_USB_STORAGE, "0"));
 #else
-	mConstValues.insert(make_pair(TW_HAS_USB_STORAGE, "1"));
+	char lun_file[255];
+	string Lun_File_str = CUSTOM_LUN_FILE;
+	size_t found = Lun_File_str.find("%");
+	if (found != string::npos) {
+		sprintf(lun_file, CUSTOM_LUN_FILE, 0);
+		Lun_File_str = lun_file;
+	}
+	if (!TWFunc::Path_Exists(Lun_File_str)) {
+		LOGI("Lun file '%s' does not exist, USB storage mode disabled\n", Lun_File_str.c_str());
+		mConstValues.insert(make_pair(TW_HAS_USB_STORAGE, "0"));
+	} else {
+		LOGI("Lun file '%s'\n", Lun_File_str.c_str());
+		mConstValues.insert(make_pair(TW_HAS_USB_STORAGE, "1"));
+	}
 #endif
 #ifdef TW_INCLUDE_INJECTTWRP
 	mConstValues.insert(make_pair(TW_HAS_INJECTTWRP, "1"));

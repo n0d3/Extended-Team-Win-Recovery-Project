@@ -1624,7 +1624,9 @@ bool TWPartition::Backup_Tar(string backup_folder) {
 		else 
 			sprintf(back_name, "%s", Backup_Path.c_str());		
 #ifdef TW_INCLUDE_LIBTAR
-		backup_count = tar.Split_Archive(back_name, Full_FileName);
+		tar.setdir(back_name);
+		tar.setfn(Full_FileName);
+		backup_count = tar.splitArchiveThread();
 		if (backup_count == -1) {
 			LOGE("Error tarring split files!\n");
 			return false;
@@ -1657,14 +1659,18 @@ bool TWPartition::Backup_Tar(string backup_folder) {
 		Full_FileName = backup_folder + Backup_FileName;
 #ifdef TW_INCLUDE_LIBTAR
 		if (use_compression) {
-			if (tar.createTGZ(Backup_Path, Full_FileName) != 0)
-				return false;
+			tar.setdir(Backup_Path);
+			tar.setfn(Full_FileName);
+			if (tar.createTarGZThread() != 0)
+				return -1;
 			string gzname = Full_FileName + ".gz";
 			rename(gzname.c_str(), Full_FileName.c_str());
 		}
 		else {
-			if (tar.create(Backup_Path, Full_FileName) != 0)
-				return false;
+			tar.setdir(Backup_Path);
+			tar.setfn(Full_FileName);
+			if (tar.createTarThread() != 0)
+				return -1;
 		}
 #else
 		if (Has_Data_Media)
@@ -1786,7 +1792,7 @@ bool TWPartition::Restore(string restore_folder) {
 
 bool TWPartition::Restore_Tar(string restore_folder, string Restore_File_System) {
 	string Full_FileName, Command, data_pth;
-	int index = 0, dataonext;
+	int index = 0, dataonext = 0;
 	char split_index[5];
 
 	Current_File_System = Restore_File_System;
@@ -1869,7 +1875,9 @@ bool TWPartition::Restore_Tar(string restore_folder, string Restore_File_System)
 			LOGI("Restoring '%s'...\n", Full_FileName.c_str());
 #ifdef TW_INCLUDE_LIBTAR
 			twrpTar tar;
-			if (tar.extract("/", Full_FileName) != 0)
+			tar.setdir("/");
+			tar.setfn(Full_FileName);
+			if (tar.extractTarThread() != 0)
 				return false;
 #else
 			Command = "tar -xf '" + Full_FileName + "'";
@@ -1887,7 +1895,9 @@ bool TWPartition::Restore_Tar(string restore_folder, string Restore_File_System)
 	} else {
 #ifdef TW_INCLUDE_LIBTAR
 		twrpTar tar;
-		if (tar.extract(Backup_Path, Full_FileName) != 0)
+		tar.setdir(Backup_Path);
+		tar.setfn(Full_FileName);
+		if (tar.extractTarThread() != 0)
 			return false;
 #else
 		// For restoring a CWM backup of sd-ext

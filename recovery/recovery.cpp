@@ -809,7 +809,7 @@ int main(int argc, char **argv) {
 	DataManager_SetupTwrpFolder();
 	// Load up all the resources
 	gui_loadResources();
-
+	PartitionManager.Mount_By_Path("/cache", true);
 	get_args(&argc, &argv);
 
 	int previous_runs = 0;
@@ -898,19 +898,21 @@ int main(int argc, char **argv) {
 #endif
 
 	int status = INSTALL_SUCCESS;
-
+	string ORSCommand;
 	if (perform_backup) {
 		char empt[50];
 		gui_console_only();
 		strcpy(empt, "(Current Date)");
 		DataManager_SetStrValue(TW_BACKUP_NAME, empt);
-		if (OpenRecoveryScript::Backup_Command("BSDCAE") != 0)
+		if (!OpenRecoveryScript::Insert_ORS_Command("backup BSDCAE\n"))
 			status = INSTALL_ERROR;
 	}
 	if (status == INSTALL_SUCCESS) { // Prevent other actions if backup failed
 		if (update_package != NULL) {
-			gui_console_only();
-			if (OpenRecoveryScript::Install_Command(update_package) == 0)
+			ORSCommand = "install ";
+			ORSCommand += update_package;
+			ORSCommand += "\n";
+			if (OpenRecoveryScript::Insert_ORS_Command(ORSCommand))
 				status = INSTALL_SUCCESS;
 			else
 				status = INSTALL_ERROR;
@@ -924,8 +926,8 @@ int main(int argc, char **argv) {
 			if (status != INSTALL_SUCCESS) ui->Print("Installation aborted.\n");
 			*/
 		} else if (wipe_data) {
-			gui_console_only();
-			if (!PartitionManager.Factory_Reset()) status = INSTALL_ERROR;
+			if (!OpenRecoveryScript::Insert_ORS_Command("wipe data\n"))
+				status = INSTALL_ERROR;
 			/*
 			if (device->WipeData()) status = INSTALL_ERROR;
 			if (erase_volume("/data")) status = INSTALL_ERROR;
@@ -933,8 +935,8 @@ int main(int argc, char **argv) {
 			*/
 			if (status != INSTALL_SUCCESS) ui->Print("Data wipe failed.\n");
 		} else if (wipe_cache) {
-			gui_console_only();
-			if (wipe_cache && erase_volume("/cache")) status = INSTALL_ERROR;
+			if (!OpenRecoveryScript::Insert_ORS_Command("wipe cache\n"))
+				status = INSTALL_ERROR;
 			if (status != INSTALL_SUCCESS) ui->Print("Cache wipe failed.\n");
 		} else if (!just_exit) {
 			status = INSTALL_ERROR;  // No command specified
@@ -942,12 +944,8 @@ int main(int argc, char **argv) {
 	}
 
 	//if (status != INSTALL_SUCCESS) ui->SetBackground(RecoveryUI::ERROR);
-	if (status != INSTALL_SUCCESS /*|| ui->IsTextVisible()*/) {
+	if (1) {
 		finish_recovery(NULL);
-		DataManager_ReadSettingsFile();
-#if 0
-		DataManager_DumpValues();
-#endif
 		if (PartitionManager.Mount_By_Path("/system", false)) {
 			if (TWFunc::Path_Exists("/system/recovery-from-boot.p")) {
 				rename("/system/recovery-from-boot.p", "/system/recovery-from-boot.bak");
@@ -955,16 +953,20 @@ int main(int argc, char **argv) {
 			}
 			PartitionManager.UnMount_By_Path("/system", false);
 		}
-		if (DataManager_GetIntValue(TW_IS_ENCRYPTED) == 0 && OpenRecoveryScript::check_for_script_file()) {
-			gui_console_only();
-			if (OpenRecoveryScript::run_script_file() != 0) {
-				// There was an error, boot the recovery
-				gui_start();
-			} else {
-				usleep(2000000); // Sleep for 2 seconds before rebooting
+		if (DataManager_GetIntValue(TW_IS_ENCRYPTED) != 0) {
+			LOGI("Is encrypted, do decrypt page first\n");
+			if (gui_startPage("decrypt") != 0) {
+				LOGE("Failed to start decrypt GUI page.\n");
 			}
-		} else
-			gui_start();
+		}
+		DataManager_ReadSettingsFile();
+#if 0
+		DataManager_DumpValues();
+#endif
+		if (DataManager_GetIntValue(TW_IS_ENCRYPTED) == 0 && (TWFunc::Path_Exists(SCRIPT_FILE_TMP) || TWFunc::Path_Exists(SCRIPT_FILE_CACHE))) {
+			OpenRecoveryScript::Run_OpenRecoveryScript();
+		}
+		gui_start();
 		//prompt_and_wait(device);
 	}
 

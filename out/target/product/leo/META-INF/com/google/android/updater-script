@@ -1,0 +1,26 @@
+ui_print(" ");
+ui_print(">>Initializing HD2's Extended TWRP installation");
+ui_print(" ");
+ui_print("  Checking recovery's partition size...");
+package_extract_dir("script", "/tmp");
+set_perm_recursive(0, 0, 0777, 0777, "/tmp");
+if run_program("/tmp/preinstall-check.sh") == "0"
+then
+	ui_print("  Partition size is adequate to proceed.");
+	package_extract_file("recovery.img", "/tmp/recovery.img");
+	ui_print("  Writing image to recovery's partition...");
+	format("MTD", "recovery");
+  	write_raw_image("/tmp/recovery.img", "recovery");
+  	delete("/tmp/recovery.img");
+	ui_print("  Done.");
+	ui_print(" ");
+	ui_print(">>Installation completed!");
+	ui_print(" ");
+else
+	ui_print("  Partition size is less than required.");
+	ui_print("  Increase partition size and try again.");
+	ui_print(" ");
+	ui_print(">>Installation aborted!");
+	ui_print(" ");
+endif;
+delete("/tmp/preinstall-check.sh");

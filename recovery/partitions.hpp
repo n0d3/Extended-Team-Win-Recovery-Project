@@ -353,6 +353,8 @@ class TWPartitionManager {
 
 	// Extended functions
 		static int Fstab_Proc_Done;
+		// Wipe all partitions except /sdcard
+		virtual int Wipe_All_But_SDCARD(void);
 		// Check filesystem of SD Card's partitions
 		virtual int Check_SDCard(void);						  
 		// Set filesystem on ext

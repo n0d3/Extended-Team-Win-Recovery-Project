@@ -115,6 +115,13 @@ bool Conditional::isConditionTrue(Condition* condition)
         else
             var2 = "FAILED";
     }
+    if (var1 == "notemptystr")
+    {
+        if (var2.size() > 0)
+            var2 = var1;
+        else
+            var2 = "FAILED";
+    }
     if (var1 == "mounted")
     {
         if (isMounted(condition->mVar2))

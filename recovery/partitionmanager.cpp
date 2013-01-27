@@ -1393,6 +1393,29 @@ int TWPartitionManager::Factory_Reset(void) {
 	return ret;
 }
 
+int TWPartitionManager::Wipe_All_But_SDCARD(void) {
+	std::vector<TWPartition*>::iterator iter;
+	int ret = true;
+
+	for (iter = Partitions.begin(); iter != Partitions.end(); iter++) {
+		if ((*iter)->Is_Present) {
+			if((*iter)->Mount_Point == "/boot"
+			|| (*iter)->Mount_Point == "/cache"
+			|| (*iter)->Mount_Point == "/system"
+			|| (*iter)->Mount_Point == "/data"
+			|| (*iter)->Mount_Point == "/sd-ext") {
+				if (!(*iter)->Wipe())
+					ret = false;
+			}
+		} 
+		if ((*iter)->Has_Android_Secure) {
+			if (!(*iter)->Wipe_AndSec())
+				ret = false;
+		}
+	}
+	return ret;
+}
+
 int TWPartitionManager::Wipe_Dalvik_Cache(void) {
 	int dataonext, dalvikonnand;
 	string data_pth;
@@ -1874,11 +1897,6 @@ int TWPartitionManager::Fix_Permissions(void) {
 	ui_print("Done.\n\n");
 	return result;
 }
-
-//partial kangbang from system/vold
-#ifndef CUSTOM_LUN_FILE
-#define CUSTOM_LUN_FILE "/sys/devices/platform/usb_mass_storage/lun%d/file"
-#endif
 
 int TWPartitionManager::Open_Lun_File(string Partition_Path, string Lun_File) {
 	int fd;
