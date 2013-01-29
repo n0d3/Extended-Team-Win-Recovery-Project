@@ -764,9 +764,6 @@ bool TWPartition::Get_Size_Via_statfs(bool Display_Error) {
 	struct statfs st;
 	string Local_Path = Mount_Point + "/.";
 
-	/*if (!Mount(Display_Error))
-		return false;*/
-
 	int skip_dalvik;
 	DataManager::GetValue(TW_SKIP_DALVIK, skip_dalvik);
 
@@ -790,6 +787,7 @@ bool TWPartition::Get_Size_Via_statfs(bool Display_Error) {
 		string data_pth;
 		DataManager::GetValue(TW_DATA_PATH, data_pth);
 		if (!Path_For_DataOnExt.empty()) {
+			LOGI("Path_For_DataOnExt: '%s'\n", Path_For_DataOnExt.c_str());
 			// In case the entered data_path changed after user interaction
 			if (Path_For_DataOnExt != data_pth) {
 				if (CheckFor_DataOnExt() == 1) {
@@ -804,12 +802,13 @@ bool TWPartition::Get_Size_Via_statfs(bool Display_Error) {
 			}
 		}
 		if (dataonext) {
-			Mount(Display_Error);
+			LOGI("TW_DATA_PATH: '%s'\n", data_pth.c_str());
+			if (!Is_Mounted())
+				Mount(Display_Error);
 			if (TWFunc::Path_Exists(data_pth))
 				Backup_Size = TWFunc::Get_Folder_Size(data_pth, true);
 			else
 				Backup_Size = 0;
-			UnMount(Display_Error);
 			if (data_pth == "/sd-ext" && skip_native)
 				Backup_Size -= NativeSD_Size;
 		} else {
@@ -832,9 +831,6 @@ bool TWPartition::Get_Size_Via_df(bool Display_Error) {
 	int include_block = 1;
 	unsigned int min_len;
 	string result;
-
-	/*if (!Mount(Display_Error))
-		return false;*/
 
 	int skip_dalvik;
 	DataManager::GetValue(TW_SKIP_DALVIK, skip_dalvik);
@@ -884,6 +880,7 @@ bool TWPartition::Get_Size_Via_df(bool Display_Error) {
 		string data_pth;
 		DataManager::GetValue(TW_DATA_PATH, data_pth);
 		if (!Path_For_DataOnExt.empty()) {
+			LOGI("Path_For_DataOnExt: '%s'\n", Path_For_DataOnExt.c_str());
 			// In case the entered data_path changed after user interaction
 			if (Path_For_DataOnExt != data_pth) {
 				if (CheckFor_DataOnExt() == 1) {
@@ -898,12 +895,13 @@ bool TWPartition::Get_Size_Via_df(bool Display_Error) {
 			}
 		}
 		if (dataonext) {
-			Mount(Display_Error);
+			LOGI("TW_DATA_PATH: '%s'\n", data_pth.c_str());
+			if (!Is_Mounted())
+				Mount(Display_Error);
 			if (TWFunc::Path_Exists(data_pth))
 				Backup_Size = TWFunc::Get_Folder_Size(data_pth, true);
 			else
 				Backup_Size = 0;
-			UnMount(Display_Error);
 			if (data_pth == "/sd-ext" && skip_native)
 				Backup_Size -= NativeSD_Size;
 		} else {
