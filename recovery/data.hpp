@@ -43,7 +43,6 @@ class DataManager {
 		static int SetValue(const string varName, float value, int persist = 0);
 		static void DumpValues();
 		static void update_tz_environment_variables();
-		static void SetBackupFolder(string storage_path);
 		static void SetDefaultValues();
 		// Outputs the version to a file in the TWRP folder
 		static void Output_Version(void); 
@@ -61,6 +60,7 @@ class DataManager {
 		// Formats mtd ptn by given name
 		static int Wipe_MTD_By_Name(string ptnName);
 		static int Detect_BLDR(void);
+		static void SetBackupFolder(string storage_path);
 		static void SetAdditionalFolders(string storage_path);
 		static void SetupTwrpFolder();
 

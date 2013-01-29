@@ -62,6 +62,8 @@ class TWFunc {
 		static int removeDir(const string path, bool removeParent);
 		//copy file from src to dst with mode permissions
 		static int copy_file(string src, string dst, int mode);
+		// Returns a dirent dt_type value using stat instead of dirent
+		static unsigned int Get_D_Type_From_Stat(string Path);
 
 		// Extended functions
 		static void Take_Screenshot(void);

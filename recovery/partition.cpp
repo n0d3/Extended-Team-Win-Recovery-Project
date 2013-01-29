@@ -450,7 +450,7 @@ bool TWPartition::Process_Flags(string Flags, bool Display_Error) {
 			Wipe_Available_in_GUI = true;
 			Wipe_During_Factory_Reset = true;
 		} else if (strlen(ptr) > 15 && strncmp(ptr, "subpartitionof=", 15) == 0) {
-			ptr += 13;
+			ptr += 15;
 			Is_SubPartition = true;
 			SubPartition_Of = ptr;
 		} else if (strcmp(ptr, "ignoreblkid") == 0) {
@@ -540,6 +540,7 @@ void TWPartition::Setup_Image(bool Display_Error) {
 	else
 		LOGI("Unhandled file system '%s' on image '%s'\n", Current_File_System.c_str(), Display_Name.c_str());
 	if (Find_Partition_Size()) {
+		Can_Be_Wiped = true;
 		Used = Size;
 		Backup_Size = Size;
 	} else {
@@ -1258,6 +1259,7 @@ bool TWPartition::Wipe_AndSec(void) {
 
 	ui_print("Wiping .android_secure\n");
 	TWFunc::removeDir(Mount_Point + "/.android_secure/", true);
+	ui_print("Done.\n");
     return true;
 }
 

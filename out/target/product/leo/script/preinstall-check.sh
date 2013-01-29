@@ -25,6 +25,14 @@ prt_min_size=$((($min_size + 1) / 1048576));
 ui_print "  Recovery's partition size = $prt_rec_size MB"
 ui_print "  Minimum required size     = $prt_min_size MB"
 
+# Clean istall - Remove previous settings and version files
+if [ -f /sdcard/TWRP/.twrps ]; then
+	rm -f "/sdcard/TWRP/*twrps";
+fi
+if [ -f /sdcard/TWRP/.version ]; then
+	rm -f "/sdcard/TWRP/*version";
+fi
+
 # Decide whether we should proceed or not
 check=$(($rec_size - $min_size));
 if [[ $check -gt 0 ]]; then

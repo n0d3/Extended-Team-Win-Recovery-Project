@@ -21,21 +21,26 @@
 #include "bootloader.h"
 #include "variables.h"
 extern "C" {
-#include "minuitwrp/minui.h"
+	#include "minuitwrp/minui.h"
+	#include "libcrecovery/common.h"
 }
 
 /* Execute a command */
 int TWFunc::Exec_Cmd(string cmd, string &result) {
 	FILE* exec;
-	char buffer[128];
+	char buffer[130];
 	int ret = 0;
-	exec = popen(cmd.c_str(), "r");
+	exec = __popen(cmd.c_str(), "r");
 	if (!exec) return -1;
 	while(!feof(exec)) {
-		if (fgets(buffer, 128, exec) != NULL)
+		memset(&buffer, 0, sizeof(buffer));
+		if (fgets(buffer, 128, exec) != NULL) {
+			buffer[128] = '\n';
+			buffer[129] = NULL;
 			result += buffer;
+		}
 	}
-	ret = pclose(exec);
+	ret = __pclose(exec);
 	return ret;
 }
 
@@ -465,6 +470,27 @@ int TWFunc::copy_file(string src, string dst, int mode) {
 	srcfile.close();
 	dstfile.close();
 	return 0;
+}
+
+unsigned int TWFunc::Get_D_Type_From_Stat(string Path) {
+	struct stat st;
+
+	stat(Path.c_str(), &st);
+	if (st.st_mode & S_IFDIR)
+		return DT_DIR;
+	else if (st.st_mode & S_IFBLK)
+		return DT_BLK;
+	else if (st.st_mode & S_IFCHR)
+		return DT_CHR;
+	else if (st.st_mode & S_IFIFO)
+		return DT_FIFO;
+	else if (st.st_mode & S_IFLNK)
+		return DT_LNK;
+	else if (st.st_mode & S_IFREG)
+		return DT_REG;
+	else if (st.st_mode & S_IFSOCK)
+		return DT_SOCK;
+	return DT_UNKNOWN;
 }
 
 void TWFunc::Take_Screenshot(void) {

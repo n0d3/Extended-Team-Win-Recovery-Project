@@ -572,20 +572,40 @@ void DataManager::SetupTwrpFolder() {
 			LOGI("Unable to mount %s when trying to setup TWRP folder.\n", DataManager_GetSettingsStorageMount());
 	}
 
+	if(GetStrValue(TW_BACKUPS_FOLDER_VAR).size() < 2
+	|| GetStrValue(TW_SDBACKUPS_FOLDER_VAR).size() < 2)
+		SetBackupFolder(GetCurrentStoragePath());
+	if(GetStrValue(TW_THEME_FOLDER_VAR).size() < 2
+	|| GetStrValue(TW_SCRIPTS_FOLDER_VAR).size() < 2)
+		SetAdditionalFolders(GetCurrentStoragePath());
+
 	string backup_path, nativesdbackup_path, theme_path, scripts_path;
 	GetValue(TW_BACKUPS_FOLDER_VAR, backup_path);
+	backup_path += "/";
 	GetValue(TW_SDBACKUPS_FOLDER_VAR, nativesdbackup_path);
+	nativesdbackup_path += "/";
 	GetValue(TW_THEME_FOLDER_VAR, theme_path);
+	theme_path += "/";
 	GetValue(TW_SCRIPTS_FOLDER_VAR, scripts_path);
+	scripts_path += "/";
 
-	if (!TWFunc::Path_Exists(backup_path))
-		TWFunc::Recursive_Mkdir(backup_path);
-	if (!TWFunc::Path_Exists(nativesdbackup_path))
-		TWFunc::Recursive_Mkdir(nativesdbackup_path);
-	if (!TWFunc::Path_Exists(theme_path))
-		TWFunc::Recursive_Mkdir(theme_path);
-	if (!TWFunc::Path_Exists(scripts_path))
-		TWFunc::Recursive_Mkdir(scripts_path);
+	if (!TWFunc::Path_Exists(backup_path)) {
+		if (!TWFunc::Recursive_Mkdir(backup_path))
+			LOGI("Could not create '%s'\n", backup_path.c_str());
+	}
+	if (!TWFunc::Path_Exists(nativesdbackup_path)) {
+		if (!TWFunc::Recursive_Mkdir(nativesdbackup_path))
+			LOGI("Could not create '%s'\n", nativesdbackup_path.c_str());
+	}
+	if (!TWFunc::Path_Exists(theme_path)) {
+		if (!TWFunc::Recursive_Mkdir(theme_path))
+			LOGI("Could not create '%s'\n", theme_path.c_str());
+	}
+	if (!TWFunc::Path_Exists(scripts_path)) {
+		if (!TWFunc::Recursive_Mkdir(scripts_path))
+			LOGI("Could not create '%s'\n", scripts_path.c_str());
+	}
+	LOGI("TWRP's folders created on /sdcard.\n");
 }
 
 void DataManager::SetDefaultValues()
@@ -785,9 +805,6 @@ void DataManager::SetDefaultValues()
 	SetValue(TW_ZIP_LOCATION_VAR, str.c_str(), 1);
 #endif
 
-	SetBackupFolder(str);
-	SetAdditionalFolders(str);
-	//SetupTwrpFolder();
 #ifdef SP1_DISPLAY_NAME
 	if (strlen(EXPAND(SP1_DISPLAY_NAME)))	mConstValues.insert(make_pair(TW_SP1_PARTITION_NAME_VAR, EXPAND(SP1_DISPLAY_NAME)));
 #else
@@ -856,10 +873,10 @@ void DataManager::SetDefaultValues()
 		Lun_File_str = lun_file;
 	}
 	if (!TWFunc::Path_Exists(Lun_File_str)) {
-		LOGI("Lun file '%s' does not exist, USB storage mode disabled\n", Lun_File_str.c_str());
+		LOGI("=> Lun file '%s' does not exist, USB storage mode disabled\n", Lun_File_str.c_str());
 		mConstValues.insert(make_pair(TW_HAS_USB_STORAGE, "0"));
 	} else {
-		LOGI("Lun file '%s'\n", Lun_File_str.c_str());
+		LOGI("=> Lun file '%s'\n", Lun_File_str.c_str());
 		mConstValues.insert(make_pair(TW_HAS_USB_STORAGE, "1"));
 	}
 #endif
@@ -936,6 +953,8 @@ void DataManager::SetDefaultValues()
 	mValues.insert(make_pair(TW_RESTORE_AVG_IMG_RATE, make_pair("15000000", 1)));
 	mValues.insert(make_pair(TW_RESTORE_AVG_FILE_RATE, make_pair("3000000", 1)));
 	mValues.insert(make_pair(TW_RESTORE_AVG_FILE_COMP_RATE, make_pair("2000000", 1)));
+	mValues.insert(make_pair("tw_wipe_cache", make_pair("0", 0)));
+	mValues.insert(make_pair("tw_wipe_dalvik", make_pair("0", 0)));
 	if (GetIntValue(TW_HAS_INTERNAL) == 1 && GetIntValue(TW_HAS_DATA_MEDIA) == 1 && GetIntValue(TW_HAS_EXTERNAL) == 0)
 		SetValue(TW_HAS_USB_STORAGE, 0, 0);
 	else
@@ -1047,6 +1066,9 @@ void DataManager::Output_Version(void) {
 
 void DataManager::ReadSettingsFile(void)
 {
+	if (SettingsFileRead)
+		return;
+
 	// Load up the values for TWRP - Sleep to let the card be ready
 	char mkdir_path[255], settings_file[255];
 	int is_enc, has_dual, use_ext, has_data_media, has_ext;

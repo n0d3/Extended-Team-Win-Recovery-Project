@@ -67,7 +67,7 @@ LOCAL_C_INCLUDES += bionic external/stlport/stlport
 LOCAL_STATIC_LIBRARIES :=
 LOCAL_SHARED_LIBRARIES :=
 
-LOCAL_STATIC_LIBRARIES += libmtdutils
+LOCAL_STATIC_LIBRARIES += libmtdutils libcrecovery
 LOCAL_STATIC_LIBRARIES += libminadbd libminzip libunz
 LOCAL_STATIC_LIBRARIES += libminuitwrp libpixelflinger_static libpng libjpegtwrp libgui
 LOCAL_STATIC_LIBRARIES += libunyaffs
