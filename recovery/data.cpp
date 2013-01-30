@@ -552,17 +552,19 @@ void DataManager::SetBackupFolder(string storage_path) {
 }
 
 void DataManager::SetAdditionalFolders(string storage_path) {
-	string theme_path, scripts_path;
+	string theme_path, scripts_path, app_path;
 
 	if (storage_path.empty())
-		theme_path = scripts_path = GetCurrentStoragePath();
+		theme_path = scripts_path = app_path = GetCurrentStoragePath();
 	else
-		theme_path = scripts_path = storage_path;
+		theme_path = scripts_path = app_path = storage_path;
 
 	theme_path += "/TWRP/theme";
 	scripts_path += "/TWRP/scripts";
+	app_path += "/TWRP/app";
 	SetValue(TW_THEME_FOLDER_VAR, theme_path, 0);
 	SetValue(TW_SCRIPTS_FOLDER_VAR, scripts_path, 0);
+	SetValue(TW_APP_FOLDER_VAR, app_path, 0);
 }
 
 void DataManager::SetupTwrpFolder() {	
@@ -576,10 +578,11 @@ void DataManager::SetupTwrpFolder() {
 	|| GetStrValue(TW_SDBACKUPS_FOLDER_VAR).size() < 2)
 		SetBackupFolder(GetCurrentStoragePath());
 	if(GetStrValue(TW_THEME_FOLDER_VAR).size() < 2
-	|| GetStrValue(TW_SCRIPTS_FOLDER_VAR).size() < 2)
+	|| GetStrValue(TW_SCRIPTS_FOLDER_VAR).size() < 2
+	|| GetStrValue(TW_APP_FOLDER_VAR).size() < 2)
 		SetAdditionalFolders(GetCurrentStoragePath());
 
-	string backup_path, nativesdbackup_path, theme_path, scripts_path;
+	string backup_path, nativesdbackup_path, theme_path, scripts_path, app_path;
 	GetValue(TW_BACKUPS_FOLDER_VAR, backup_path);
 	backup_path += "/";
 	GetValue(TW_SDBACKUPS_FOLDER_VAR, nativesdbackup_path);
@@ -588,6 +591,8 @@ void DataManager::SetupTwrpFolder() {
 	theme_path += "/";
 	GetValue(TW_SCRIPTS_FOLDER_VAR, scripts_path);
 	scripts_path += "/";
+	GetValue(TW_APP_FOLDER_VAR, app_path);
+	app_path += "/";
 
 	if (!TWFunc::Path_Exists(backup_path)) {
 		if (!TWFunc::Recursive_Mkdir(backup_path))
@@ -604,6 +609,10 @@ void DataManager::SetupTwrpFolder() {
 	if (!TWFunc::Path_Exists(scripts_path)) {
 		if (!TWFunc::Recursive_Mkdir(scripts_path))
 			LOGI("Could not create '%s'\n", scripts_path.c_str());
+	}
+	if (!TWFunc::Path_Exists(app_path)) {
+		if (!TWFunc::Recursive_Mkdir(app_path))
+			LOGI("Could not create '%s'\n", app_path.c_str());
 	}
 	LOGI("TWRP's folders created on /sdcard.\n");
 }

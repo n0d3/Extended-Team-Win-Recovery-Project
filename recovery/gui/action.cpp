@@ -652,6 +652,21 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				operation_end(1, simulate);
 		}
 
+		if (function == "app_run") {
+			int ret = 0, wipe_cache = 0;;
+			string appfile;
+			DataManager::GetValue("tw_app_file", appfile);
+
+			operation_start("AppExec");
+			ret = flash_zip(appfile, arg, simulate, &wipe_cache);
+			if (ret != 0) {
+				ui_print("Error with zip '%s'\n", appfile.c_str());				
+				ret = 1;
+			}
+		   	operation_end(ret, simulate);
+
+			return 0;
+		}
 		if (function == "flash") {
 			int i, ret_val = 0, wipe_cache = 0;
 

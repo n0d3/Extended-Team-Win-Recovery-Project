@@ -55,6 +55,9 @@
 // Scripts folder
 #define TW_SCRIPTS_FOLDER_VAR     	"tw_scripts_folder"
 
+// App folder
+#define TW_APP_FOLDER_VAR     		"tw_app_folder"
+
 // tune2fs -c
 #define TW_NUM_OF_MOUNTS_FOR_FS_CHK 	"tw_num_of_mounts_for_fs_check"
 

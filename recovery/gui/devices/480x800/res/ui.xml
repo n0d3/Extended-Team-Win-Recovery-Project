@@ -182,7 +182,7 @@
 			<object type="text" color="%text_color%">
 				<font resource="font" />
 				<placement x="90" y="10" />
-				<text>ExtendedTWRP v%tw_version%.r4</text>
+				<text>ExtendedTWRP v%tw_version%.r5</text>
 			</object>
 
 			<object type="text" color="%text_success_color%">
@@ -3172,11 +3172,20 @@
 			</object>
 
 			<object type="button">
-				<placement x="%col2_x%" y="%row4_y%" />
+				<placement x="%col2_x%" y="615" />
 				<font resource="font" color="%button_text_color%" />
 				<text>ADB Sideload</text>
-				<image resource="main_button" />				
+				<image resource="ml_button" />				
 				<action function="page">sideload</action>
+			</object>
+
+			<object type="button">
+				<condition var1="tw_has_external" var2="1" />
+				<placement x="%col2_x%" y="675" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Run App</text>
+				<image resource="ml_button" />
+				<action function="page">appselect</action>
 			</object>
 
 			<object type="button">
@@ -4000,6 +4009,121 @@
 			</object>
 				
 			<object type="template" name="footer" />
+		</page>
+
+		<page name="appselect">
+			<object type="template" name="header" />
+
+			<object type="fileselector">
+				<placement x="%fileselector_x%" y="%row1_y%" w="%fileselector_width%" h="%fileselector_install_height%" />
+				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
+				<text>Select a recovery app to run:</text>
+				<separator color="%fileselector_separatorcolor%" height="%fileselector_separatorheight%" />
+				<sort name="tw_gui_sort_order" />
+				<icon folder="folder_icon" file="file_icon" />
+				<background color="%fileselector_background%" />
+				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" />
+				<filter extn=".zip" folders="0" files="1" nav="0" />
+				<path name="tw_app_folder" default="/sdcard/TWRP/app" />
+				<data name="tw_app_file" />
+				<selection name="tw_app_selection" />
+			</object>
+
+			<object type="template" name="sort_options" />
+
+			<object type="action">
+				<condition var1="tw_app_file" op="modified" />
+				<actions>
+					<action function="page">appconfirm</action>
+				</actions>
+			</object>
+
+			<object type="action">
+				<touch key="home" />
+				<action function="page">main</action>
+			</object>
+
+			<object type="action">
+				<touch key="back" />
+				<action function="page">advanced</action>
+			</object>
+
+			<object type="template" name="footer" />
+		</page>
+
+		<page name="appconfirm">
+			<object type="template" name="header" />
+
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%row1_text_y%" placement="5"/>
+				<text>Ready to load</text>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%row2_text_y%" placement="5"/>
+				<text>%tw_app_file%</text>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%row10_text_y%" placement="5"/>
+				<text>Press back button to cancel.</text>
+			</object>
+
+			<object type="slider">
+				<placement x="%slider_x%" y="%slider_y%" />
+				<resource base="slider" used="slider-used" touch="slider-touch" />
+				<action function="app_run">apprun</action>
+			</object>
+			
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%slider_text_y%" placement="4" />
+				<text>Swipe to Confirm</text>
+			</object>
+
+			<object type="action">
+				<touch key="back" />
+				<action function="page">appselect</action>
+			</object>
+
+			<object type="action">
+				<touch key="home" />
+				<action function="page">main</action>
+			</object>
+				
+			<object type="template" name="footer" />
+		</page>
+
+		<page name="apprun">
+			<object type="template" name="header" />
+
+			<object type="console">
+				<placement x="%console_x%" y="%row1_y%" w="%console_width%" h="%console_install_height%" />
+				<color foreground="%console_foreground%" background="%console_background%" scroll="%console_scroll%" />
+				<font resource="fixed" />
+			</object>
+
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%row17_text_y%" placement="5" />
+				<text>Running 'recovery' application</text>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<font resource="mediumfont" />
+				<placement x="%center_x%" y="%row18_text_y%" placement="5" />
+				<text>%tw_app_file%</text>
+			</object>
+
+			<object type="template" name="progress_bar" />
+
+			<object type="action">
+				<condition var1="tw_operation_state" var2="1" />
+				<action function="page">appselect</action>
+			</object>
 		</page>
 
 		<page name="partsdcard">
