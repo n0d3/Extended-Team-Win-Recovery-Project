@@ -2525,7 +2525,7 @@ int TWPartitionManager::NativeSD_Backup(string RomPath) {
 	}
 
 	char back_name[255], split_index[5];
-	string Full_FileName, Command, Tar_Args;
+	string Full_FileName, Command, Tar_Args, Tar_Excl;
 	int use_compression, index, backup_count;
 	unsigned long long total_bsize = 0, file_size;
 
@@ -2580,7 +2580,7 @@ int TWPartitionManager::NativeSD_Backup(string RomPath) {
 		int skip_dalvik;
 		DataManager::GetValue(TW_SKIP_DALVIK, skip_dalvik);
 		if (skip_dalvik)
-			Tar_Args += "--exclude='dalvik-cache' --exclude='dalvik-cache/*'";
+			Tar_Excl = " --exclude='dalvik-cache' --exclude='dalvik-cache/*'";
 		ui_print("Backing up %s's data...\n", Rom_Name.c_str());
 		string DATA_Backup_FileName = "data.tar";
 		if (data_backup_size > MAX_ARCHIVE_SIZE) {
@@ -2611,7 +2611,7 @@ int TWPartitionManager::NativeSD_Backup(string RomPath) {
 			system("cd /tmp && rm -rf list");
 		} else {
 			Full_FileName = Full_Backup_Path + DATA_Backup_FileName;
-			Command = "cd " + extpath + " && tar " + Tar_Args + " -f '" + Full_FileName + "' " + Rom_Name + "/data";
+			Command = "cd " + extpath + " && tar " + Tar_Args + Tar_Excl + " -f '" + Full_FileName + "' " + Rom_Name + "/data";
 			LOGI("Backup command: '%s'\n", Command.c_str());
 			system(Command.c_str());
 			if (TWFunc::Get_File_Size(Full_FileName) == 0) {
