@@ -642,6 +642,7 @@ void DataManager::SetDefaultValues()
 	if (Detect_BLDR() == 1) // cLK detected
 		get_boot_partitions();
 
+	mValues.insert(make_pair(TW_SEL_THEME_PATH, make_pair("", 1)));
 	mValues.insert(make_pair(TW_SDBOOT_PARTITION, make_pair("", 1)));
 	mValues.insert(make_pair(TW_BACKUP_NAND_DATA, make_pair("0", 1)));
     	mValues.insert(make_pair(TW_DATA_PATH, make_pair("/sd-ext", 1)));

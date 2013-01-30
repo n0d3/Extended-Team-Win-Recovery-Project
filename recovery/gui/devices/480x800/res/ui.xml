@@ -3074,11 +3074,9 @@
 				<placement x="%col1_x%" y="%row3_text_y%" />
 				<condition var1="tw_has_external" var2="1" />
 				<font resource="font" color="%button_text_color%" />
-				<!--<text>Select Theme</text>-->
-				<text>Reload Theme</text>
+				<text>Select Theme</text>
 				<image resource="ml_button" />
-				<action function="reload"></action>
-				<!--<action function="page">themeselect</action>-->
+				<action function="page">themeselect</action>
 			</object>
 
 			<object type="button">
@@ -3796,15 +3794,13 @@
 			<object type="template" name="footer" />
 		</page>
 
-		<!-- TEST: Select and Load a theme from sdcard -->
-<!--
 		<page name="themeselect">
 			<object type="template" name="header" />
 
 			<object type="fileselector">
 				<placement x="%fileselector_x%" y="%row1_y%" w="%fileselector_width%" h="%fileselector_medium_height%" />
 				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
-				<text>Select a theme from SD Card:</text>
+				<text>Select a theme:</text>
 				<separator color="%fileselector_separatorcolor%" height="%fileselector_separatorheight%" />
 				<sort name="tw_gui_sort_order" />
 				<icon folder="folder_icon" file="file_icon" />
@@ -3818,11 +3814,9 @@
 
 			<object type="template" name="sort_options" />
 
-			<object type="action">
+			<object type="action">			
 				<condition var1="tw_theme_file" op="modified" />
-				<actions>
-					<action function="page">themeconfirm</action>
-				</actions>
+				<action function="page">themecheck</action>
 			</object>
 
 			<object type="action">
@@ -3835,7 +3829,40 @@
 				<action function="page">advanced</action>
 			</object>
 
+			<object type="button">
+				<placement x="%col_center_x%" y="%row3_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Use Built-In UI</text>
+				<image resource="main_button" />
+				<actions>
+					<action function="set">tw_sel_theme_path=</action>
+					<action function="reload"></action>
+				</actions>
+			</object>
+
 			<object type="template" name="footer" />
+		</page>
+
+		<page name="themecheck">
+			<object type="action">
+				<action function="fileexists">%tw_theme_file%/ui.zip</action>
+			</object>
+
+			<object type="action">
+				<conditions>
+					<condition var1="tw_operation_state" var2="1" />
+					<condition var1="tw_operation_status" var2="0" />
+				</conditions>
+				<action function="page">themeconfirm</function>
+			</object>
+
+			<object type="action">
+				<conditions>
+					<condition var1="tw_operation_state" var2="1" />
+					<condition var1="tw_operation_status" var2="1" />
+				</conditions>
+				<action function="page">themeselect</function>
+			</object>
 		</page>
 
 		<page name="themeconfirm">
@@ -3880,7 +3907,7 @@
 				
 			<object type="template" name="footer" />
 		</page>
--->
+
 		<page name="scriptselect">
 			<object type="template" name="header" />
 

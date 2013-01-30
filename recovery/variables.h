@@ -50,7 +50,7 @@
 
 // Theme file
 #define TW_THEME_FOLDER_VAR		"tw_theme_folder"
-//#define TW_SEL_THEME_PATH		"tw_sel_theme_path"
+#define TW_SEL_THEME_PATH		"tw_sel_theme_path"
 
 // Scripts folder
 #define TW_SCRIPTS_FOLDER_VAR     	"tw_scripts_folder"

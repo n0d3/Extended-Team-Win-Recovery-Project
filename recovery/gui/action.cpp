@@ -362,6 +362,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 	}
 
 	if (function == "reload") {
+		struct stat st;
 		int check = 0, ret_val = 0;
 		std::string root_path;
 		std::string theme_path;
@@ -374,15 +375,13 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 		}
 
 		// TEST: Load a pre-selected theme
-		//DataManager::GetValue(TW_SEL_THEME_PATH, theme_path);
-		//if (theme_path.empty())
+		DataManager::GetValue(TW_SEL_THEME_PATH, theme_path);
+		if (theme_path.empty())
 			theme_path = root_path + "/TWRP/theme/ui.zip";
-		if (check != 0 || PageManager::ReloadPackage("TWRP", theme_path) != 0)
-		{
+		if (check != 0 || PageManager::ReloadPackage("TWRP", theme_path) != 0) {
 			// Loading the custom theme failed - try loading the stock theme
 			LOGI("Attempting to reload stock theme...\n");
-			if (PageManager::ReloadPackage("TWRP", "/res/ui.xml"))
-			{
+			if (PageManager::ReloadPackage("TWRP", "/res/ui.xml")) {
 				LOGE("Failed to load base packages.\n");
 				ret_val = 1;
 			}
@@ -1339,8 +1338,8 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 							}
 
 							// TEST: Load a pre-selected theme
-							//DataManager::GetValue(TW_SEL_THEME_PATH, theme_path);
-							//if (theme_path.empty())
+							DataManager::GetValue(TW_SEL_THEME_PATH, theme_path);
+							if (theme_path.empty())
 								theme_path = root_path + "/TWRP/theme/ui.zip";
 							if (check == 0 && stat(theme_path.c_str(), &st) == 0) {
 								if (PageManager::ReloadPackage("TWRP", theme_path) != 0)
