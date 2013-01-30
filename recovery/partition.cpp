@@ -699,12 +699,15 @@ bool TWPartition::Update_Size(bool Display_Error) {
 		return false;
 
 	Was_Already_Mounted = Is_Mounted();
-	if (Removable || Is_Encrypted) {
-		if (!Mount(false))
-			return true;
-	} else if (!Mount(Display_Error))
-		return false;
-
+	if (!Was_Already_Mounted) {
+		if (Removable || Is_Encrypted) {
+			if (!Mount(false))
+				return true;
+		} else {		
+			if (!Mount(Display_Error))
+				return false;
+		}
+	}
 	ret = Get_Size_Via_statfs(Display_Error);
 	if (!ret || Size == 0) {
 		if (!Get_Size_Via_df(Display_Error)) {
@@ -795,16 +798,17 @@ bool TWPartition::Get_Size_Via_statfs(bool Display_Error) {
 					DataManager::GetValue(TW_DATA_PATH, data_pth);
 					DataManager::GetValue(TW_DATA_ON_EXT, dataonext);
 				}
+				Path_For_DataOnExt = data_pth;
 				// Recheck for new data_pth
 				CheckFor_Dalvik_Cache();
 				CheckFor_NativeSD();
-				Path_For_DataOnExt = data_pth;
 			}
 		}
 		if (dataonext) {
 			LOGI("TW_DATA_PATH: '%s'\n", data_pth.c_str());
 			if (!Is_Mounted())
-				Mount(Display_Error);
+				system(("mount " + Primary_Block_Device + " " + Mount_Point).c_str());
+				//Mount(Display_Error);
 			if (TWFunc::Path_Exists(data_pth))
 				Backup_Size = TWFunc::Get_Folder_Size(data_pth, true);
 			else
@@ -888,16 +892,17 @@ bool TWPartition::Get_Size_Via_df(bool Display_Error) {
 					DataManager::GetValue(TW_DATA_PATH, data_pth);
 					DataManager::GetValue(TW_DATA_ON_EXT, dataonext);
 				}
+				Path_For_DataOnExt = data_pth;
 				// Recheck for new data_pth
 				CheckFor_Dalvik_Cache();
 				CheckFor_NativeSD();
-				Path_For_DataOnExt = data_pth;
 			}
 		}
 		if (dataonext) {
 			LOGI("TW_DATA_PATH: '%s'\n", data_pth.c_str());
 			if (!Is_Mounted())
-				Mount(Display_Error);
+				system(("mount " + Primary_Block_Device + " " + Mount_Point).c_str());
+				//Mount(Display_Error);
 			if (TWFunc::Path_Exists(data_pth))
 				Backup_Size = TWFunc::Get_Folder_Size(data_pth, true);
 			else
@@ -1041,8 +1046,6 @@ bool TWPartition::Mount(bool Display_Error) {
 			}
 		}
 #endif
-		if (Removable && PartitionManager.Fstab_Proc_Done == 1)
-			Update_Size(Display_Error);
 
 		if (!Symlink_Mount_Point.empty()) {
 			Command = "mount '" + Symlink_Path + "' '" + Symlink_Mount_Point + "'";
@@ -1092,10 +1095,10 @@ bool TWPartition::UnMount(bool Display_Error) {
 
 		if (umount(Mount_Point.c_str()) != 0) {
 			if (Display_Error)
-				LOGE("Unable to unmount '%s'\nRetrying with 'umount -f'\n", Mount_Point.c_str());
+				LOGE("Unable to unmount '%s'\nRetrying with 'umount -l'\n", Mount_Point.c_str());
 			else
-				LOGI("Unable to unmount '%s'\nRetrying with 'umount -f'\n", Mount_Point.c_str());
-			Command = "umount -f " + Mount_Point;
+				LOGI("Unable to unmount '%s'\nRetrying with 'umount -l'\n", Mount_Point.c_str());
+			Command = "umount -l " + Mount_Point;
 			if (system(Command.c_str()) == 0) {
 				return true;
 			}
@@ -1244,6 +1247,8 @@ bool TWPartition::Wipe(string New_File_System) {
 				}
 			}
 		}
+		// If the partition was wiped update sizes
+		Update_Size(true);
 	}
 	return wiped;
 }

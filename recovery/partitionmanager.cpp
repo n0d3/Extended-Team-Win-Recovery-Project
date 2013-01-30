@@ -1431,6 +1431,7 @@ int TWPartitionManager::Wipe_Dalvik_Cache(void) {
 			if (Cache->Mount(true))
 				TWFunc::removeDir("/cache/dalvik-cache", false);
 			ui_print("Cleaned: /cache/dalvik-cache...\n");
+			Cache->Dalvik_Cache_Size = 0;
 		}		
 	}
 	// data
@@ -1447,6 +1448,7 @@ int TWPartitionManager::Wipe_Dalvik_Cache(void) {
 					TWFunc::removeDir("/data/dalvik-cache", false);
 					ui_print("Cleaned: /data/dalvik-cache...\n");
 				}
+				Data->Dalvik_Cache_Size = 0;
 			}
 		}	
 	}
@@ -1461,6 +1463,7 @@ int TWPartitionManager::Wipe_Dalvik_Cache(void) {
 				if (TWFunc::Path_Exists(dalvik_pth)) {
 					TWFunc::removeDir(dalvik_pth, false);
 					ui_print("Cleaned: %s...\n", dalvik_pth.c_str());
+					SDext->Dalvik_Cache_Size = 0;
 				}
 			}
 		}
