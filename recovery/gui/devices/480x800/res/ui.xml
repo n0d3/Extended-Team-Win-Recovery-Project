@@ -182,7 +182,7 @@
 			<object type="text" color="%text_color%">
 				<font resource="font" />
 				<placement x="90" y="10" />
-				<text>ExtendedTWRP v%tw_version%.r6</text>
+				<text>ExtendedTWRP v%tw_version%.r7</text>
 			</object>
 
 			<object type="text" color="%text_success_color%">
