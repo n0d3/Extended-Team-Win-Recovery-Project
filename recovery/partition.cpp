@@ -1567,7 +1567,7 @@ string TWPartition::Backup_Method_By_Name() {
 
 bool TWPartition::Backup_Tar(string backup_folder) {
 	char back_name[255], split_index[5];
-	string Full_FileName, Split_FileName, Tar_Args = "", Command, data_pth, pathTodatafolder;
+	string Full_FileName, Split_FileName, Tar_Args = "", Tar_Excl = "", Command, data_pth, pathTodatafolder;
 	int use_compression, index, backup_count, dataonext;
 	struct stat st;
 	unsigned long long total_bsize = 0, file_size;
@@ -1599,14 +1599,14 @@ bool TWPartition::Backup_Tar(string backup_folder) {
 		int skip_dalvik;
 		DataManager::GetValue(TW_SKIP_DALVIK, skip_dalvik);
 		if (skip_dalvik)
-			Tar_Args = "--exclude='dalvik-cache' --exclude='dalvik-cache/*' ";
+			Tar_Excl += " --exclude='dalvik-cache' --exclude='dalvik-cache/*'";
 	}
 	// Skip any NativeSD Rom during backup of sd-ext
 	if (Backup_Path == "/sd-ext" || Backup_Path == "/sdext2") {
 		int skip_native;
 		DataManager::GetValue(TW_SKIP_NATIVESD, skip_native);
 		if (skip_native)
-			Tar_Args += Tar_exclude;
+			Tar_Excl += Tar_exclude;
 	}
 
 	// Use Compression?
@@ -1621,7 +1621,7 @@ bool TWPartition::Backup_Tar(string backup_folder) {
 	sprintf(back_name, "%s.%s.win", Backup_Name.c_str(), Current_File_System.c_str());
 	Backup_FileName = back_name;
 	Full_FileName = backup_folder + Backup_FileName;
-	 if (Backup_Size > MAX_ARCHIVE_SIZE) {
+	if (Backup_Size > MAX_ARCHIVE_SIZE) {
 		// This backup needs to be split into multiple archives
 		ui_print("Breaking backup file into multiple archives...\n");
 		if (Backup_Path == "/sd-ext" && dataonext)
@@ -1645,7 +1645,7 @@ bool TWPartition::Backup_Tar(string backup_folder) {
 		for (index=0; index<backup_count; index++) {
 			sprintf(split_index, "%03i", index);
 			Full_FileName = backup_folder + Backup_FileName + split_index;
-			Command = "tar " + Tar_Args + " -f '" + Full_FileName + "' -T /tmp/list/filelist" + split_index;
+			Command = "tar " + Tar_Args + Tar_Excl + " -f '" + Full_FileName + "' -T /tmp/list/filelist" + split_index;
 			LOGI("Backup command: '%s'\n", Command.c_str());
 			ui_print("Backup archive %i of %i...\n", (index + 1), backup_count);
 			system(Command.c_str()); // sending backup command formed earlier above
@@ -1682,9 +1682,9 @@ bool TWPartition::Backup_Tar(string backup_folder) {
 			Command = "cd " + Backup_Path + " && tar " + Tar_Args + " ./ --exclude='media*' -f '" + Full_FileName + "'";
 		else {
 			if (Backup_Path == "/sd-ext" && dataonext) {
-				Command = "cd " + Backup_Path + " && tar "+ Tar_Args +" -f '" + Full_FileName + "' " + pathTodatafolder;			
+				Command = "cd " + Backup_Path + " && tar "+ Tar_Args + Tar_Excl + " -f '" + Full_FileName + "' " + pathTodatafolder;			
 			} else {
-				Command = "cd " + Backup_Path + " && tar " + Tar_Args + " -f '" + Full_FileName + "' ./*";
+				Command = "cd " + Backup_Path + " && tar " + Tar_Args + Tar_Excl + " -f '" + Full_FileName + "' ./*";
 			}
 		}
 		LOGI("Backup command: '%s'\n", Command.c_str());
@@ -1694,15 +1694,15 @@ bool TWPartition::Backup_Tar(string backup_folder) {
 			LOGE("Backup file size for '%s' is 0 bytes.\n", Full_FileName.c_str());
 			return false;
 		}
-		if (Backup_Path == "/sd-ext" && dataonext) {
-			// Create a file to recognize that this is DataOnExt and not a typical sd-ext backup
-			if (pathTodatafolder == "./*")
-				pathTodatafolder = "";
-			else
-				pathTodatafolder = "/" + pathTodatafolder;
-			Command = "echo /sd-ext" + pathTodatafolder + ">" + backup_folder + ".dataonext";
-			system(Command.c_str());
-		}
+	}
+	if (Backup_Path == "/sd-ext" && dataonext) {
+		// Create a file to recognize that this is DataOnExt and not a typical sd-ext backup
+		if (pathTodatafolder == "./*")
+			pathTodatafolder = "";
+		else
+			pathTodatafolder = "/" + pathTodatafolder;
+		Command = "echo /sd-ext" + pathTodatafolder + ">" + backup_folder + ".dataonext";
+		system(Command.c_str());
 	}
 	return true;
 }
@@ -1913,7 +1913,7 @@ bool TWPartition::Restore_Tar(string restore_folder, string Restore_File_System)
 			Command = "cd / && tar -xf '" + Full_FileName + "'";			
 		// For restoring a CWM backup of android_secure
 		else if (Check_Tar_Entry(Full_FileName, ".android_secure"))
-			Command = "cd /sdcard && tar -xf '" + Full_FileName + "'";			
+			Command = "cd " + Storage_Path + " && tar -xf '" + Full_FileName + "'";			
 		else
 			Command = "cd " + Backup_Path + " && tar -xf '" + Full_FileName + "'";
 		LOGI("Restore command: '%s'\n", Command.c_str());
@@ -2187,7 +2187,7 @@ void TWPartition::CheckFor_NativeSD(void) {
 									count++;
 									LOGI("Excluding : %s\n", pathToCheck.c_str());
 									NativeSD_Size += TWFunc::Get_Folder_Size(pathToCheck, true);
-									Tar_exclude += ("--exclude='" + dname + "' --exclude='" + dname + "/*' ");
+									Tar_exclude += (" --exclude='" + dname + "' --exclude='" + dname + "/*'");
 								}
 							}
 						} else {
@@ -2195,7 +2195,7 @@ void TWPartition::CheckFor_NativeSD(void) {
 							if (TWFunc::Path_Exists(pathToCheck)) {
 								count++;
 								NativeSD_Size += TWFunc::Get_Folder_Size(pathToCheck, true);
-								Tar_exclude += ("--exclude='" + dname + "' --exclude='" + dname + "/*' ");
+								Tar_exclude += (" --exclude='" + dname + "' --exclude='" + dname + "/*'");
 							}
 						}
 					} else
