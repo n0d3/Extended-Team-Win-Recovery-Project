@@ -2438,7 +2438,7 @@ int TWPartitionManager::FSConvert_SDEXT(string extpath) {
 			if (!Mount_Current_Storage(true))
 				return false;
 			LOGI("Checking sizes...\n");			
-		    	if (free_space + (32 * 1024 * 1024) < ext_size) {
+		    	if (free_space - (32 * 1024 * 1024) < ext_size) {
 				LOGE("Not enough free space on storage.\n");
 				return false;
 			}
@@ -2549,7 +2549,7 @@ int TWPartitionManager::NativeSD_Backup(string RomPath) {
 		LOGE("Unable to locate storage device.\n");
 		return false;
 	}
-	if (free_space + (32 * 1024 * 1024) < total_bytes) {
+	if (free_space - (32 * 1024 * 1024) < total_bytes) {
 		// We require an extra 32MB just in case
 		LOGE("Not enough free space on storage.\n");
 		return false;
