@@ -1615,7 +1615,7 @@ void TWPartitionManager::Update_System_Details(void) {
 				int backup_display_size = (int)((*iter)->Backup_Size / 1048576LLU);
 				DataManager::SetValue(TW_BACKUP_SDEXT_SIZE, backup_display_size);
 				if ((*iter)->Backup_Size == 0) {
-					DataManager::SetValue(TW_HAS_SDEXT_PARTITION, 0);
+					//DataManager::SetValue(TW_HAS_SDEXT_PARTITION, 0);
 					DataManager::SetValue(TW_BACKUP_SDEXT_VAR, 0);
 				} else
 					DataManager::SetValue(TW_HAS_SDEXT_PARTITION, 1);
@@ -1623,7 +1623,7 @@ void TWPartitionManager::Update_System_Details(void) {
 				int backup_display_size = (int)((*iter)->Backup_Size / 1048576LLU);
 				DataManager::SetValue(TW_BACKUP_SDEXT2_SIZE, backup_display_size);
 				if ((*iter)->Backup_Size == 0) {
-					DataManager::SetValue(TW_HAS_SDEXT2_PARTITION, 0);
+					//DataManager::SetValue(TW_HAS_SDEXT2_PARTITION, 0);
 					DataManager::SetValue(TW_BACKUP_SDEXT2_VAR, 0);
 				} else {
 					DataManager::SetValue(TW_HAS_SDEXT2_PARTITION, 1);

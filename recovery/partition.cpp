@@ -783,6 +783,8 @@ bool TWPartition::Get_Size_Via_statfs(bool Display_Error) {
 	Used = ((st.f_blocks - st.f_bfree) * st.f_bsize);
 	Free = (st.f_bfree * st.f_bsize);
 	if (Mount_Point == "/sd-ext") {
+		if (Size == 0)
+			DataManager::SetValue(TW_HAS_SDEXT_PARTITION, 0);
 		// sd-ext is a special case due to DataOnExt & NativeSD features
 		int dataonext, skip_native;
 		DataManager::GetValue(TW_SKIP_NATIVESD, skip_native);
