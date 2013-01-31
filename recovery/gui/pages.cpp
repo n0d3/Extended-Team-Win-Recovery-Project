@@ -788,7 +788,7 @@ int PageManager::ReloadPackage(std::string name, std::string package)
 
     if (LoadPackage(name, package, "main") != 0)
     {
-        LOGE("Failed to load package.\n");
+        LOGI("Failed to load package.\n");
         mPageSets.insert(std::pair<std::string, PageSet*>(name, set));
         return -1;
     }

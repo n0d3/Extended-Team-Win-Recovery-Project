@@ -215,7 +215,6 @@ int GUIAction::doActions() {
 	// For multi-action, we always use a thread
 	pthread_t t;
 	pthread_attr_t tattr;
-	//pthread_create(&t, NULL, thread_start, this);
 	if (pthread_attr_init(&tattr)) {
 		LOGE("Unable to pthread_attr_init\n");
 		return -1;
@@ -232,18 +231,13 @@ int GUIAction::doActions() {
 		LOGE("Error setting pthread_attr_setstacksize\n");
 		return -1;
 	}*/
-	//LOGI("creating thread\n");
 	int ret = pthread_create(&t, &tattr, thread_start, this);
-	//LOGI("after thread creation\n");
 	if (ret) {
 		LOGI("Unable to create more threads for actions... continuing in same thread! %i\n", ret);
 		thread_start(this);
 	} else {
-		if (pthread_join(t, NULL)) {
+		if (pthread_join(t, NULL))
 			LOGE("Error joining threads\n");
-		} else {
-			//LOGI("Thread joined\n");
-		}
 	}
 	if (pthread_attr_destroy(&tattr)) {
 		LOGE("Failed to pthread_attr_destroy\n");
@@ -495,8 +489,8 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			value -= amount_to_subtract;
 			if (value <= 0)
 				value = 0;
-			/*if (varName == "tw_sdext_size" && value == 0)
-				DataManager::SetValue("tw_sdext2_size", 0);*/
+			if (varName == "tw_sdext_size" && value == 0)
+				DataManager::SetValue("tw_sdext2_size", 0);
 			DataManager::SetValue(varName, value);
 			return 0;
 		}

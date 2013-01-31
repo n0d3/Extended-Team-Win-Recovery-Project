@@ -152,14 +152,14 @@ int GUIText::Update(void)
 {
     if (!isConditionTrue())     return 0;
 
-    static int updateCounter = 3;
+    static int updateCounter = 1;
 
     // This hack just makes sure we update at least once a minute for things like clock and battery
-    if (updateCounter)  updateCounter--;
-    else
-    {
+    if (updateCounter) {
+        updateCounter--;
+    } else {
         mVarChanged = 1;
-        updateCounter = 3;
+        updateCounter = 1;
     }
 
     if (mIsStatic || !mVarChanged)      return 0;

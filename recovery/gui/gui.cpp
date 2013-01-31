@@ -582,6 +582,25 @@ error:
     return -1;
 }
 
+static void *time_update_thread(void *cookie)
+{
+	char tmp[32];
+	time_t now;
+	struct tm *current;
+	string current_time;
+
+	for(;;) {
+		now = time(0);
+		current = localtime(&now);
+		sprintf(tmp, "%02d:%02d:%02d", current->tm_hour, current->tm_min, current->tm_sec);
+		current_time = tmp;
+		DataManager::SetValue("tw_time", current_time, 0);
+		usleep(998);
+	}
+	
+	return NULL; // needless :)
+}
+
 extern "C" int gui_start()
 {
     if (!gGuiInitialized)   return -1;
@@ -596,6 +615,9 @@ extern "C" int gui_start()
 		// Start by spinning off an input handler.
 		pthread_t t;
 		pthread_create(&t, NULL, input_thread, NULL);
+		// time handler
+		pthread_t t_update;
+		pthread_create(&t_update, NULL, time_update_thread, NULL);
 		gGuiInputRunning = 1;
 	}
 
