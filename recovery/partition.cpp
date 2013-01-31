@@ -1876,7 +1876,7 @@ bool TWPartition::Restore_Tar(string restore_folder, string Restore_File_System)
 		sprintf(split_index, "%03i", index);
 		Full_FileName += split_index;
 		while (TWFunc::Path_Exists(Full_FileName)) {
-			ui_print("Restoring archive %i...\n", index);
+			ui_print("Restoring archive %i...\n", index+1);
 			LOGI("Restoring '%s'...\n", Full_FileName.c_str());
 #ifdef TW_INCLUDE_LIBTAR
 			twrpTar tar;
@@ -1885,7 +1885,10 @@ bool TWPartition::Restore_Tar(string restore_folder, string Restore_File_System)
 			if (tar.extractTarThread() != 0)
 				return false;
 #else
-			Command = "tar -xf '" + Full_FileName + "'";
+			if (Check_Tar_Entry(Full_FileName, "sd-ext") || Check_Tar_Entry(Full_FileName, "system") || Check_Tar_Entry(Full_FileName, "data"))
+				Command = "cd / && tar -xf '" + Full_FileName + "'";
+			else			
+				Command = "cd " + Backup_Path + " && tar -xf '" + Full_FileName + "'";
 			LOGI("Restore command: '%s'\n", Command.c_str());
 			system(Command.c_str());	
 #endif

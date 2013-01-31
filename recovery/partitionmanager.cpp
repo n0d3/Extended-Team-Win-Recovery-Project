@@ -1171,6 +1171,7 @@ void TWPartitionManager::Set_Restore_Files(string Restore_Name) {
 	int tw_restore_sp2 = -1;
 	int tw_restore_sp3 = -1;
 	bool get_date = true;
+	bool split_archive = false;
 
 	DIR* d;
 	d = opendir(Restore_Name.c_str());
@@ -1185,8 +1186,9 @@ void TWPartitionManager::Set_Restore_Files(string Restore_Name) {
 			continue;
 
 		string dname = de->d_name;
+		string filename = de->d_name;
 		string search_str = ".", label, fstype, extn;
-		if (de->d_type == DT_REG) {			
+		if (de->d_type == DT_REG) {
 			// Find last occurrence of period to immediately check file's extension 
 			size_t last_occur = dname.rfind(search_str);
 			if (last_occur == string::npos) {
@@ -1194,8 +1196,20 @@ void TWPartitionManager::Set_Restore_Files(string Restore_Name) {
 				continue;
 			}
 			extn = dname.substr((last_occur + 1), (dname.size() - last_occur - 1));
-			if (extn != "win" && extn != "img" && extn != "tar")
-				continue; // skip irrelevant files
+			
+			if (extn.size() > 3) {
+				// check if file's extension has the format *.winxxx, cause this is part of a split archive
+				if (strncmp(extn.c_str(), "winxxx", 3) == 0) {
+					split_archive = true;
+				} else {
+					split_archive = false;
+					continue; // skip irrelevant files
+				}
+			} else {
+				split_archive = false;
+				if (extn != "win" && extn != "img" && extn != "tar")
+					continue; // skip irrelevant files
+			}
 
 			// Get the date once
 			if (get_date) {
@@ -1221,7 +1235,18 @@ void TWPartitionManager::Set_Restore_Files(string Restore_Name) {
 			// If this is a CWM backup containing an '.android_secure.vfat.tar' change the label to TWRP standards
 			if (label == "android_secure")
 				label = "and-sec";
-			
+			// If this is a split archive and we already processed the first part continue
+			if (split_archive) {
+				if (label == "sd-ext" && tw_restore_sdext == 1)
+					continue;
+				else if (label == "sdext2" && tw_restore_sdext2 == 1)
+					continue;
+				else if (label == "system" && tw_restore_system == 1)
+					continue;
+				else if (label == "data" && tw_restore_data == 1)
+					continue;
+			}
+
 			// If first and last occurrence are the same then this probably is
 			// a CWM backup from an mtd partition (i.e. boot.img)
 			if (first_occur == last_occur)
@@ -1241,9 +1266,15 @@ void TWPartitionManager::Set_Restore_Files(string Restore_Name) {
 				// ...in order to use unyaffs to restore
 				Part->Use_unyaffs_To_Restore = true;
 			}
-			Part->Backup_FileName = de->d_name;
-			//LOGI("*Backup_FileName = %s\n", Part->Backup_FileName.c_str());
-			//LOGI("*Backup_Path = %s\n", Part->Backup_Path.c_str());
+			// If we have a part of split archive, use the proper filename(without the numbers at the end)
+			if (split_archive)
+				Part->Backup_FileName = filename.substr(0, (filename.size() - 3));
+			else
+				Part->Backup_FileName = filename;
+
+			LOGI("*extn = %s\n", extn.c_str());
+			LOGI("*Backup_FileName = %s\n", Part->Backup_FileName.c_str());
+			LOGI("*Backup_Path = %s\n", Part->Backup_Path.c_str());
 
 			// Now, we just need to find the correct label
 			if (Part->Backup_Path == "/boot") {
