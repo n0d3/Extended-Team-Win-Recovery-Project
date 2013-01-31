@@ -574,6 +574,30 @@ void TWPartition::Recreate_AndSec_Folder(void) {
 	}
 }
 
+void TWPartition::Recreate_DataOnExt_Folder(void) {
+	int dataonext = 0;
+	DataManager::GetValue(TW_DATA_ON_EXT, dataonext);
+	if (!dataonext)
+		return;
+	string data_pth;
+	DataManager::GetValue(TW_DATA_PATH, data_pth);
+	if (data_pth == "/sd-ext")
+		return;
+	string root_pth;
+	root_pth = TWFunc::Get_Root_Path(data_pth);
+	if (root_pth != Mount_Point)
+		return;
+
+	if (!Mount(true)) {
+		LOGE("Unable to recreate folder for DataOnExt.\n");
+	} else if (!TWFunc::Path_Exists(data_pth)) {
+		LOGI("Recreating data folder for DataOnExt.\n");
+		if (!TWFunc::Recursive_Mkdir(data_pth))
+			LOGI("Could not create '%s'\n", data_pth.c_str());
+		UnMount(true);
+	}
+}
+
 void TWPartition::Recreate_Media_Folder(void) {
 	string Command;
 
@@ -1310,6 +1334,7 @@ bool TWPartition::Wipe_EXT23(string File_System) {
 		if (TWFunc::Exec_Cmd(command, result) == 0) {
 			Current_File_System = File_System;
 			Recreate_AndSec_Folder();
+			Recreate_DataOnExt_Folder();
 			ui_print("Done.\n");
 			return true;
 		} else {
@@ -1344,6 +1369,7 @@ bool TWPartition::Wipe_EXT4() {
 		if (TWFunc::Exec_Cmd(Command, result) == 0) {
 			Current_File_System = "ext4";
 			Recreate_AndSec_Folder();
+			Recreate_DataOnExt_Folder();
 			ui_print("Done.\n");
 			return true;
 		} else {
@@ -1369,6 +1395,7 @@ bool TWPartition::Wipe_NILFS2() {
 		if (TWFunc::Exec_Cmd(command, result) == 0) {
 			Current_File_System = "nilfs2";
 			Recreate_AndSec_Folder();
+			Recreate_DataOnExt_Folder();
 			ui_print("Done.\n");
 			return true;
 		} else {
@@ -1499,6 +1526,7 @@ bool TWPartition::Wipe_RMRF() {
 	ui_print("Removing all files under '%s'\n", Mount_Point.c_str());
 	TWFunc::removeDir(Mount_Point, true);
 	Recreate_AndSec_Folder();
+	Recreate_DataOnExt_Folder();
 	return true;
 }
 

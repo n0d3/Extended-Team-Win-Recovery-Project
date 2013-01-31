@@ -258,9 +258,11 @@ class TWPartition {
 		// Check partition for dalvik-cache
 		void CheckFor_Dalvik_Cache(void);
 		// Check sd-ext partition if being used as /data
-		int  CheckFor_DataOnExt(void);
+		int CheckFor_DataOnExt(void);
 		// Quick check build.prop for "DataOnExt" string
 		void Check_BuildProp(void);
+		// Recreates the data folder used for DataOnExt feature
+		void Recreate_DataOnExt_Folder(void);
 
 	friend class TWPartitionManager;
 };
