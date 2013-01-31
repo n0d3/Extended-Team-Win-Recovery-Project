@@ -996,11 +996,11 @@ int DataManager::GetMagicValue(const string varName, string& value)
 		now = time(0);
 		current = localtime(&now);
 
-		if (current->tm_hour >= 12)
+		/*if (current->tm_hour >= 12)
 			sprintf(tmp, "%d:%02d PM", current->tm_hour == 12 ? 12 : current->tm_hour - 12, current->tm_min);
 		else
-			sprintf(tmp, "%d:%02d AM", current->tm_hour == 0 ? 12 : current->tm_hour, current->tm_min);
-
+			sprintf(tmp, "%d:%02d AM", current->tm_hour == 0 ? 12 : current->tm_hour, current->tm_min);*/
+		sprintf(tmp, "%02d:%02d:%02d", current->tm_hour, current->tm_min, current->tm_sec);
 		value = tmp;
 		return 0;
 	}
