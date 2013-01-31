@@ -2502,14 +2502,18 @@ int TWPartitionManager::NativeSD_Backup(string RomPath) {
 
 	Update_System_Details();
 
-	if (!Mount_Current_Storage(true))
-		return false;
-
 	DataManager::GetValue(TW_USE_SDEXT2_PARTITION, z);
 	if (z == 0)
 		extpath = "/sd-ext";
 	else
 		extpath = "/sdext2";
+
+	if (!Mount_Current_Storage(true))
+		return false;
+
+	TWPartition* sdext = Find_Partition_By_Path(extpath);
+	if (!sdext->Mount(false))
+		return false;
 	
 	char timestamp[255];
 	sprintf(timestamp,"%04d-%02d-%02d--%02d-%02d-%02d",t->tm_year+1900,t->tm_mon+1,t->tm_mday,t->tm_hour,t->tm_min,t->tm_sec);
@@ -2532,12 +2536,17 @@ int TWPartitionManager::NativeSD_Backup(string RomPath) {
 		LOGE("Failed to make backup folder.\n");
 		return false;
 	}
-	system("echo > /sdcard/TWRP/NativeSD-BACKUPS/.nativesd");
 
 	LOGI("Calculating backup details...\n");
-	unsigned long long system_backup_size = TWFunc::Get_Folder_Size(RomPath + "/system", true);
-    	unsigned long long data_backup_size = TWFunc::Get_Folder_Size(RomPath + "/data", true);
-    	unsigned long long boot_backup_size = TWFunc::Get_Folder_Size("/sdcard/NativeSD/" + RomPath.substr(8, RomPath.size() - 1), true);
+	unsigned long long system_backup_size = 0;
+	if (TWFunc::Path_Exists(RomPath + "/system"))
+		system_backup_size = TWFunc::Get_Folder_Size(RomPath + "/system", true);
+    	unsigned long long data_backup_size = 0;
+	if (TWFunc::Path_Exists(RomPath + "/data"))
+		data_backup_size = TWFunc::Get_Folder_Size(RomPath + "/data", true);
+    	unsigned long long boot_backup_size = 0;
+	if (TWFunc::Path_Exists("/sdcard/NativeSD/" + RomPath.substr(8, RomPath.size() - 1)))
+		boot_backup_size = TWFunc::Get_Folder_Size("/sdcard/NativeSD/" + RomPath.substr(8, RomPath.size() - 1), true);
 
 	total_bytes = system_backup_size + data_backup_size + boot_backup_size;
     	ui_print(" * Total size of all data: %lluMB\n", total_bytes / 1024 / 1024);
@@ -2556,16 +2565,16 @@ int TWPartitionManager::NativeSD_Backup(string RomPath) {
 	}
 
 	char back_name[255], split_index[5];
-	string Full_FileName, Command, Tar_Args, Tar_Excl;
+	string Full_FileName, Command, Tar_Args = "", Tar_Excl = "";
 	int use_compression, index, backup_count;
 	unsigned long long total_bsize = 0, file_size;
 
 	DataManager::GetValue(TW_USE_COMPRESSION_VAR, use_compression);
 	if (use_compression)
-		Tar_Args = "-czv";
+		Tar_Args += "-czv";
 	else
-		Tar_Args = "-cv";
-	if (inc_system) {
+		Tar_Args += "-cv";
+	if (inc_system && system_backup_size > 0) {
 		ui_print("Backing up %s's system...\n", Rom_Name.c_str());
 		string SYS_Backup_FileName = "system.tar";
 		if (system_backup_size > MAX_ARCHIVE_SIZE) {
@@ -2607,7 +2616,7 @@ int TWPartitionManager::NativeSD_Backup(string RomPath) {
 				Make_MD5(true, Full_Backup_Path, SYS_Backup_FileName);
 		}
 	}
-	if (inc_data) {
+	if (inc_data && data_backup_size > 0) {
 		int skip_dalvik;
 		DataManager::GetValue(TW_SKIP_DALVIK, skip_dalvik);
 		if (skip_dalvik)
@@ -2626,7 +2635,7 @@ int TWPartitionManager::NativeSD_Backup(string RomPath) {
 			for (index=0; index<backup_count; index++) {
 				sprintf(split_index, "%03i", index);
 				Full_FileName = Full_Backup_Path + DATA_Backup_FileName + split_index;
-				Command = "tar "+ Tar_Args + " -f '" + Full_FileName + "' -T /tmp/list/filelist" + split_index;
+				Command = "tar "+ Tar_Args + Tar_Excl + " -f '" + Full_FileName + "' -T /tmp/list/filelist" + split_index;
 				LOGI("Backup command: '%s'\n", Command.c_str());
 				ui_print("Backup archive %i of %i...\n", (index + 1), backup_count);
 				system(Command.c_str()); // sending backup command formed earlier above
@@ -2653,7 +2662,7 @@ int TWPartitionManager::NativeSD_Backup(string RomPath) {
 				Make_MD5(true, Full_Backup_Path, DATA_Backup_FileName);
 		}
 	}
-	if (inc_boot) {
+	if (inc_boot && boot_backup_size > 0) {
 		ui_print("Backing up %s's boot...\n", Rom_Name.c_str());
 		string BOOT_Backup_FileName = "boot.tar";
 		Full_FileName = Full_Backup_Path + BOOT_Backup_FileName;
@@ -2791,7 +2800,7 @@ int TWPartitionManager::NativeSD_Restore(string RomPath) {
 			Full_FileName += split_index;
 			while (TWFunc::Path_Exists(Full_FileName)) {
 				ui_print("Restoring archive %i...\n", index + 1);
-				Command = "tar -xvf '" + Full_FileName + "'";
+				Command = "cd / && tar -xvf '" + Full_FileName + "'";
 				LOGI("Restore command: '%s'\n", Command.c_str());
 				system(Command.c_str());
 				index++;
@@ -2822,7 +2831,7 @@ int TWPartitionManager::NativeSD_Restore(string RomPath) {
 			Full_FileName += split_index;
 			while (TWFunc::Path_Exists(Full_FileName)) {
 				ui_print("Restoring archive %i...\n", index + 1);
-				Command = "tar -xvf '" + Full_FileName + "'";
+				Command = "cd / && tar -xvf '" + Full_FileName + "'";
 				LOGI("Restore command: '%s'\n", Command.c_str());
 				system(Command.c_str());
 				index++;
