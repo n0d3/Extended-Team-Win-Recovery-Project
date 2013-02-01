@@ -588,6 +588,7 @@ void TWPartition::Recreate_DataOnExt_Folder(void) {
 	if (root_pth != Mount_Point)
 		return;
 
+	data_pth += "/";
 	if (!Mount(true)) {
 		LOGE("Unable to recreate folder for DataOnExt.\n");
 	} else if (!TWFunc::Path_Exists(data_pth)) {
