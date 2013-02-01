@@ -47,6 +47,7 @@
 #define TW_DATA_PATH		    	"tw_data_path"
 #define TW_DATA_ON_EXT			"tw_data_on_ext"
 #define TW_DATA_ON_EXT_CHECK	    	"tw_data_on_ext_check"
+#define TW_RESTORE_IS_DATAONEXT         "tw_restore_is_dataonext"
 
 // Theme file
 #define TW_THEME_FOLDER_VAR		"tw_theme_folder"

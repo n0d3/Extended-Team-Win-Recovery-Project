@@ -657,6 +657,7 @@ void DataManager::SetDefaultValues()
     	mValues.insert(make_pair(TW_DATA_PATH, make_pair("/sd-ext", 1)));
 	mValues.insert(make_pair(TW_DATA_ON_EXT, make_pair("0", 1)));
 	mValues.insert(make_pair(TW_DATA_ON_EXT_CHECK, make_pair("0", 1)));
+	mValues.insert(make_pair(TW_RESTORE_IS_DATAONEXT, make_pair("0", 1)));
 
 	mValues.insert(make_pair(TW_NUM_OF_MOUNTS_FOR_FS_CHK, make_pair("10", 1)));
 

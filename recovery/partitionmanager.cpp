@@ -1170,6 +1170,7 @@ void TWPartitionManager::Set_Restore_Files(string Restore_Name) {
 	int tw_restore_sp1 = -1;
 	int tw_restore_sp2 = -1;
 	int tw_restore_sp3 = -1;
+	int tw_restore_is_dataonext = 0;
 	bool get_date = true;
 	bool split_archive = false;
 
@@ -1189,6 +1190,9 @@ void TWPartitionManager::Set_Restore_Files(string Restore_Name) {
 		string filename = de->d_name;
 		string search_str = ".", label, fstype, extn;
 		if (de->d_type == DT_REG) {
+			// Check if this is a backup featuring DataOnExt
+			if (dname == ".dataonext")
+				tw_restore_is_dataonext = 1;
 			// Find last occurrence of period to immediately check file's extension 
 			size_t last_occur = dname.rfind(search_str);
 			if (last_occur == string::npos) {
@@ -1296,6 +1300,7 @@ void TWPartitionManager::Set_Restore_Files(string Restore_Name) {
 					tw_restore_sp1 = -1;
 					tw_restore_sp2 = -1;
 					tw_restore_sp3 = -1;
+					tw_restore_is_dataonext = 0;
 					break;
 				}
 			}
@@ -1341,6 +1346,7 @@ void TWPartitionManager::Set_Restore_Files(string Restore_Name) {
 	DataManager::SetValue(TW_RESTORE_SP1_VAR, tw_restore_sp1);
 	DataManager::SetValue(TW_RESTORE_SP2_VAR, tw_restore_sp2);
 	DataManager::SetValue(TW_RESTORE_SP3_VAR, tw_restore_sp3);
+	DataManager::SetValue(TW_RESTORE_IS_DATAONEXT, tw_restore_is_dataonext);
 
 	return;
 }

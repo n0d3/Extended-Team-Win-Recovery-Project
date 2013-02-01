@@ -1981,8 +1981,23 @@
 				<placement x="%col1_x%" y="%row3_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Data</text>
-				<condition var1="tw_restore_data" op=">=" var2="0" />
+				<conditions>
+					<condition var1="tw_restore_data" op=">=" var2="0" />
+					<condition var1="tw_restore_is_dataonext" var2="0" />
+				</conditions>				
 				<data variable="tw_restore_data" />
+				<image checked="checkbox_true" unchecked="checkbox_false" />
+			</object>
+
+			<object type="checkbox">
+				<placement x="%col1_x%" y="%row3_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>Data</text>
+				<conditions>
+					<condition var1="tw_restore_sdext" op=">=" var2="0" />
+					<condition var1="tw_restore_is_dataonext" var2="1" />
+				</conditions>				
+				<data variable="tw_restore_sdext" />
 				<image checked="checkbox_true" unchecked="checkbox_false" />
 			</object>
 
@@ -2017,7 +2032,10 @@
 				<placement x="%col1_x%" y="%row8_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>sd-ext</text>
-				<condition var1="tw_restore_sdext" op=">=" var2="0" />
+				<conditions>
+					<condition var1="tw_restore_sdext" op=">=" var2="0" />
+					<condition var1="tw_restore_is_dataonext" var2="0" />
+				</conditions>				
 				<data variable="tw_restore_sdext" />
 				<image checked="checkbox_true" unchecked="checkbox_false" />
 			</object>
