@@ -1266,6 +1266,7 @@ void TWPartitionManager::Set_Restore_Files(string Restore_Name) {
 			}
 
 			// Check if we are dealing with a CWM backup...
+			Part->Use_unyaffs_To_Restore = false;
 			if (extn == "img" && fstype == "yaffs2") {
 				// ...in order to use unyaffs to restore
 				Part->Use_unyaffs_To_Restore = true;
