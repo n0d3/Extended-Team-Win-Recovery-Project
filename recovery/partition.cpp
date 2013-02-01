@@ -2060,7 +2060,8 @@ void TWPartition::Check_FS_Type() {
 #ifdef TW_INCLUDE_EXFAT
 	// blkid doesn't return the fs-type of an exfat partition.
 	// Using dumpexfat's exit code seems to do the trick.
-	if (Mount_Point == "/sdcard") { // Only /sdcard can be formatted to exfat type
+	if (Mount_Point == "/sdcard" || Mount_Point == "/external" || Mount_Point == "/external_sd") {
+		// Only storage can be formatted to exfat type
 		Command = "dumpexfat " + Actual_Block_Device + "&> /dev/null";
 		if (system(Command.c_str()) == 0) {
 			Current_File_System = "exfat";
