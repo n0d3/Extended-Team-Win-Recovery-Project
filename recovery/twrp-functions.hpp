@@ -41,7 +41,7 @@ class TWFunc {
 		// Recursively makes the entire path
 		static int Recursive_Mkdir(string Path);
 		// Gets the size of a folder and all of its subfolders using dirent and stat
-		static unsigned long long Get_Folder_Size(string Path, bool Display_Error);
+		static unsigned long long Get_Folder_Size(const string& Path, bool Display_Error);
 		// Returns true if the path exists
 		static bool Path_Exists(string Path);
 		// Updates text for display in the GUI, e.g. Backing up %partition name%

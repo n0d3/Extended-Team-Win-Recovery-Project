@@ -60,8 +60,7 @@ int TWFunc::Check_MD5(string File) {
 	if (Path_Exists(MD5_File)) {
 		DirPath = Get_Path(File);
 		MD5_File = Get_Filename(MD5_File);
-		chdir(DirPath.c_str());
-		Command = "/sbin/busybox md5sum -c " + MD5_File;
+		Command = "cd '" + DirPath + "' && /sbin/busybox md5sum -c " + MD5_File;
 		Exec_Cmd(Command, result);
 		pos = result.find(":");
 		if (pos != string::npos) {
@@ -202,20 +201,17 @@ int TWFunc::Recursive_Mkdir(string Path) {
 	return true;
 }
 
-unsigned long long TWFunc::Get_Folder_Size(string Path, bool Display_Error) {
+unsigned long long TWFunc::Get_Folder_Size(const string& Path, bool Display_Error) {
 	DIR* d;
 	struct dirent* de;
 	struct stat st;
-	char path2[4096], filename[4096];
 	unsigned long long dusize = 0;
 	unsigned long long dutemp = 0;
-	// Make a copy of path in case the data in the pointer gets overwritten later
-	strcpy(path2, Path.c_str());
 
-	d = opendir(path2);
+	d = opendir(Path.c_str());
 	if (d == NULL)
 	{
-		LOGE("error opening '%s'\n", path2);
+		LOGE("error opening '%s'\n", Path.c_str());
 		LOGE("error: %s\n", strerror(errno));
 		return 0;
 	}
@@ -224,19 +220,13 @@ unsigned long long TWFunc::Get_Folder_Size(string Path, bool Display_Error) {
 	{
 		if (de->d_type == DT_DIR && strcmp(de->d_name, ".") != 0 && strcmp(de->d_name, "..") != 0)
 		{
-			strcpy(filename, path2);
-			strcat(filename, "/");
-			strcat(filename, de->d_name);
-			dutemp = Get_Folder_Size(filename, Display_Error);
+			dutemp = Get_Folder_Size((Path + "/" + de->d_name), Display_Error);
 			dusize += dutemp;
 			dutemp = 0;
 		}
 		else if (de->d_type == DT_REG)
 		{
-			strcpy(filename, path2);
-			strcat(filename, "/");
-			strcat(filename, de->d_name);
-			stat(filename, &st);
+			stat((Path + "/" + de->d_name).c_str(), &st);
 			dusize += (unsigned long long)(st.st_size);
 		}
 	}
