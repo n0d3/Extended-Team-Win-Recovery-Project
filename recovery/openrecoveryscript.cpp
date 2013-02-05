@@ -421,6 +421,8 @@ int OpenRecoveryScript::Install_Command(string Zip) {
 		Full_Path = DataManager::GetCurrentStoragePath();
 		Full_Path += "/" + Zip;
 		LOGI("Full zip path: '%s'\n", Full_Path.c_str());
+		if (!TWFunc::Path_Exists(Full_Path))
+			Full_Path = TWFunc::Find_File_On_Storage(Full_Path);
 		if (!TWFunc::Path_Exists(Full_Path)) {
 			ret_string = Locate_Zip_File(Full_Path, DataManager::GetCurrentStoragePath());
 			if (!ret_string.empty()) {
@@ -444,6 +446,8 @@ int OpenRecoveryScript::Install_Command(string Zip) {
 		Zip = Full_Path;
 	} else {
 		// Full path given
+		if (!TWFunc::Path_Exists(Zip))
+			Zip = TWFunc::Find_File_On_Storage(Zip);
 		if (!TWFunc::Path_Exists(Zip)) {
 			ret_string = Locate_Zip_File(Zip, DataManager::GetCurrentStoragePath());
 			if (!ret_string.empty())
