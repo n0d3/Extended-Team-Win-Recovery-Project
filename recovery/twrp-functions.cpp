@@ -318,13 +318,13 @@ void TWFunc::copy_log_file(const char* source, const char* destination, int appe
 void TWFunc::twfinish_recovery(const char *send_intent) {
 	// By this point, we're ready to return to the main system...
 	if (send_intent != NULL) {
-	FILE *fp = fopen_path(INTENT_FILE, "w");
-	if (fp == NULL) {
-	    LOGE("Can't open %s\n", INTENT_FILE);
-	} else {
-	    fputs(send_intent, fp);
-	    check_and_fclose(fp, INTENT_FILE);
-	}
+		FILE *fp = fopen_path(INTENT_FILE, "w");
+		if (fp == NULL) {
+		    LOGE("Can't open %s\n", INTENT_FILE);
+		} else {
+		    fputs(send_intent, fp);
+		    check_and_fclose(fp, INTENT_FILE);
+		}
 	}
 
 	// Copy logs to cache so the system can find out what happened.
@@ -481,6 +481,31 @@ unsigned int TWFunc::Get_D_Type_From_Stat(string Path) {
 	else if (st.st_mode & S_IFSOCK)
 		return DT_SOCK;
 	return DT_UNKNOWN;
+}
+
+// Returns full-path of Filename if found on starage
+string TWFunc::Find_File_On_Storage(string Filename) {
+	string Full_Path = Filename;
+	string File_Name = Get_Filename(Filename);
+	string Current_Storage_Path = DataManager::GetCurrentStoragePath();
+	if (!PartitionManager.Is_Mounted_By_Path(Current_Storage_Path))
+		PartitionManager.Mount_Current_Storage(false);
+
+	if (File_Name.size() != 0) {
+		LOGI("Scanning storage for %s...\n", File_Name.c_str());
+		string result, cmd;
+		cmd = "find " + Current_Storage_Path + " -type f -iname " + File_Name + " | sed 1q";
+		TWFunc::Exec_Cmd(cmd, result);
+		if (!result.empty()) {
+			// Trim any '\n' from result
+			size_t position = result.find("\n", 0);
+			if (position != string::npos) {
+				result.resize(position);
+			}
+			Full_Path = result;
+		}
+	}
+	return Full_Path;
 }
 
 void TWFunc::Take_Screenshot(void) {
