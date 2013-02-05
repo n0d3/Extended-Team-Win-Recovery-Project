@@ -40,7 +40,11 @@
 #include "data.hpp"
 #include "twrp-functions.hpp"
 #include "fixPermissions.hpp"
-#include "makelist.hpp"
+#ifdef TW_INCLUDE_LIBTAR
+	#include "twrpTar.hpp"
+#else
+	#include "makelist.hpp"
+#endif
 
 #ifdef TW_INCLUDE_CRYPTO
 	#ifdef TW_INCLUDE_JB_CRYPTO
@@ -517,8 +521,7 @@ bool TWPartitionManager::Make_MD5(bool generate_md5, string Backup_Folder, strin
 	ui_print(" * Generating md5...\n");
 
 	if (TWFunc::Path_Exists(Full_File)) {
-		command = "md5sum " + Backup_Filename + " > " + Backup_Filename + ".md5";
-		chdir(Backup_Folder.c_str());
+		command = "cd '" + Backup_Folder + "' && md5sum " + Backup_Filename + " > " + Backup_Filename + ".md5";
 		if (TWFunc::Exec_Cmd(command, result) == 0) {
 			ui_print(" * MD5 Created.\n");
 			return true;
@@ -535,8 +538,7 @@ bool TWPartitionManager::Make_MD5(bool generate_md5, string Backup_Folder, strin
 			intToStr << index;
 			ostringstream fn;
 			fn << setw(3) << setfill('0') << intToStr.str();
-			command = "md5sum " + Backup_Filename + fn.str() + " >"  + Backup_Filename + fn.str() + ".md5";
-			chdir(Backup_Folder.c_str());
+			command = "cd '" + Backup_Folder + "' && md5sum " + Backup_Filename + fn.str() + " >"  + Backup_Filename + fn.str() + ".md5";
 			if (TWFunc::Exec_Cmd(command, result) != 0) {
 				ui_print(" * MD5 Error.\n");
 				return false;
@@ -949,6 +951,8 @@ int TWPartitionManager::Run_Backup(void) {
 	Update_System_Details();
 	UnMount_Main_Partitions();
 	ui_print("[BACKUP COMPLETED IN %d SECONDS]\n\n", total_time); // the end
+	string backup_log = Full_Backup_Path + "recovery.log";
+	TWFunc::copy_file("/tmp/recovery.log", backup_log, 0644);
     	return true;
 }
 
@@ -2577,17 +2581,31 @@ int TWPartitionManager::NativeSD_Backup(string RomPath) {
 	unsigned long long total_bsize = 0, file_size;
 
 	DataManager::GetValue(TW_USE_COMPRESSION_VAR, use_compression);
+#ifdef TW_INCLUDE_LIBTAR
+	twrpTar tar;
+#else
 	if (use_compression)
 		Tar_Args += "-czv";
 	else
 		Tar_Args += "-cv";
+#endif
 	if (inc_system && system_backup_size > 0) {
 		ui_print("Backing up %s's system...\n", Rom_Name.c_str());
 		string SYS_Backup_FileName = "system.tar";
+		Full_FileName = Full_Backup_Path + SYS_Backup_FileName;
 		if (system_backup_size > MAX_ARCHIVE_SIZE) {
 			// This backup needs to be split into multiple archives
 			ui_print("Breaking backup file into multiple archives...\nGenerating file lists\n");
 			sprintf(back_name, "%s/system", RomPath.c_str());
+#ifdef TW_INCLUDE_LIBTAR
+			tar.setdir(back_name);
+			tar.setfn(Full_FileName);
+			backup_count = tar.splitArchiveThread();
+			if (backup_count == -1) {
+				LOGE("Error tarring split files!\n");
+				return false;
+			}
+#else
 			backup_count = MakeList::Make_File_List(back_name);
 			if (backup_count < 1) {
 				LOGE("Error generating file list!\n");
@@ -2610,11 +2628,26 @@ int TWPartitionManager::NativeSD_Backup(string RomPath) {
 			}
 			ui_print(" * Total size: %llu bytes.\n", total_bsize);
 			system("cd /tmp && rm -rf list");
+#endif
 		} else {
 			Full_FileName = Full_Backup_Path + SYS_Backup_FileName;
+#ifdef TW_INCLUDE_LIBTAR
+			tar.setdir(extpath + "/" + Rom_Name + "/system");
+			tar.setfn(Full_FileName);
+			if (use_compression) {
+				if (tar.createTarGZThread() != 0)
+					return -1;
+				string gzname = Full_FileName + ".gz";
+				rename(gzname.c_str(), Full_FileName.c_str());
+			} else {
+				if (tar.createTarThread() != 0)
+					return -1;
+			}
+#else
 			Command = "cd " + extpath + " && tar " + Tar_Args + " -f '" + Full_FileName + "' " + Rom_Name + "/system";
 			LOGI("Backup command: '%s'\n", Command.c_str());
 			system(Command.c_str());
+#endif
 			if (TWFunc::Get_File_Size(Full_FileName) == 0) {
 				LOGE("Backup file size for '%s' is 0 bytes.\n", Full_FileName.c_str());
 				return false;
@@ -2634,6 +2667,15 @@ int TWPartitionManager::NativeSD_Backup(string RomPath) {
 			// This backup needs to be split into multiple archives
 			ui_print("Breaking backup file into multiple archives...\nGenerating file lists\n");
 			sprintf(back_name, "%s/data", RomPath.c_str());
+#ifdef TW_INCLUDE_LIBTAR
+			tar.setdir(back_name);
+			tar.setfn(Full_FileName);
+			backup_count = tar.splitArchiveThread();
+			if (backup_count == -1) {
+				LOGE("Error tarring split files!\n");
+				return false;
+			}
+#else
 			backup_count = MakeList::Make_File_List(back_name);
 			if (backup_count < 1) {
 				LOGE("Error generating file list!\n");
@@ -2656,11 +2698,26 @@ int TWPartitionManager::NativeSD_Backup(string RomPath) {
 			}
 			ui_print(" * Total size: %llu bytes.\n", total_bsize);
 			system("cd /tmp && rm -rf list");
+#endif
 		} else {
 			Full_FileName = Full_Backup_Path + DATA_Backup_FileName;
+#ifdef TW_INCLUDE_LIBTAR
+			tar.setdir(extpath + "/" + Rom_Name + "/data");
+			tar.setfn(Full_FileName);
+			if (use_compression) {
+				if (tar.createTarGZThread() != 0)
+					return -1;
+				string gzname = Full_FileName + ".gz";
+				rename(gzname.c_str(), Full_FileName.c_str());
+			} else {
+				if (tar.createTarThread() != 0)
+					return -1;
+			}
+#else
 			Command = "cd " + extpath + " && tar " + Tar_Args + Tar_Excl + " -f '" + Full_FileName + "' " + Rom_Name + "/data";
 			LOGI("Backup command: '%s'\n", Command.c_str());
 			system(Command.c_str());
+#endif
 			if (TWFunc::Get_File_Size(Full_FileName) == 0) {
 				LOGE("Backup file size for '%s' is 0 bytes.\n", Full_FileName.c_str());
 				return false;
@@ -2673,9 +2730,23 @@ int TWPartitionManager::NativeSD_Backup(string RomPath) {
 		ui_print("Backing up %s's boot...\n", Rom_Name.c_str());
 		string BOOT_Backup_FileName = "boot.tar";
 		Full_FileName = Full_Backup_Path + BOOT_Backup_FileName;
+#ifdef TW_INCLUDE_LIBTAR
+		tar.setdir("/sdcard/NativeSD/" + Rom_Name);
+		tar.setfn(Full_FileName);
+		if (use_compression) {
+			if (tar.createTarGZThread() != 0)
+				return -1;
+			string gzname = Full_FileName + ".gz";
+			rename(gzname.c_str(), Full_FileName.c_str());
+		} else {
+			if (tar.createTarThread() != 0)
+				return -1;
+		}
+#else
 		Command = "cd /sdcard/NativeSD && tar " + Tar_Args + " -f '" + Full_FileName + "' " + Rom_Name;
 		LOGI("Backup command: '%s'\n", Command.c_str());
 		system(Command.c_str());
+#endif
 		if (TWFunc::Get_File_Size(Full_FileName) == 0) {
 			LOGE("Backup file size for '%s' is 0 bytes.\n", Full_FileName.c_str());
 			return false;
@@ -2807,9 +2878,17 @@ int TWPartitionManager::NativeSD_Restore(string RomPath) {
 			Full_FileName += split_index;
 			while (TWFunc::Path_Exists(Full_FileName)) {
 				ui_print("Restoring archive %i...\n", index + 1);
+#ifdef TW_INCLUDE_LIBTAR
+				twrpTar tar;
+				tar.setdir("/");
+				tar.setfn(Full_FileName);
+				if (tar.extractTarThread() != 0)
+					return false;
+#else
 				Command = "cd / && tar -xvf '" + Full_FileName + "'";
 				LOGI("Restore command: '%s'\n", Command.c_str());
-				system(Command.c_str());
+				system(Command.c_str());	
+#endif
 				index++;
 				sprintf(split_index, "%03i", index);
 				Full_FileName = Full_Backup_Path + "/system.tar" + split_index;
@@ -2819,9 +2898,17 @@ int TWPartitionManager::NativeSD_Restore(string RomPath) {
 				return false;
 			}
 		} else {
+#ifdef TW_INCLUDE_LIBTAR
+			twrpTar tar;
+			tar.setdir(extpath);
+			tar.setfn(Full_FileName);
+			if (tar.extractTarThread() != 0)
+				return false;
+#else
 			Command = "cd " + extpath + " && tar -xvf '" + Full_FileName + "'";
 			LOGI("Restore command: '%s'\n", Command.c_str());
-			system(Command.c_str());
+			system(Command.c_str());	
+#endif
 		}
 	}
 	if (inc_data) {
@@ -2838,9 +2925,17 @@ int TWPartitionManager::NativeSD_Restore(string RomPath) {
 			Full_FileName += split_index;
 			while (TWFunc::Path_Exists(Full_FileName)) {
 				ui_print("Restoring archive %i...\n", index + 1);
+#ifdef TW_INCLUDE_LIBTAR
+				twrpTar tar;
+				tar.setdir("/");
+				tar.setfn(Full_FileName);
+				if (tar.extractTarThread() != 0)
+					return false;
+#else
 				Command = "cd / && tar -xvf '" + Full_FileName + "'";
 				LOGI("Restore command: '%s'\n", Command.c_str());
-				system(Command.c_str());
+				system(Command.c_str());	
+#endif
 				index++;
 				sprintf(split_index, "%03i", index);
 				Full_FileName = Full_Backup_Path + "/data.tar" + split_index;
@@ -2850,9 +2945,17 @@ int TWPartitionManager::NativeSD_Restore(string RomPath) {
 				return false;
 			}
 		} else {
+#ifdef TW_INCLUDE_LIBTAR
+			twrpTar tar;
+			tar.setdir(extpath);
+			tar.setfn(Full_FileName);
+			if (tar.extractTarThread() != 0)
+				return false;
+#else
 			Command = "cd " + extpath + " && tar -xvf '" + Full_FileName + "'";
 			LOGI("Restore command: '%s'\n", Command.c_str());
-			system(Command.c_str());
+			system(Command.c_str());	
+#endif
 		}
 	}
 	if (inc_boot) {
@@ -2865,12 +2968,28 @@ int TWPartitionManager::NativeSD_Restore(string RomPath) {
 			system(("rm -rf " + Boot_Restore_Path).c_str());
 		}
 		Full_FileName = Full_Backup_Path + "/boot.tar";
+#ifdef TW_INCLUDE_LIBTAR
+		twrpTar tar;
+		tar.setdir(Boot_Restore_Path);
+		tar.setfn(Full_FileName);
+		if (tar.extractTarThread() != 0)
+			return false;
+#else
 		Command = "cd " + Boot_Restore_Path + " && tar -xvf '" + Full_FileName + "'";
 		LOGI("Restore command: '%s'\n", Command.c_str());
-		system(Command.c_str());
+		system(Command.c_str());	
+#endif
+#ifdef TW_INCLUDE_LIBTAR
+		twrpTar tar;
+		tar.setdir("/sdcard/NativeSD");
+		tar.setfn(Full_FileName);
+		if (tar.extractTarThread() != 0)
+			return false;
+#else
 		Command = "cd /sdcard/NativeSD && tar -xvf '" + Full_FileName + "'";
 		LOGI("Restore command: '%s'\n", Command.c_str());
-		system(Command.c_str());
+		system(Command.c_str());	
+#endif
 	}
 	TWFunc::GUI_Operation_Text(TW_UPDATE_SYSTEM_DETAILS_TEXT, "Updating System Details");
 	Update_System_Details();

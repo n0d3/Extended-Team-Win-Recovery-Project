@@ -45,6 +45,7 @@ class twrpTar {
 		int splitArchiveThread();
                 void setfn(string fn);
                 void setdir(string dir);
+
 	private:
 		int createTGZ();
 		int create();

@@ -1694,17 +1694,17 @@ bool TWPartition::Backup_Tar(string backup_folder) {
 	} else {
 		Full_FileName = backup_folder + Backup_FileName;
 #ifdef TW_INCLUDE_LIBTAR
-		if (use_compression) {
+		if (Backup_Path == "/sd-ext" && dataonext)
+			tar.setdir(Backup_Path + "/" + pathTodatafolder);
+		else
 			tar.setdir(Backup_Path);
-			tar.setfn(Full_FileName);
+		tar.setfn(Full_FileName);
+		if (use_compression) {
 			if (tar.createTarGZThread() != 0)
 				return -1;
 			string gzname = Full_FileName + ".gz";
 			rename(gzname.c_str(), Full_FileName.c_str());
-		}
-		else {
-			tar.setdir(Backup_Path);
-			tar.setfn(Full_FileName);
+		} else {
 			if (tar.createTarThread() != 0)
 				return -1;
 		}
@@ -1934,7 +1934,14 @@ bool TWPartition::Restore_Tar(string restore_folder, string Restore_File_System)
 	} else {
 #ifdef TW_INCLUDE_LIBTAR
 		twrpTar tar;
-		tar.setdir(Backup_Path);
+		// For restoring a CWM backup of sd-ext
+		if (Check_Tar_Entry(Full_FileName, "sd-ext"))
+			tar.setdir("/");
+		// For restoring a CWM backup of android_secure
+		else if (Check_Tar_Entry(Full_FileName, ".android_secure"))
+			tar.setdir(Storage_Path);
+		else
+			tar.setdir(Backup_Path);
 		tar.setfn(Full_FileName);
 		if (tar.extractTarThread() != 0)
 			return false;

@@ -103,20 +103,17 @@ int twrpTar::Generate_Multiple_Archives(string Path) {
 	LOGI("Path: '%s', archive filename: '%s'\n", Path.c_str(), tarfn.c_str());
 
 	d = opendir(Path.c_str());
-	if (d == NULL)
-	{
+	if (d == NULL) {
 		LOGE("error opening '%s' -- error: %s\n", Path.c_str(), strerror(errno));
 		closedir(d);
 		return -1;
 	}
-	while ((de = readdir(d)) != NULL)
-	{
+	while ((de = readdir(d)) != NULL) {
 		FileName = Path + "/";
 		FileName += de->d_name;
 		if (has_data_media == 1 && FileName.size() >= 11 && strncmp(FileName.c_str(), "/data/media", 11) == 0)
 			continue; // Skip /data/media
-		if (de->d_type == DT_DIR && strcmp(de->d_name, ".") != 0 && strcmp(de->d_name, "..") != 0)
-		{
+		if (de->d_type == DT_DIR && strcmp(de->d_name, ".") != 0 && strcmp(de->d_name, "..") != 0) {
 			unsigned long long folder_size = TWFunc::Get_Folder_Size(FileName, false);
 			tardir = FileName;
 			if (Archive_Current_Size + folder_size > MAX_ARCHIVE_SIZE) {
@@ -132,8 +129,7 @@ int twrpTar::Generate_Multiple_Archives(string Path) {
 				Archive_Current_Size += folder_size;
 			}
 		}
-		else if (de->d_type == DT_REG || de->d_type == DT_LNK)
-		{
+		else if (de->d_type == DT_REG || de->d_type == DT_LNK) {
 			stat(FileName.c_str(), &st);
 
 			if (Archive_Current_Size != 0 && Archive_Current_Size + st.st_size > MAX_ARCHIVE_SIZE) {
@@ -170,8 +166,7 @@ int twrpTar::Generate_Multiple_Archives(string Path) {
 	return 0;
 }
 
-int twrpTar::Split_Archive()
-{
+int twrpTar::Split_Archive() {
 	string temp = tarfn + "%03i";
 	char actual_filename[255];
 
@@ -242,34 +237,34 @@ int twrpTar::tarDirs(bool include_root) {
         if (d != NULL) {
                 struct dirent* de;
                 while ((de = readdir(d)) != NULL) {
-                        LOGI("adding %s\n", de->d_name);
 #ifdef RECOVERY_SDCARD_ON_DATA
                         if ((tardir == "/data" || tardir == "/data/") && strcmp(de->d_name, "media") == 0) continue;
 #endif
                         if (strcmp(de->d_name, ".") == 0 || strcmp(de->d_name, "..") == 0)   continue;
 
+                        LOGI("adding %s\n", de->d_name);
                         subfolder = mainfolder;
                         subfolder += de->d_name;
                         strcpy(buf, subfolder.c_str());
                         if (de->d_type == DT_DIR) {
-					if (include_root) {
-                                if (tar_append_tree(t, buf, NULL) != 0) {
-                                        LOGE("Error appending '%s' to tar archive '%s'\n", buf, charTarFile);
-                                        return -1;
-                                }
-							} else {
-								string temp = Strip_Root_Dir(buf);
-								char* charTarPath = (char*) temp.c_str();
-								if (tar_append_tree(t, buf, charTarPath) != 0) {
-                                        LOGE("Error appending '%s' to tar archive '%s'\n", buf, charTarFile);
-                                        return -1;
-                                }
-							}
+				if (include_root) {
+		                        if (tar_append_tree(t, buf, NULL) != 0) {
+		                                LOGE("Error appending '%s' to tar archive '%s'\n", buf, charTarFile);
+		                                return -1;
+		                        }
+				} else {
+					string temp = Strip_Root_Dir(buf);
+					char* charTarPath = (char*) temp.c_str();
+					if (tar_append_tree(t, buf, charTarPath) != 0) {
+                                        	LOGE("Error appending '%s' to tar archive '%s'\n", buf, charTarFile);
+                                        	return -1;
+                                	}
+				}
                         } else if (tardir != "/" && (de->d_type == DT_REG || de->d_type == DT_LNK)) {
-							if (addFile(buf, include_root) != 0)
-								return -1;
-						}
-                        fflush(NULL);
+				if (addFile(buf, include_root) != 0)
+					return -1;
+			}
+                       	fflush(NULL);
                 }
                 closedir(d);
         }
@@ -329,12 +324,11 @@ int twrpTar::createTar() {
 		p = popen(cmd.c_str(), "w");
 		fd = fileno(p);
 		if (!p) return -1;
-		if(tar_fdopen(&t, fd, charRootDir, NULL, O_RDONLY | O_LARGEFILE, 0644, TAR_GNU) != 0) {
+		if (tar_fdopen(&t, fd, charRootDir, NULL, O_RDONLY | O_LARGEFILE, 0644, TAR_GNU) != 0) {
 			pclose(p);
 			return -1;
 		}
-	}
-	else {
+	} else {
 		if (tar_open(&t, charTarFile, NULL, O_WRONLY | O_CREAT | O_LARGEFILE, 0644, TAR_GNU) == -1)
 			return -1;
 	}
@@ -356,8 +350,7 @@ int twrpTar::openTar(bool gzip) {
 			pclose(pipe);
 			return -1;
 		}
-	}
-	else {
+	} else {
 		if (tar_open(&t, charTarFile, NULL, O_RDONLY | O_LARGEFILE, 0644, TAR_GNU) != 0) {
 			LOGE("Unable to open tar archive '%s'\n", charTarFile);
 			return -1;
