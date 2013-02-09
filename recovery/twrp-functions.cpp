@@ -14,6 +14,7 @@
 #include <sys/vfs.h>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include "twrp-functions.hpp"
 #include "partitions.hpp"
 #include "common.h"
@@ -483,6 +484,31 @@ unsigned int TWFunc::Get_D_Type_From_Stat(string Path) {
 	return DT_UNKNOWN;
 }
 
+bool TWFunc::replace_string(string str, const string search_str, const string replace_str) {
+	size_t start_pos = str.find(search_str);
+	if(start_pos != string::npos) {
+		str.replace(start_pos, search_str.length(), replace_str);
+        	return true;
+	}
+
+	return false; // search_str not found
+}
+
+string TWFunc::to_string(int number) {
+/*
+	char temp[255];
+	string snumber;
+	memset(temp, 0, sizeof(temp));
+	sprintf(temp, "%i", number);
+	snumber = temp;
+	return snumber;
+*/
+	stringstream ss;
+	ss << number;
+
+	return ss.str();
+}
+
 // Check a tar file for a given entry
 bool TWFunc::Tar_Entry_Exists(string tar_file, string entry, int level) {
 	bool ret = false;
@@ -503,6 +529,58 @@ bool TWFunc::Tar_Entry_Exists(string tar_file, string entry, int level) {
 	}
 
 	return ret;
+}
+
+// Compressed or Uncompressed archive?
+int TWFunc::Get_Archive_Type(string FilePath) {
+        int type = 0;
+        string::size_type i = 0;
+        int firstbyte = 0, secondbyte = 0;
+	char header[3];
+        
+        ifstream f;
+        f.open(FilePath.c_str(), ios::in | ios::binary);
+        f.get(header, 3);
+        f.close();
+        firstbyte = header[i] & 0xff;
+        secondbyte = header[++i] & 0xff;
+
+        if (firstbyte == 0x1f && secondbyte == 0x8b)		
+		type = 1;
+	else
+		type = 0;
+
+	return type;
+}
+
+// Total bytes of archive's content
+unsigned long long TWFunc::Get_Archive_Uncompressed_Size(string FilePath) {
+	int type = 0;
+        unsigned long long total_size = 0;
+	string Tar, Command, result, line;
+
+	Tar = Get_Filename(FilePath);
+	LOGI("%s is ", Tar.c_str());
+	type = Get_Archive_Type(FilePath);
+	if (type == 0) {
+		LOGI("uncompressed archive.\n");
+		Command = "tar tvf " + FilePath + " | sed 's! \\+! !g' | cut -f3 -d' '";
+	} else {
+		LOGI("compressed archive.\n");
+		Command = "tar tzvf " + FilePath + " | sed 's! \\+! !g' | cut -f3 -d' '";
+	}
+	TWFunc::Exec_Cmd(Command, result);
+	if (!result.empty()) {
+		istringstream f(result);
+		while (getline(f, line)) {
+			total_size += atoi(line.c_str());
+		}
+	}
+	LOGI("[Uncompressed size: %llu bytes]\n", Tar.c_str(), total_size);
+	// adding 5% just to be safe sounds like a good idea
+	total_size *= 1.05;
+
+	return total_size;
 }
 
 // Returns full-path of Filename if found on storage
@@ -640,7 +718,7 @@ int TWFunc::SubDir_Check(string Dir, string subDir1, string subDir2, string subD
 		if (wanted_subDir_num == 0)
 			return 0; // none of the wanted subdirs was found
 		else if (wanted_subDir_num >= min)
-			return 1; // if at least the minimum number of subdirs (res) were found
+			return 1; // if the minimum number of subdirs were found
 	}
 	return 0;
 }
