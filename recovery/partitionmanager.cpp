@@ -1128,7 +1128,7 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 			return false;
 		ui_print("Done verifying MD5.\n");
 	} else
-			ui_print("Skipping MD5 check based on user setting.\n");
+		ui_print("Skipping MD5 check based on user setting.\n");
 
 	ui_print("Restoring %i partitions...\n", partition_count);
 	ui->SetProgress(0.0);
@@ -2136,7 +2136,7 @@ int TWPartitionManager::Check_SDCard(void) {
 }
 
 int TWPartitionManager::Partition_SDCard(void) {
-	char mkdir_path[255], temp[255], line[512];
+	char mkdir_path[255], line[512];
 	string Command, Device, fat_str, ext_str, ext2_str, swap_str, start_loc, end_loc, ext_format, ext2_format, sd_path, tmpdevice, n_mounts, sd_format;
 	int ext, ext2, swap, total_size = 0, fat_size, c_var;
 	FILE* fp;
@@ -2204,22 +2204,13 @@ int TWPartitionManager::Partition_SDCard(void) {
 	if (ext == 0)
 		ext2 = 0;
 	fat_size = total_size - ext - ext2 - swap;
-	LOGI("sd card block device is '%s', sdcard size is: %iMB, fat size: %iMB, ext size: %iMB, ext system: '%s', 2nd ext size: %iMB, 2nd ext system: '%s', swap size: %iMB\n", Device.c_str(), total_size, fat_size, ext, ext_format.c_str(), ext2, ext2_format.c_str(), swap);
-	memset(temp, 0, sizeof(temp));
-	sprintf(temp, "%i", c_var);
-	n_mounts = temp;
-	memset(temp, 0, sizeof(temp));
-	sprintf(temp, "%i", fat_size);
-	fat_str = temp;
-	memset(temp, 0, sizeof(temp));
-	sprintf(temp, "%i", fat_size + ext);
-	ext_str = temp;
-	memset(temp, 0, sizeof(temp));
-	sprintf(temp, "%i", fat_size + ext + ext2);
-	ext2_str = temp;
-	memset(temp, 0, sizeof(temp));
-	sprintf(temp, "%i", fat_size + ext + ext2 + swap);
-	swap_str = temp;
+	LOGI("sd card block device is '%s', sdcard size is: %iMB, fat size: %iMB, ext size: %iMB, ext system: '%s', 2nd ext size: %iMB, 2nd ext system: '%s', swap size: %iMB\n",
+		Device.c_str(), total_size, fat_size, ext, ext_format.c_str(), ext2, ext2_format.c_str(), swap);
+	n_mounts = TWFunc::to_string(c_var);
+	fat_str = TWFunc::to_string(fat_size);
+	ext_str = TWFunc::to_string(fat_size + ext);
+	ext2_str = TWFunc::to_string(fat_size + ext + ext2);
+	swap_str = TWFunc::to_string(fat_size + ext + ext2 + swap);
 	if (ext + ext2 + swap > total_size) {
 		LOGE("EXT + Swap size is larger than sdcard size.\n");
 		return false;
@@ -2433,7 +2424,6 @@ int TWPartitionManager::FSConvert_SDEXT(string extpath) {
 		return false;
 	}
 	unsigned long long ext_size = TWFunc::Get_Folder_Size(extpath, true);
-	char temp[255];
 	string Command, ext_format, n_mounts;
 	int rescue_ext, c_var, restore_needed = 0;
 	DataManager::GetValue("tw_rescue_ext_contents", rescue_ext);	
@@ -2442,9 +2432,7 @@ int TWPartitionManager::FSConvert_SDEXT(string extpath) {
 	if (SDext->Current_File_System == ext_format) {
 		ui_print("No need to change file system type.\n");
 	} else {
-		memset(temp, 0, sizeof(temp));
-		sprintf(temp, "%i", c_var);
-		n_mounts = temp;
+		n_mounts = TWFunc::to_string(c_var);
 		if (rescue_ext) {
 			if (!Mount_Current_Storage(true))
 				return false;

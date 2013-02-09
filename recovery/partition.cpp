@@ -1886,11 +1886,7 @@ bool TWPartition::Restore_Tar(string restore_folder, string Restore_File_System)
 			// Set number of mounts that will trigger a filesystem check from settings
 			int c_var;
 			DataManager::GetValue("tw_num_of_mounts_for_fs_check", c_var);
-			char temp[255];
-			string n_mounts;
-			memset(temp, 0, sizeof(temp));
-			sprintf(temp, "%i", c_var);
-			n_mounts = temp;	
+			string n_mounts = TWFunc::to_string(c_var);
 			system(("tune2fs -c " + n_mounts + " " + Primary_Block_Device).c_str());
 		}
 	}
@@ -1916,7 +1912,7 @@ bool TWPartition::Restore_Tar(string restore_folder, string Restore_File_System)
 			if (tar.extractTarThread() != 0)
 				return false;
 #else
-			if (Check_Tar_Entry(Full_FileName, "sd-ext") || Check_Tar_Entry(Full_FileName, "system") || Check_Tar_Entry(Full_FileName, "data"))
+			if (TWFunc::Tar_Entry_Exists(Full_FileName, "sd-ext", 1) || TWFunc::Tar_Entry_Exists(Full_FileName, "system", 1) || TWFunc::Tar_Entry_Exists(Full_FileName, "data", 1))
 				Command = "cd / && tar -xf '" + Full_FileName + "'";
 			else			
 				Command = "cd " + Backup_Path + " && tar -xf '" + Full_FileName + "'";
@@ -1935,10 +1931,10 @@ bool TWPartition::Restore_Tar(string restore_folder, string Restore_File_System)
 #ifdef TW_INCLUDE_LIBTAR
 		twrpTar tar;
 		// For restoring a CWM backup of sd-ext
-		if (Check_Tar_Entry(Full_FileName, "sd-ext"))
+		if (TWFunc::Tar_Entry_Exists(Full_FileName, "sd-ext", 1))
 			tar.setdir("/");
 		// For restoring a CWM backup of android_secure
-		else if (Check_Tar_Entry(Full_FileName, ".android_secure"))
+		else if (TWFunc::Tar_Entry_Exists(Full_FileName, ".android_secure", 1))
 			tar.setdir(Storage_Path);
 		else
 			tar.setdir(Backup_Path);
@@ -1947,10 +1943,10 @@ bool TWPartition::Restore_Tar(string restore_folder, string Restore_File_System)
 			return false;
 #else
 		// For restoring a CWM backup of sd-ext
-		if (Check_Tar_Entry(Full_FileName, "sd-ext"))
+		if (TWFunc::Tar_Entry_Exists(Full_FileName, "sd-ext", 1))
 			Command = "cd / && tar -xf '" + Full_FileName + "'";			
 		// For restoring a CWM backup of android_secure
-		else if (Check_Tar_Entry(Full_FileName, ".android_secure"))
+		else if (TWFunc::Tar_Entry_Exists(Full_FileName, ".android_secure", 1))
 			Command = "cd " + Storage_Path + " && tar -xf '" + Full_FileName + "'";			
 		else
 			Command = "cd " + Backup_Path + " && tar -xf '" + Full_FileName + "'";
