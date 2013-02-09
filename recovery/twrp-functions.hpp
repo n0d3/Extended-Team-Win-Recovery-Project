@@ -66,6 +66,7 @@ class TWFunc {
 		static unsigned int Get_D_Type_From_Stat(string Path);
 
 		// Extended functions
+		static bool Tar_Entry_Exists(string tar_file, string entry, int level);
 		static string Find_File_On_Storage(string Filename);
 		static void Take_Screenshot(void);
 		static int SubDir_Check(string Dir, string subDir1, string subDir2, string subDir3, string subDir4, string subDir5, int min);

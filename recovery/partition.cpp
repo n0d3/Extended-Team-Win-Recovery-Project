@@ -2147,20 +2147,6 @@ bool TWPartition::Check_MD5(string restore_folder) {
 	return false;
 }
 
-// Check a tar file for a given top entry
-bool TWPartition::Check_Tar_Entry(string tar_file, string entry) {
-	bool ret = false;
-	string cmd, result;
-
-	cmd = "tar -tf " + tar_file + " | sed 1q";
-	TWFunc::Exec_Cmd(cmd, result);
-	if (!result.empty()) {
-		if (result.find(entry) != string::npos)
-			ret = true;
-	}
-	return ret;
-}
-
 void TWPartition::Check_BuildProp(void) {
 	if (!Mount(true)) {
 		LOGI("Unable to check %s/build.prop.\n", Mount_Point.c_str());

@@ -251,8 +251,6 @@ class TWPartition {
 		bool Wipe_NTFS();                                                         
 		// Restore using unyaffs for cwm-backup file type
 		bool Restore_Yaffs_Image(string restore_folder);
-		// Check a tar's top entry
-		bool Check_Tar_Entry(string tar_file, string entry);
 		// Check sd-ext partition for NativeSD Roms
 		void CheckFor_NativeSD(void);
 		// Check partition for dalvik-cache

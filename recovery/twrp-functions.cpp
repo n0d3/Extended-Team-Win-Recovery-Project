@@ -483,7 +483,29 @@ unsigned int TWFunc::Get_D_Type_From_Stat(string Path) {
 	return DT_UNKNOWN;
 }
 
-// Returns full-path of Filename if found on starage
+// Check a tar file for a given entry
+bool TWFunc::Tar_Entry_Exists(string tar_file, string entry, int level) {
+	bool ret = false;
+	string cmd, result, line;
+
+	cmd = "tar -tf " + tar_file;
+	if (level)
+		cmd += " | sed " + to_string(level) + "q";
+	TWFunc::Exec_Cmd(cmd, result);
+	if (!result.empty()) {
+		istringstream f(result);
+		while (getline(f, line)) {
+			if (line.find(entry) != string::npos) {
+				ret = true;
+				break;
+			}
+		}
+	}
+
+	return ret;
+}
+
+// Returns full-path of Filename if found on storage
 string TWFunc::Find_File_On_Storage(string Filename) {
 	string Full_Path = Filename;
 	string File_Name = Get_Filename(Filename);
