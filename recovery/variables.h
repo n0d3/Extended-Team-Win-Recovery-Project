@@ -42,6 +42,9 @@
 // cLK's extra boot partition
 #define TW_SDBOOT_PARTITION  	    	"tw_sdboot_partition"
 
+// check restore size and adjust ptable if needed
+#define TW_HANDLE_RESTORE_SIZE        	"tw_handle_restore_size"
+
 // DataOnExt
 #define TW_BACKUP_NAND_DATA         	"tw_backup_nand_data"
 #define TW_DATA_PATH		    	"tw_data_path"
