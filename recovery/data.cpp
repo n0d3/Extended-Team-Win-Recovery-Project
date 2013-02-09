@@ -662,6 +662,7 @@ void DataManager::SetDefaultValues()
 	mValues.insert(make_pair(TW_NUM_OF_MOUNTS_FOR_FS_CHK, make_pair("10", 1)));
 
 	mValues.insert(make_pair(TW_RESCUE_EXT_CONTENTS, make_pair("0", 1)));
+	mValues.insert(make_pair(TW_HANDLE_RESTORE_SIZE, make_pair("0", 1)));
 // Extended-End
 
 #ifdef TW_INCLUDE_MKNTFS

@@ -182,7 +182,7 @@
 			<object type="text" color="%text_color%">
 				<font resource="font" />
 				<placement x="90" y="10" />
-				<text>ExtendedTWRP v%tw_version%.r1</text>
+				<text>ExtendedTWRP v%tw_version%.r2</text>
 			</object>
 
 			<object type="text" color="%text_success_color%">
@@ -2837,8 +2837,8 @@
 			<object type="checkbox">
 				<placement x="%col1_x%" y="%row6_text_y%" />
 				<font resource="font" color="%text_color%" />
-				<text>Ignore image size errors during backup.</text>
-				<data variable="tw_ignore_image_size" />
+				<text>Handle partition size during restore.</text>
+				<data variable="tw_handle_restore_size" />
 				<image checked="checkbox_true" unchecked="checkbox_false" />
 			</object>
 
