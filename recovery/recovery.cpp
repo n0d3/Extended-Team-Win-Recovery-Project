@@ -67,6 +67,7 @@ static const struct option OPTIONS[] = {
 	{ "show_text", no_argument, NULL, 't' },
 	{ "just_exit", no_argument, NULL, 'x' },
 	{ "nandroid", no_argument, NULL, 'n' },
+	{ "restore", required_argument, NULL, 'r' },
 	{ NULL, 0, NULL, 0 },
 };
 
@@ -815,6 +816,7 @@ int main(int argc, char **argv) {
 	int previous_runs = 0;
 	const char *send_intent = NULL;
 	const char *update_package = NULL;
+	const char *restore_arg = NULL;
 	int wipe_data = 0, wipe_cache = 0;
 	bool just_exit = false;
 	bool perform_backup = false;
@@ -830,6 +832,7 @@ int main(int argc, char **argv) {
 		case 't': ui->ShowText(true); break;
 		case 'x': just_exit = true; break;
 		case 'n': perform_backup = true; LOGI("nandroid\n"); break;
+		case 'r': restore_arg = optarg; break;
 		case '?':
 			LOGE("Invalid command argument\n");
 			continue;
@@ -905,6 +908,13 @@ int main(int argc, char **argv) {
 		strcpy(empt, "(Current Date)");
 		DataManager_SetStrValue(TW_BACKUP_NAME, empt);
 		if (!OpenRecoveryScript::Insert_ORS_Command("backup BSDCAE\n"))
+			status = INSTALL_ERROR;
+	} else if (restore_arg) {
+		ORSCommand = "restore ";
+		ORSCommand += restore_arg;
+		ORSCommand += "\n";
+		LOGI("ORSCommand: %s.\n", ORSCommand.c_str());
+		if (!OpenRecoveryScript::Insert_ORS_Command(ORSCommand))
 			status = INSTALL_ERROR;
 	}
 	if (status == INSTALL_SUCCESS) { // Prevent other actions if backup failed

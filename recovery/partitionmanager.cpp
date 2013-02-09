@@ -978,7 +978,7 @@ bool TWPartitionManager::Restore_Partition(TWPartition* Part, string Restore_Nam
 }
 
 int TWPartitionManager::Run_Restore(string Restore_Name) {
-	int check_md5, check, partition_count = 0;
+	int hserr, check_md5, check, partition_count = 0;
 	TWPartition* restore_sys = NULL;
 	TWPartition* restore_data = NULL;
 	TWPartition* restore_cache = NULL;
@@ -991,101 +991,338 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 	TWPartition* restore_sp3 = NULL;
 	time_t rStart, rStop;
 	time(&rStart);
-
+	// Needed for any size checks
+	string Full_FileName, part_size, parts, Command, data_size;
+	int dataonext, dalvik_found_on_data = 1, dalvik_found_on_sdext = 1, dalvik_found_on_sdext2 = 1;
+	unsigned long long min_size, dt_size;
+	
 	ui_print("\n[RESTORE STARTED]\n\n");
 	ui_print(" * Restore folder:%s\n @ %s\n", TWFunc::Get_Filename(Restore_Name).c_str(), TWFunc::Get_Path(Restore_Name).c_str());
-
 	if (!Mount_Current_Storage(true))
 		return false;
 
+	// Handle size errors?
+	DataManager::GetValue("tw_handle_restore_size", hserr);
+	if (hserr > 0)
+		LOGI("TWRP will adjust partitions' size if needed.\n");
+	
+	DataManager::GetValue(TW_RESTORE_IS_DATAONEXT, dataonext);
 	DataManager::GetValue(TW_SKIP_MD5_CHECK_VAR, check_md5);
 	DataManager::GetValue(TW_RESTORE_SYSTEM_VAR, check);
 	if (check > 0) {
 		restore_sys = Find_Partition_By_Path("/system");
-		if (restore_sys == NULL) {
+		if (restore_sys == NULL)
 			LOGE("Unable to locate system partition.\n");
-			return false;
+		else {
+			if (hserr > 0) {
+				LOGI("Comparing %s's size to %s's size...\n", restore_sys->Backup_FileName.c_str(), restore_sys->Backup_Name.c_str());
+				min_size = 0;
+				Full_FileName = Restore_Name + "/" + restore_sys->Backup_FileName;				
+				if (restore_sys->Use_unyaffs_To_Restore) {
+					// This is a yaffs2.img
+					min_size += TWFunc::Get_File_Size(Full_FileName);
+				} else {
+					// This is an archive
+					min_size += TWFunc::Get_Archive_Uncompressed_Size(Full_FileName);
+				}
+				// Now compare the size of the partition and the minimum required size
+				if (restore_sys->Size >= min_size) {
+					LOGI("%s's size is adequate to restore %s.\n", restore_sys->Backup_Name.c_str(), restore_sys->Backup_FileName.c_str());
+					partition_count++;
+				} else {
+					LOGI("Size mismatch for %s.\n", restore_sys->Backup_Name.c_str());
+					// cLK can deal with this case
+					// TWRP just needs to call later clkpartmgr
+					if (DataManager::Detect_BLDR() == 1) {
+						part_size += " system:" + TWFunc::to_string((int)(min_size/1048576LLU));
+					} else if (DataManager::Detect_BLDR() == 2) {
+						restore_data = NULL;
+						LOGE("Size of 'system' partition is less than needed.\n");
+						LOGE("Skipping 'system' from restoring process.\n");
+					} else if (DataManager::Detect_BLDR() == 0)
+						partition_count++;
+				}
+				parts += "S";
+			} else
+				partition_count++;
 		}
-		partition_count++;
 	}
 	DataManager::GetValue(TW_RESTORE_DATA_VAR, check);
 	if (check > 0) {
 		restore_data = Find_Partition_By_Path("/data");
-		if (restore_data == NULL) {
+		if (restore_data == NULL)
 			LOGE("Unable to locate data partition.\n");
-		} else
-			partition_count++;
+		else {
+			if (hserr > 0) {
+				LOGI("Comparing %s's size to %s's size...\n", restore_data->Backup_FileName.c_str(), restore_data->Backup_Name.c_str());
+				min_size = 0;
+				Full_FileName = Restore_Name + "/" + restore_data->Backup_FileName;				
+				if (restore_data->Use_unyaffs_To_Restore) {
+					// This is a yaffs2.img
+					min_size += TWFunc::Get_File_Size(Full_FileName);
+				} else {
+					// This is an archive
+					min_size += TWFunc::Get_Archive_Uncompressed_Size(Full_FileName);
+					dt_size = min_size;
+					// check if the archive contains dalvik-cache.
+					// If not we must add enough space for it
+					if (!dataonext && !TWFunc::Tar_Entry_Exists(Full_FileName, "dalvik-cache", 0))
+						dalvik_found_on_data = 0;
+				}
+				// Now compare the size of the partition and the minimum required size
+				if (restore_data->Size >= min_size) {
+					LOGI("%s's size is adequate to restore %s.\n", restore_data->Backup_Name.c_str(), restore_data->Backup_FileName.c_str());
+					partition_count++;
+				} else {
+					LOGI("Size mismatch for %s.\n", restore_data->Backup_Name.c_str());
+					// cLK can deal with this case
+					// TWRP just needs to call later clkpartmgr
+					if (DataManager::Detect_BLDR() == 1) {
+						data_size = " data:" + TWFunc::to_string((int)(min_size/1048576LLU));
+					} else if (DataManager::Detect_BLDR() == 2) {
+						restore_data = NULL;
+						LOGE("Size of 'data' partition is less than needed.\n");
+						LOGE("Skipping 'data' from restoring process.\n");
+					} else if (DataManager::Detect_BLDR() == 0)
+						partition_count++;
+				}
+				parts += "D";
+			} else
+				partition_count++;
+		}
 	}
 	DataManager::GetValue(TW_RESTORE_CACHE_VAR, check);
 	if (check > 0) {
 		restore_cache = Find_Partition_By_Path("/cache");
-		if (restore_cache == NULL) {
+		if (restore_cache == NULL)
 			LOGE("Unable to locate cache partition.\n");
-		} else
+		else {
 			partition_count++;
+			parts += "C";
+		}
 	}
 	DataManager::GetValue(TW_RESTORE_BOOT_VAR, check);
 	if (check > 0) {
 		restore_boot = Find_Partition_By_Path("/boot");
-		if (restore_boot == NULL) {
+		if (restore_boot == NULL)
 			LOGE("Unable to locate boot partition.\n");
-		} else
-			partition_count++;
+		else {
+			if (hserr > 0) {
+				LOGI("Comparing %s's size to %s's size...\n", restore_boot->Backup_FileName.c_str(), restore_boot->Backup_Name.c_str());
+				min_size = 0;
+				Full_FileName = Restore_Name + "/" + restore_boot->Backup_FileName;
+				if (restore_boot->Backup_FileName.find("mtd") != string::npos) {
+					// This is a dumped img
+					min_size += TWFunc::Get_File_Size(Full_FileName);
+				} else {
+					// This is an archive
+					min_size += TWFunc::Get_Archive_Uncompressed_Size(Full_FileName);
+				}
+				// Now compare the size of the partition and the minimum required size
+				if (restore_boot->Size >= min_size) {
+					LOGI("%s's size is adequate to restore %s.\n", restore_boot->Backup_Name.c_str(), restore_boot->Backup_FileName.c_str());
+					partition_count++;
+				} else {
+					LOGI("Size mismatch for %s.\n", restore_boot->Backup_Name.c_str());
+					// cLK can help us deal with this case
+					// TWRP just needs to call later clkpartmgr
+					if (DataManager::Detect_BLDR() == 1) {
+						part_size += " boot:" + TWFunc::to_string((int)(min_size/1048576LLU));
+					} else if (DataManager::Detect_BLDR() == 2) {
+						restore_boot = NULL;
+						LOGE("Size of 'boot' partition is less than needed.\n");
+						LOGE("Skipping 'boot' from restoring process.\n");
+					} else if (DataManager::Detect_BLDR() == 0)
+						partition_count++;
+				}
+				parts += "B";
+			} else
+				partition_count++;
+		}
 	}
 	DataManager::GetValue(TW_RESTORE_ANDSEC_VAR, check);
 	if (check > 0) {
 		restore_andsec = Find_Partition_By_Path("/and-sec");
-		if (restore_andsec == NULL) {
+		if (restore_andsec == NULL)
 			LOGE("Unable to locate android secure partition.\n");
-		} else
+		else {
 			partition_count++;
+			parts += "A";
+		}
 	}
 	DataManager::GetValue(TW_RESTORE_SDEXT_VAR, check);
 	if (check > 0) {
 		restore_sdext = Find_Partition_By_Path("/sd-ext");
-		if (restore_sdext == NULL) {
+		if (restore_sdext == NULL)
 			LOGE("Unable to locate sd-ext partition.\n");
-		} else
-			partition_count++;
+		else {
+			if (hserr > 0) {
+				LOGI("Comparing %s's size to %s's size...\n", restore_sdext->Backup_FileName.c_str(), restore_sdext->Backup_Name.c_str());
+				min_size = 0;
+				Full_FileName = Restore_Name + "/" + restore_sdext->Backup_FileName;
+				if (!TWFunc::Path_Exists(Full_FileName)) {
+					int index = 0;
+					char split_index[5];
+					sprintf(split_index, "%03i", index);
+					Full_FileName += split_index;
+					while (TWFunc::Path_Exists(Full_FileName)) {
+						ui_print("Getting size of archive %i...\n", index+1);
+						min_size += TWFunc::Get_Archive_Uncompressed_Size(Full_FileName);
+						index++;		
+						sprintf(split_index, "%03i", index);
+						Full_FileName = Restore_Name + "/" + restore_sys->Backup_FileName + split_index;
+					}
+					if (index == 0)
+						LOGE("Error locating restore file: '%s'\n", Full_FileName.c_str());
+				} else {
+					min_size += TWFunc::Get_Archive_Uncompressed_Size(Full_FileName);
+					// check if the archive contains dalvik-cache.
+					// If not we must add enough space for it
+					if (!TWFunc::Tar_Entry_Exists(Full_FileName, "dalvik-cache", 0))
+						dalvik_found_on_sdext = 0;
+				}
+				// Now compare the size of the partition and the minimum required size
+				if (restore_sdext->Size >= min_size) {
+					LOGI("%s's size is adequate to restore %s.\n", restore_sdext->Backup_Name.c_str(), restore_sdext->Backup_FileName.c_str());
+					partition_count++;
+				} else {
+					LOGI("Size mismatch for %s.\n", restore_sdext->Backup_Name.c_str());
+					// TODO: TWRP could repartition card in this case
+					//	 but better just inform that sd-ext partition is too small for this backup to be restored
+					restore_sdext = NULL;
+					LOGE("Size of 'sd-ext' partition is less than needed.\n");
+					LOGE("Skipping 'sd-ext' from restoring process.\n");
+				}
+				parts += "E";
+			} else
+				partition_count++;
+		}
 	}
 	DataManager::GetValue(TW_RESTORE_SDEXT2_VAR, check);
 	if (check > 0) {
 		restore_sdext2 = Find_Partition_By_Path("/sdext2");
-		if (restore_sdext2 == NULL) {
+		if (restore_sdext2 == NULL)
 			LOGE("Unable to locate sdext2 partition.\n");
-		} else
-			partition_count++;
+		else {
+			if (hserr > 0) {
+				LOGI("Comparing %s's size to %s's size...\n", restore_sdext2->Backup_FileName.c_str(), restore_sdext2->Backup_Name.c_str());
+				min_size = 0;
+				Full_FileName = Restore_Name + "/" + restore_sdext2->Backup_FileName;
+				if (!TWFunc::Path_Exists(Full_FileName)) {
+					int index = 0;
+					char split_index[5];
+					sprintf(split_index, "%03i", index);
+					Full_FileName += split_index;
+					while (TWFunc::Path_Exists(Full_FileName)) {
+						ui_print("Checking archive %i...\n", index+1);
+						min_size += TWFunc::Get_Archive_Uncompressed_Size(Full_FileName);
+						index++;		
+						sprintf(split_index, "%03i", index);
+						Full_FileName = Restore_Name + "/" + restore_sys->Backup_FileName + split_index;
+					}
+					if (index == 0)
+						LOGE("Error locating restore file: '%s'\n", Full_FileName.c_str());
+				} else {
+					min_size += TWFunc::Get_Archive_Uncompressed_Size(Full_FileName);
+					// check if the archive contains dalvik-cache.
+					// If not we must add enough space for it
+					if (!TWFunc::Tar_Entry_Exists(Full_FileName, "dalvik-cache", 0))
+						dalvik_found_on_sdext2 = 0;
+				}
+				// Now compare the size of the partition and the minimum required size
+				if (restore_sdext2->Size >= min_size) {
+					LOGI("%s's size is adequate to restore %s.\n", restore_sdext2->Backup_Name.c_str(), restore_sdext2->Backup_FileName.c_str());
+					partition_count++;
+				} else {
+					LOGI("Size mismatch for %s.\n", restore_sdext2->Backup_Name.c_str());
+					// TODO: TWRP could repartition card in this case
+					//	 but better just inform that sdext2 partition is too small for this backup to be restored
+					restore_sdext = NULL;
+					LOGE("Size of 'sdext2' partition is less than needed.\n");
+					LOGE("Skipping 'sdext2' from restoring process.\n");
+				}
+				parts += "X";
+			} else
+				partition_count++;
+		}
 	}
 #ifdef SP1_NAME
 	DataManager::GetValue(TW_RESTORE_SP1_VAR, check);
 	if (check > 0) {
 		restore_sp1 = Find_Partition_By_Path(EXPAND(SP1_NAME));
-		if (restore_sp1 == NULL) {
+		if (restore_sp1 == NULL)
 			LOGE("Unable to locate %s partition.\n", EXPAND(SP1_NAME));
-		} else
+		else {
+			// TODO: Size check for SP1
 			partition_count++;
+			parts += "1";
+		}
 	}
 #endif
 #ifdef SP2_NAME
 	DataManager::GetValue(TW_RESTORE_SP2_VAR, check);
 	if (check > 0) {
 		restore_sp2 = Find_Partition_By_Path(EXPAND(SP2_NAME));
-		if (restore_sp2 == NULL) {
+		if (restore_sp2 == NULL)
 			LOGE("Unable to locate %s partition.\n", EXPAND(SP2_NAME));
-		} else
+		else {
+			// TODO: Size check for SP2
 			partition_count++;
+			parts += "2";
+		}
 	}
 #endif
 #ifdef SP3_NAME
 	DataManager::GetValue(TW_RESTORE_SP3_VAR, check);
 	if (check > 0) {
 		restore_sp3 = Find_Partition_By_Path(EXPAND(SP3_NAME));
-		if (restore_sp3 == NULL) {
+		if (restore_sp3 == NULL)
 			LOGE("Unable to locate %s partition.\n", EXPAND(SP3_NAME));
-		} else
+		else {
+			// TODO: Size check for SP3
 			partition_count++;
+			parts += "3";
+		}
 	}
 #endif
+	
+	if (hserr > 0 && DataManager::Detect_BLDR() == 1) {
+		if (!data_size.empty()) {
+			// data backup is to be restored, BUT no dalvik-cache was detected inside
+			if (restore_data != NULL && !dalvik_found_on_data) {
+				// Either sdext backup is to be restored, BUT no dalvik-cache was detected inside
+				if((restore_sdext != NULL && !dalvik_found_on_sdext)
+				/* or sdext2 backup is to be restored, BUT no dalvik-cache was detected inside	  */
+				|| (restore_sdext2 != NULL && !dalvik_found_on_sdext2)) {
+					// increase by 40% data's new size just to be safe
+					data_size = " data:" + TWFunc::to_string((int)(1.4*dt_size/1048576LLU));
+				}
+			}
+			part_size += data_size;
+		}
+		// create clkpartmgr's command
+		Command = "clkpartmgr --restore=" + TWFunc::Get_Filename(Restore_Name); // folder's name
+		if (check_md5 <= 0)
+			parts += "M"; // arg for skipping md5 check
+		if (!parts.empty())
+			Command += (" --partitions=" + parts); // which parts to restore
+		if (!part_size.empty()) {
+			Command += part_size; // the part of command that holds which partitions are going to be resized
+			LOGI("Command: %s\n", Command.c_str());
+			// notify user
+			ui_print("The backup you selected to restore, probably\n");
+			ui_print("requires at least one larger partition.\n");
+			ui_print("'clkpartmgr' will be executed in order to check\n");
+			ui_print("if we need to enter cLK and adjust the PTABLE.\n");
+			// set TW_HANDLE_RESTORE_SIZE to -1 since we already handled the size mismatch
+			DataManager::SetValue("tw_handle_restore_size", -1);
+			sleep(5);
+			// run clkpartmgr's command 
+			if (system(Command.c_str()) == 1)
+				DataManager::SetValue("tw_handle_restore_size", 1);
+		} else
+			return false;
+	}
 
 	if (partition_count == 0) {
 		LOGE("No partitions selected for restore.\n");
@@ -1158,6 +1395,10 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 	UnMount_Main_Partitions();
 	time(&rStop);
 	ui_print("[RESTORE COMPLETED IN %d SECONDS]\n\n",(int)difftime(rStop,rStart));
+	// hserr will be negative if we are restoring via OpenRecoveryScript
+	// reset to 1, the pre-restore selected value
+	if (hserr < 0)
+		DataManager::SetValue("tw_handle_restore_size", 1);
 	return true;
 }
 

@@ -167,10 +167,17 @@ int OpenRecoveryScript::run_script_file(void) {
 				char folder_path[512], partitions[512];
 
 				string val = value, restore_folder, restore_partitions;
-				size_t pos = val.find_last_of(" ");
+				size_t pos = val.find_last_of("|");
 				if (pos == string::npos) {
-					restore_folder = value;
-					partitions[0] = '\0';
+					pos = val.find_last_of(" ");
+					if (pos == string::npos) {
+						restore_folder = value;
+						partitions[0] = '\0';
+					} else {
+						restore_folder = val.substr(0, pos);
+						restore_partitions = val.substr(pos + 1, val.size() - pos - 1);
+						strcpy(partitions, restore_partitions.c_str());
+					}
 				} else {
 					restore_folder = val.substr(0, pos);
 					restore_partitions = val.substr(pos + 1, val.size() - pos - 1);
@@ -223,6 +230,7 @@ int OpenRecoveryScript::run_script_file(void) {
 					int tw_restore_boot = 0;
 					int tw_restore_andsec = 0;
 					int tw_restore_sdext = 0;
+					int tw_restore_sdext2 = 0;
 					int tw_restore_sp1 = 0;
 					int tw_restore_sp2 = 0;
 					int tw_restore_sp3 = 0;
@@ -262,6 +270,9 @@ int OpenRecoveryScript::run_script_file(void) {
 						} else if ((value2[i] == 'E' || value2[i] == 'e') && DataManager::GetIntValue(TW_RESTORE_SDEXT_VAR) > 0) {
 							tw_restore_sdext = 1;
 							ui_print("SD-Ext\n");
+						} else if ((value2[i] == 'X' || value2[i] == 'x') && DataManager::GetIntValue(TW_RESTORE_SDEXT2_VAR) > 0) {
+							tw_restore_sdext2 = 1;
+							ui_print("SDExt2\n");
 						} else if (value2[i] == 'M' || value2[i] == 'm') {
 							DataManager::SetValue(TW_SKIP_MD5_CHECK_VAR, 1);
 							ui_print("MD5 check skip is on\n");
@@ -282,6 +293,8 @@ int OpenRecoveryScript::run_script_file(void) {
 						DataManager::SetValue(TW_RESTORE_ANDSEC_VAR, 0);
 					if (DataManager::GetIntValue(TW_RESTORE_SDEXT_VAR) && !tw_restore_sdext)
 						DataManager::SetValue(TW_RESTORE_SDEXT_VAR, 0);
+					if (DataManager::GetIntValue(TW_RESTORE_SDEXT2_VAR) && !tw_restore_sdext2)
+						DataManager::SetValue(TW_RESTORE_SDEXT2_VAR, 0);
 					if (DataManager::GetIntValue(TW_RESTORE_SP1_VAR) && !tw_restore_sp1)
 						DataManager::SetValue(TW_RESTORE_SP1_VAR, 0);
 					if (DataManager::GetIntValue(TW_RESTORE_SP2_VAR) && !tw_restore_sp2)
@@ -289,6 +302,7 @@ int OpenRecoveryScript::run_script_file(void) {
 					if (DataManager::GetIntValue(TW_RESTORE_SP3_VAR) && !tw_restore_sp3)
 						DataManager::SetValue(TW_RESTORE_SP3_VAR, 0);
 				}
+				PartitionManager.Wipe_By_Path("/cache");
 				PartitionManager.Run_Restore(folder_path);
 				ui_print("Restore complete!\n");
 			} else if (strcmp(command, "mount") == 0) {
