@@ -2731,7 +2731,7 @@ int TWPartitionManager::FSConvert_SDEXT(string extpath) {
 int TWPartitionManager::NativeSD_Backup(string RomPath) {
 	int z, inc_system, inc_data, inc_boot, do_md5;
 	string extpath, Rom_Name, Backup_Folder, Backup_Name, Full_Backup_Path;
-	unsigned long long total_bytes = 0, free_space = 0;
+	unsigned long long total_bytes = 0, free_space = 0, remaining_bytes = 0;
 
 	TWPartition* storage = NULL;
 
@@ -2789,6 +2789,7 @@ int TWPartitionManager::NativeSD_Backup(string RomPath) {
 		boot_backup_size = TWFunc::Get_Folder_Size("/sdcard/NativeSD/" + RomPath.substr(8, RomPath.size() - 1), true);
 
 	total_bytes = system_backup_size + data_backup_size + boot_backup_size;
+	remaining_bytes = total_bytes;
     	ui_print(" * Total size of all data: %lluMB\n", total_bytes / 1024 / 1024);
 	storage = Find_Partition_By_Path(DataManager::GetCurrentStoragePath());
 	if (storage != NULL) {
@@ -2804,29 +2805,43 @@ int TWPartitionManager::NativeSD_Backup(string RomPath) {
 		return false;
 	}
 
+	ui->SetProgress(0.0);
+
 	char back_name[255], split_index[5];
 	string Full_FileName, Command, Tar_Args = "", Tar_Excl = "";
-	int use_compression, index, backup_count;
+	int backup_time, use_compression, index, backup_count, file_bps;
 	unsigned long long total_bsize = 0, file_size;
+	unsigned long total_time, remain_time, section_time, file_time = 1;
+	float pos;
 
 	DataManager::GetValue(TW_USE_COMPRESSION_VAR, use_compression);
-#ifdef TW_INCLUDE_LIBTAR
-	twrpTar tar;
-#else
-	if (use_compression)
+	if (use_compression) {
 		Tar_Args += "-czv";
-	else
+		DataManager::GetValue(TW_BACKUP_AVG_FILE_COMP_RATE, file_bps);
+	} else {
 		Tar_Args += "-cv";
-#endif
+		DataManager::GetValue(TW_BACKUP_AVG_FILE_RATE, file_bps);
+	}
+
+	total_time = total_bytes / (unsigned long)file_bps;
+	
 	if (inc_system && system_backup_size > 0) {
+		time_t start, stop;
+		time(&start);
 		ui_print("Backing up %s's system...\n", Rom_Name.c_str());
 		string SYS_Backup_FileName = "system.tar";
-		Full_FileName = Full_Backup_Path + SYS_Backup_FileName;
+		remain_time = remaining_bytes / (unsigned long)file_bps;
+		pos = (total_time - remain_time) / (float) total_time;
+		ui->SetProgress(pos);
+		section_time = system_backup_size / file_bps;
+		pos = section_time / (float) total_time;
+		ui->ShowProgress(pos, section_time);
 		if (system_backup_size > MAX_ARCHIVE_SIZE) {
 			// This backup needs to be split into multiple archives
 			ui_print("Breaking backup file into multiple archives...\nGenerating file lists\n");
 			sprintf(back_name, "%s/system", RomPath.c_str());
 #ifdef TW_INCLUDE_LIBTAR
+			twrpTar tar;
 			tar.setdir(back_name);
 			tar.setfn(Full_FileName);
 			backup_count = tar.splitArchiveThread();
@@ -2861,6 +2876,7 @@ int TWPartitionManager::NativeSD_Backup(string RomPath) {
 		} else {
 			Full_FileName = Full_Backup_Path + SYS_Backup_FileName;
 #ifdef TW_INCLUDE_LIBTAR
+			twrpTar tar;
 			tar.setdir(extpath + "/" + Rom_Name + "/system");
 			tar.setfn(Full_FileName);
 			if (use_compression) {
@@ -2881,22 +2897,36 @@ int TWPartitionManager::NativeSD_Backup(string RomPath) {
 				LOGE("Backup file size for '%s' is 0 bytes.\n", Full_FileName.c_str());
 				return false;
 			}
-			if (do_md5)
-				Make_MD5(true, Full_Backup_Path, SYS_Backup_FileName);
 		}
+		time(&stop);
+		backup_time = (int) difftime(stop, start);
+		LOGI("System Backup time: %d\n", backup_time);
+		remaining_bytes -= system_backup_size;
+		file_time += backup_time;
+		if (do_md5)
+			Make_MD5(true, Full_Backup_Path, SYS_Backup_FileName);
 	}
 	if (inc_data && data_backup_size > 0) {
+		time_t start, stop;
+		time(&start);
 		int skip_dalvik;
 		DataManager::GetValue(TW_SKIP_DALVIK, skip_dalvik);
 		if (skip_dalvik)
 			Tar_Excl = " --exclude='dalvik-cache' --exclude='dalvik-cache/*'";
 		ui_print("Backing up %s's data...\n", Rom_Name.c_str());
 		string DATA_Backup_FileName = "data.tar";
+		remain_time = remaining_bytes / (unsigned long)file_bps;
+		pos = (total_time - remain_time) / (float) total_time;
+		ui->SetProgress(pos);
+		section_time = data_backup_size / file_bps;
+		pos = section_time / (float) total_time;
+		ui->ShowProgress(pos, section_time);
 		if (data_backup_size > MAX_ARCHIVE_SIZE) {
 			// This backup needs to be split into multiple archives
 			ui_print("Breaking backup file into multiple archives...\nGenerating file lists\n");
 			sprintf(back_name, "%s/data", RomPath.c_str());
 #ifdef TW_INCLUDE_LIBTAR
+			twrpTar tar;
 			tar.setdir(back_name);
 			tar.setfn(Full_FileName);
 			backup_count = tar.splitArchiveThread();
@@ -2931,6 +2961,7 @@ int TWPartitionManager::NativeSD_Backup(string RomPath) {
 		} else {
 			Full_FileName = Full_Backup_Path + DATA_Backup_FileName;
 #ifdef TW_INCLUDE_LIBTAR
+			twrpTar tar;
 			tar.setdir(extpath + "/" + Rom_Name + "/data");
 			tar.setfn(Full_FileName);
 			if (use_compression) {
@@ -2951,15 +2982,29 @@ int TWPartitionManager::NativeSD_Backup(string RomPath) {
 				LOGE("Backup file size for '%s' is 0 bytes.\n", Full_FileName.c_str());
 				return false;
 			}
-			if (do_md5)
-				Make_MD5(true, Full_Backup_Path, DATA_Backup_FileName);
 		}
+		time(&stop);
+		backup_time = (int) difftime(stop, start);
+		LOGI("Data Backup time: %d\n", backup_time);
+		remaining_bytes -= data_backup_size;
+		file_time += backup_time;
+		if (do_md5)
+			Make_MD5(true, Full_Backup_Path, DATA_Backup_FileName);
 	}
 	if (inc_boot && boot_backup_size > 0) {
+		time_t start, stop;
+		time(&start);
 		ui_print("Backing up %s's boot...\n", Rom_Name.c_str());
 		string BOOT_Backup_FileName = "boot.tar";
+		remain_time = remaining_bytes / (unsigned long)file_bps;
+		pos = (total_time - remain_time) / (float) total_time;
+		ui->SetProgress(pos);
+		section_time = boot_backup_size / file_bps;
+		pos = section_time / (float) total_time;
+		ui->ShowProgress(pos, section_time);
 		Full_FileName = Full_Backup_Path + BOOT_Backup_FileName;
 #ifdef TW_INCLUDE_LIBTAR
+		twrpTar tar;
 		tar.setdir("/sdcard/NativeSD/" + Rom_Name);
 		tar.setfn(Full_FileName);
 		if (use_compression) {
@@ -2980,9 +3025,33 @@ int TWPartitionManager::NativeSD_Backup(string RomPath) {
 			LOGE("Backup file size for '%s' is 0 bytes.\n", Full_FileName.c_str());
 			return false;
 		}
+		time(&stop);
+		backup_time = (int) difftime(stop, start);
+		LOGI("Boot Backup time: %d\n", backup_time);
+		remaining_bytes -= boot_backup_size;
+		file_time += backup_time;
 		if (do_md5)
 			Make_MD5(true, Full_Backup_Path, BOOT_Backup_FileName);
 	}
+	
+	// Average BPS
+	if (file_time == 0)
+		file_time = 1;
+	file_bps = (int)total_bytes / (int)file_time;	
+
+	int prev_file_bps;
+	if (use_compression)
+		DataManager::GetValue(TW_BACKUP_AVG_FILE_COMP_RATE, prev_file_bps);
+	else
+		DataManager::GetValue(TW_BACKUP_AVG_FILE_RATE, prev_file_bps);
+	file_bps += (prev_file_bps * 4);
+	file_bps /= 5;
+
+	if (use_compression)
+		DataManager::SetValue(TW_BACKUP_AVG_FILE_COMP_RATE, file_bps);
+	else
+		DataManager::SetValue(TW_BACKUP_AVG_FILE_RATE, file_bps);
+
 	unsigned long long actual_backup_size = TWFunc::Get_Folder_Size(Full_Backup_Path, true);
     	actual_backup_size /= (1024LLU * 1024LLU);
 	ui_print("[%llu MB TOTAL BACKED UP]\n", actual_backup_size);

@@ -3,34 +3,11 @@
 if grep -Fxq "clk=" /proc/cmdline
 then
 	if [ "`which clkpartmgr`" ]; then
-		ZIP_NAME=HD2_Extended_TWRP_2.4.1.0.r1.zip
+		ZIP_NAME=HD2_Extended_TWRP_2.4.1.0.r2.zip
 		PART1_NAME=recovery
 		PART1_MINSIZE=6
-		############################################################################
-		# clkpartmgr is a simple cmdline tool to get TWRP and cLK		   #
-		# communicate in case we need to change the p-table layout.		   #
-		#									   #
-		# Usage: clkpartmgr [OPTIONAL:<zip-name>] <ptn-name:min-size>		   #
-		#									   #
-		# Example:								   #
-		#	  If we want to install a Rom package called 'CM10_v1.zip'	   #
-		#	  and the minimum required sizes of 'boot' and 'system'		   #
-		#	  partitions are 5MB and 260MB respectively, then 		   #
-		#	  clkpartmgr could be called when installing this Rom		   #
-		#	  to make sure that the sizes of those partitions are adequate:	   #
-		#		"clkpartmgr CM10.1_v1.zip boot:5 system:260"		   #
-		#	  In case a partition is smaller than the required value	   #
-		#	  the p-table needs to be changed, so clkpartmgr automatically	   #
-		#	  reboots the device into cLK, where the changes are applied,	   #
-		#	  and re-enters recovery to continue installing the 'CM10_v1.zip'. #
-		#									   #
-		# Notes:								   #
-		#	  *if size_of_partition >= min_size => No change to p-table.	   #
-		#	  *if the name of the zip is not given then after changing	   #
-		#	   the p-table layout, cLK will boot into recovery but		   #
-		#	   the installation of the zip will not automatically continue.	   #
-		############################################################################
-		clkpartmgr $ZIP_NAME $PART1_NAME:$PART1_MINSIZE
+
+		clkpartmgr --update_package=$ZIP_NAME $PART1_NAME:$PART1_MINSIZE
 		exit 0;
 	fi
 fi

@@ -576,7 +576,7 @@ unsigned long long TWFunc::Get_Archive_Uncompressed_Size(string FilePath) {
 			total_size += atoi(line.c_str());
 		}
 	}
-	LOGI("[Uncompressed size: %llu bytes]\n", Tar.c_str(), total_size);
+	LOGI("[Uncompressed size: %llu bytes]\n", total_size);
 	// adding 5% just to be safe sounds like a good idea
 	total_size *= 1.05;
 
