@@ -564,21 +564,25 @@ unsigned long long TWFunc::Get_Archive_Uncompressed_Size(string FilePath) {
 	type = Get_Archive_Type(FilePath);
 	if (type == 0) {
 		LOGI("uncompressed archive.\n");
-		Command = "tar tvf " + FilePath + " | sed 's! \\+! !g' | cut -f3 -d' '";
+		//Command = "tar tvf " + FilePath + " | sed 's! \\+! !g' | cut -f3 -d' '";
+		total_size = Get_File_Size(FilePath);
 	} else {
 		LOGI("compressed archive.\n");
-		Command = "tar tzvf " + FilePath + " | sed 's! \\+! !g' | cut -f3 -d' '";
+		//Command = "tar tzvf " + FilePath + " | sed 's! \\+! !g' | cut -f3 -d' '";
+		Command = "gzip -l " + FilePath + " | sed -e '1d' -e 's! \\+! !g' | cut -f3 -d' '";
 	}
-	TWFunc::Exec_Cmd(Command, result);
-	if (!result.empty()) {
-		istringstream f(result);
-		while (getline(f, line)) {
-			total_size += atoi(line.c_str());
+	if (!Command.empty()) {
+		TWFunc::Exec_Cmd(Command, result);
+		if (!result.empty()) {
+			istringstream f(result);
+			while (getline(f, line)) {
+				total_size += atoi(line.c_str());
+			}
 		}
 	}
 	LOGI("[Uncompressed size: %llu bytes]\n", total_size);
-	// adding 5% just to be safe sounds like a good idea
-	total_size *= 1.05;
+	// adding some extra space just to be safe sounds like a good idea
+	total_size *= 1.07; // Test increasing by 7%
 
 	return total_size;
 }
