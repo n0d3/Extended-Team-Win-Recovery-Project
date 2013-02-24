@@ -462,7 +462,7 @@ static int write_block(MtdWriteContext *ctx, const char *data)
             if (retry > 0) {
                 fprintf(stderr, "mtd: wrote block after %d retries\n", retry);
             }
-            fprintf(stderr, "mtd: successfully wrote block at %08lx\n", pos);
+            fprintf(stderr, "mtd: successfully wrote block at %llx\n", pos);
             return 0;  // Success!
         }
 
