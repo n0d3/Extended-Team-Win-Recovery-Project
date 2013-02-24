@@ -168,19 +168,6 @@ void curtainClose()
     return;
 }
 
-timespec timespec_diff(timespec& start, timespec& end)
-{
-	timespec temp;
-	if ((end.tv_nsec-start.tv_nsec)<0) {
-		temp.tv_sec = end.tv_sec-start.tv_sec-1;
-		temp.tv_nsec = 1000000000+end.tv_nsec-start.tv_nsec;
-	} else {
-		temp.tv_sec = end.tv_sec-start.tv_sec;
-		temp.tv_nsec = end.tv_nsec-start.tv_nsec;
-	}
-	return temp;
-}
-
 static void *input_thread(void *cookie)
 {
     int drag = 0;
@@ -347,7 +334,7 @@ static void loopTimer(void)
         timespec curTime;
         clock_gettime(CLOCK_MONOTONIC, &curTime);
 
-        timespec diff = timespec_diff(lastCall, curTime);
+        timespec diff = TWFunc::timespec_diff(lastCall, curTime);
 
         // This is really 30 times per second
         if (diff.tv_sec || diff.tv_nsec > 33333333)
@@ -397,7 +384,9 @@ static int runPages(void)
         }
         else
         {
+	    pthread_mutex_lock(&gForceRendermutex);
             gForceRender = 0;
+	    pthread_mutex_unlock(&gForceRendermutex);
             PageManager::Render();
             flip();
         }

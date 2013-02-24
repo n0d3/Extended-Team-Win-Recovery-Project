@@ -135,6 +135,8 @@
 		<variable name="fileselector_separatorcolor" value="#505050" />
 		<variable name="fileselector_separatorheight" value="2" />
 		<variable name="fileselector_background" value="#303030" />
+		<variable name="fileselector_highlight_color" value="#505050" />
+		<variable name="fileselector_highlight_font_color" value="#33B5E5" />
 		<variable name="fileselector_spacing" value="18" />
 		<variable name="listbox_x" value="5" />
 		<variable name="listbox_width" value="470" />
@@ -548,7 +550,8 @@
 				<sort name="tw_gui_sort_order" />
 				<icon folder="folder_icon" file="file_icon" />
 				<background color="%fileselector_background%" />
-				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" />
+				<highlight color="%fileselector_highlight_color%" />
+				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
 				<filter extn=".zip" folders="1" files="1" />
 				<path name="tw_zip_location" default="/sdcard" />
 				<data name="tw_filename" />
@@ -1944,7 +1947,8 @@
 				<sort name="tw_gui_sort_order" />
 				<icon folder="folder_icon" file="file_icon" />
 				<background color="%fileselector_background%" />
-				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" />
+				<highlight color="%fileselector_highlight_color%" />
+				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
 				<filter folders="1" files="0" nav="0" />
 				<path name="tw_backups_folder" />
 				<data name="tw_restore" default="" />
@@ -2983,6 +2987,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<placement x="%col1_x%" y="%row12_text_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Time Zone</text>
@@ -3699,7 +3704,8 @@
 				<sort name="tw_gui_sort_order" />
 				<icon folder="folder_icon" file="file_icon" />
 				<background color="%fileselector_background%" />
-				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" />
+				<highlight color="%fileselector_highlight_color%" />
+				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
 				<filter folders="1" files="0" nav="0" />
 				<path name="sd_kernel_location" default="/sdcard/NativeSD" />
 				<data name="sd_kernel" />
@@ -3834,7 +3840,8 @@
 				<sort name="tw_gui_sort_order" />
 				<icon folder="folder_icon" file="file_icon" />
 				<background color="%fileselector_background%" />
-				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" />
+				<highlight color="%fileselector_highlight_color%" />
+				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
 				<filter folders="1" files="0" nav="0" />
 				<path name="sd_rom_location" default="/sdcard/NativeSD" />
 				<data name="sd_rom" default="" />
@@ -3881,7 +3888,8 @@
 				<sort name="tw_gui_sort_order" />
 				<icon folder="folder_icon" file="file_icon" />
 				<background color="%fileselector_background%" />
-				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" />
+				<highlight color="%fileselector_highlight_color%" />
+				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
 				<filter folders="1" files="0" nav="0" />
 				<path name="tw_sdbackups_folder" />
 				<data name="sd_rom2" default="" />
@@ -3928,7 +3936,8 @@
 				<sort name="tw_gui_sort_order" />
 				<icon folder="folder_icon" file="file_icon" />
 				<background color="%fileselector_background%" />
-				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" />
+				<highlight color="%fileselector_highlight_color%" />
+				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
 				<filter folders="1" files="0" nav="0" />
 				<path name="sd_rom_location3" default="/sdcard/NativeSD" />
 				<data name="sd_rom3" default="" />
@@ -3975,7 +3984,8 @@
 				<sort name="tw_gui_sort_order" />
 				<icon folder="folder_icon" file="file_icon" />
 				<background color="%fileselector_background%" />
-				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" />
+				<highlight color="%fileselector_highlight_color%" />
+				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
 				<filter folders="1" files="0" nav="0" />
 				<path name="sd_rom_location4" default="/sdcard/NativeSD" />
 				<data name="sd_rom4" default="" />
@@ -4022,7 +4032,8 @@
 				<sort name="tw_gui_sort_order" />
 				<icon folder="folder_icon" file="file_icon" />
 				<background color="%fileselector_background%" />
-				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" />
+				<highlight color="%fileselector_highlight_color%" />
+				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
 				<filter folders="1" files="0" nav="0" />
 				<path name="sd_rom_location5" default="/sdcard/NativeSD" />
 				<data name="sd_rom5" default="" />
@@ -4069,7 +4080,8 @@
 				<sort name="tw_gui_sort_order" />
 				<icon folder="folder_icon" file="file_icon" />
 				<background color="%fileselector_background%" />
-				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" />
+				<highlight color="%fileselector_highlight_color%" />
+				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
 				<filter folders="1" files="0" nav="0" />
 				<path name="sd_rom_location6" default="/sdcard/NativeSD" />
 				<data name="sd_rom6" default="" />
@@ -4116,7 +4128,8 @@
 				<sort name="tw_gui_sort_order" />
 				<icon folder="folder_icon" file="file_icon" />
 				<background color="%fileselector_background%" />
-				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" />
+				<highlight color="%fileselector_highlight_color%" />
+				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
 				<filter folders="1" files="0" nav="0" />
 				<path name="tw_theme_path" default="/sdcard/TWRP/theme" />
 				<data name="tw_theme_file" />
@@ -4231,7 +4244,8 @@
 				<sort name="tw_gui_sort_order" />
 				<icon folder="folder_icon" file="file_icon" />
 				<background color="%fileselector_background%" />
-				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" />
+				<highlight color="%fileselector_highlight_color%" />
+				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
 				<filter extn=".sh" folders="1" files="1" />
 				<path name="tw_scripts_folder" default="/sdcard/TWRP/scripts" />
 				<data name="tw_script_file" />
@@ -4325,7 +4339,8 @@
 				<sort name="tw_gui_sort_order" />
 				<icon folder="folder_icon" file="file_icon" />
 				<background color="%fileselector_background%" />
-				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" />
+				<highlight color="%fileselector_highlight_color%" />
+				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
 				<filter extn=".zip" folders="0" files="1" nav="0" />
 				<path name="tw_app_folder" default="/sdcard/TWRP/app" />
 				<data name="tw_app_file" />
@@ -5027,7 +5042,8 @@
 				<sort name="tw_gui_sort_order" />
 				<icon folder="folder_icon" file="file_icon" />
 				<background color="%fileselector_background%" />
-				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" />
+				<highlight color="%fileselector_highlight_color%" />
+				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
 				<folders="1" files="1" />
 				<path name="tw_file_location1" default="/" />
 				<data name="tw_filename1" />
@@ -5269,7 +5285,8 @@
 				<sort name="tw_gui_sort_order" />
 				<icon folder="folder_icon" file="file_icon" />
 				<background color="%fileselector_background%" />
-				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" />
+				<highlight color="%fileselector_highlight_color%" />
+				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
 				<filter folders="1" files="0" />
 				<path name="tw_file_location2" default="/" />
 				<data name="tw_filename2" />
@@ -5668,7 +5685,8 @@
 				<sort name="tw_gui_sort_order" />
 				<icon folder="folder_icon" file="file_icon" />
 				<background color="%fileselector_background%" />
-				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" />
+				<highlight color="%fileselector_highlight_color%" />
+				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
 				<filter folders="1" files="0" />
 				<path name="tw_terminal_location" default="/" />
 				<data name="tw_terminal" />
