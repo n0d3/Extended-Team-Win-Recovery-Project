@@ -531,22 +531,42 @@ protected:
 protected:
     std::vector<ListData> mList;
     std::string mVariable;
-	std::string mSelection;
-	std::string currentValue;
+    std::string mSelection;
+    std::string currentValue;
+    std::string mHeaderText;
+    std::string mLastValue;
+    int actualLineHeight;
     int mStart;
+    int startY;
+    int mSeparatorH, mHeaderSeparatorH;
     int mLineSpacing;
     int mUpdate;
-    int mBackgroundX, mBackgroundY, mBackgroundW, mBackgroundH;
-	static int mSortOrder;
+    int mBackgroundX, mBackgroundY, mBackgroundW, mBackgroundH, mHeaderH;
+    int mIconWidth, mIconHeight, mSelectedIconWidth, mSelectedIconHeight, mUnselectedIconWidth, mUnselectedIconHeight, mHeaderIconHeight, mHeaderIconWidth;
+    int scrollingSpeed;
+    int scrollingY;
+    static int mSortOrder;
     unsigned mFontHeight;
     unsigned mLineHeight;
-    int mIconWidth, mIconHeight;
+    Resource* mHeaderIcon;
     Resource* mIconSelected;
     Resource* mIconUnselected;
     Resource* mBackground;
     Resource* mFont;
     COLOR mBackgroundColor;
     COLOR mFontColor;
+    COLOR mHeaderBackgroundColor;
+    COLOR mHeaderFontColor;
+    COLOR mSeparatorColor;
+    COLOR mHeaderSeparatorColor;
+    bool hasHighlightColor;
+    bool hasFontHighlightColor;
+    bool isHighlighted;
+    COLOR mHighlightColor;
+    COLOR mFontHighlightColor;
+    int mHeaderIsStatic;
+    int startSelection;
+    int touchDebounce;
 };
 
 // GUIAnimation - Used for animations
