@@ -64,6 +64,14 @@ class TWFunc {
 		static int copy_file(string src, string dst, int mode);
 		// Returns a dirent dt_type value using stat instead of dirent
 		static unsigned int Get_D_Type_From_Stat(string Path);
+		// read from file
+		static int read_file(string fn, string& results);
+		//write from file
+		static int write_file(string fn, string& line);
+		// Return a diff for 2 times
+		static timespec timespec_diff(timespec& start, timespec& end);
+		//drop linux cache memory
+		static int drop_caches(void);
 
 		// Extended functions
 		static bool replace_string(string str, const string search_str, const string replace_str);

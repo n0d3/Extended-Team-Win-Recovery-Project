@@ -40,6 +40,7 @@
 #include "data.hpp"
 #include "partitions.hpp"
 #include "twrp-functions.hpp"
+#include "gui/blanktimer.hpp"
 
 extern "C"
 {
@@ -61,6 +62,8 @@ string					DataManager::mBackingFile;
 int					DataManager::mInitialized = 0;
 int                                     DataManager::SettingsFileRead = 0;
 int                                     DataManager::BLDR = -1;
+
+extern blanktimer blankTimer;
 
 // Device ID functions
 void DataManager::sanitize_device_id(char* device_id) {
@@ -268,8 +271,7 @@ int DataManager::Wipe_MTD_By_Name(string ptnName) {
     	return true;
 }
 
-int DataManager::ResetDefaults()
-{
+int DataManager::ResetDefaults() {
 	string rm;
 	if (PartitionManager.Mount_Settings_Storage(false)) {
 		rm = "rm -f " + GetCurrentStoragePath() + "/TWRP/.twrps &> /dev/null";
@@ -482,7 +484,10 @@ int DataManager::SetValue(const string varName, string value, int persist /* = 0
 
 	if (pos->second.second != 0)
 		SaveValues();
-	gui_notifyVarChange(varName.c_str(), value.c_str());
+	if (varName == "tw_screen_timeout_secs") {
+		blankTimer.setTime(atoi(value.c_str()));
+	} else
+		gui_notifyVarChange(varName.c_str(), value.c_str());
 	return 0;
 }
 
@@ -983,49 +988,32 @@ void DataManager::SetDefaultValues()
 	mValues.insert(make_pair("tw_terminal_state", make_pair("0", 0)));
 	mValues.insert(make_pair("tw_background_thread_running", make_pair("0", 0)));
 	mValues.insert(make_pair(TW_RESTORE_FILE_DATE, make_pair("0", 0)));
-}
-
-// Magic Values
-int DataManager::GetMagicValue(const string varName, string& value)
-{
-	// Handle special dynamic cases
-	if (varName == "tw_battery")
-	{
-		char tmp[16];
-		static char charging = ' ';
-		static int lastVal = -1;
-		static time_t nextSecCheck = 0;
-
-		struct timeval curTime;
-		gettimeofday(&curTime, NULL);
-		if (curTime.tv_sec > nextSecCheck)
-		{
-			char cap_s[4];
-			FILE * cap = fopen("/sys/class/power_supply/battery/capacity","rt");
-			if (cap){
-				fgets(cap_s, 4, cap);
-				fclose(cap);
-				lastVal = atoi(cap_s);
-				if (lastVal > 100)  lastVal = 101;
-				if (lastVal < 0)	lastVal = 0;
-			}
-			cap = fopen("/sys/class/power_supply/battery/status","rt");
-			if (cap) {
-				fgets(cap_s, 2, cap);
-				fclose(cap);
-				if (cap_s[0] == 'C')
-					charging = '+';
-				else
-					charging = ' ';
-			}
-			nextSecCheck = curTime.tv_sec + 60;
-		}
-
-		sprintf(tmp, "%i%%%c", lastVal, charging);
-		value = tmp;
-		return 0;
+	mValues.insert(make_pair("tw_screen_timeout_secs", make_pair("60", 1)));
+	mValues.insert(make_pair("tw_gui_done", make_pair("0", 0)));
+#ifdef TW_MAX_BRIGHTNESS
+	if (strcmp(EXPAND(TW_BRIGHTNESS_PATH), "/nobrightness") != 0) {
+		LOGI("=> Brightness file '%s'\n", EXPAND(TW_BRIGHTNESS_PATH));
+		mConstValues.insert(make_pair("tw_has_brightnesss_file", "1"));
+		mConstValues.insert(make_pair("tw_brightness_file", EXPAND(TW_BRIGHTNESS_PATH)));
+		ostringstream val100, val25, val50, val75;
+		int value = TW_MAX_BRIGHTNESS;
+		val100 << value;
+		mConstValues.insert(make_pair("tw_brightness_100", val100.str()));
+		value = TW_MAX_BRIGHTNESS * 0.25;
+		val25 << value;
+		mConstValues.insert(make_pair("tw_brightness_25", val25.str()));
+		value = TW_MAX_BRIGHTNESS * 0.5;
+		val50 << value;
+		mConstValues.insert(make_pair("tw_brightness_50", val50.str()));
+		value = TW_MAX_BRIGHTNESS * 0.75;
+		val75 << value;
+		mConstValues.insert(make_pair("tw_brightness_75", val75.str()));
+		mValues.insert(make_pair("tw_brightness", make_pair(val100.str(), 1)));
+		mValues.insert(make_pair("tw_brightness_display", make_pair("100", 1)));
+	} else {
+		mConstValues.insert(make_pair("tw_has_brightnesss_file", "0"));
 	}
-	return -1;
+#endif
 }
 
 void DataManager::Output_Version(void) {
@@ -1118,6 +1106,14 @@ void DataManager::ReadSettingsFile(void)
 		PartitionManager.Mount_By_Path(ext_path, 0);
 	}
 	update_tz_environment_variables();
+#ifdef TW_MAX_BRIGHTNESS
+	if (pause == 0 && strcmp(EXPAND(TW_BRIGHTNESS_PATH), "/nobrightness") != 0) {
+		string brightness_path = EXPAND(TW_BRIGHTNESS_PATH);
+		string brightness_value = GetStrValue("tw_brightness");
+		LOGI("writing %s to brightness\n", brightness_value.c_str());
+		TWFunc::write_file(brightness_path, brightness_value);
+	}
+#endif
 	SettingsFileRead = 1;
 }
 

@@ -484,6 +484,50 @@ unsigned int TWFunc::Get_D_Type_From_Stat(string Path) {
 	return DT_UNKNOWN;
 }
 
+int TWFunc::read_file(string fn, string& results) {
+	ifstream file;
+	file.open(fn.c_str(), ios::in);
+	if (file.is_open()) {
+		file >> results;
+		file.close();
+		return 0;
+	}
+	LOGI("Cannot find file %s\n", fn.c_str());
+	return -1;
+}
+
+int TWFunc::write_file(string fn, string& line) {
+	FILE *file;
+	file = fopen(fn.c_str(), "w");
+	if (file != NULL) {
+		fwrite(line.c_str(), line.size(), 1, file);
+		fclose(file);
+		return 0;
+	}
+	LOGI("Cannot find file %s\n", fn.c_str());
+	return -1;
+}
+
+timespec TWFunc::timespec_diff(timespec& start, timespec& end) {
+	timespec temp;
+	if ((end.tv_nsec-start.tv_nsec)<0) {
+		temp.tv_sec = end.tv_sec-start.tv_sec-1;
+		temp.tv_nsec = 1000000000+end.tv_nsec-start.tv_nsec;
+	} else {
+	        temp.tv_sec = end.tv_sec-start.tv_sec;
+	        temp.tv_nsec = end.tv_nsec-start.tv_nsec;
+	}
+	return temp;
+}
+
+int TWFunc::drop_caches(void) {
+	string file = "/proc/sys/vm/drop_caches";
+	string value = "3";
+	if (write_file(file, value) != 0)
+		return -1;
+	return 0;
+}
+
 bool TWFunc::replace_string(string str, const string search_str, const string replace_str) {
 	size_t start_pos = str.find(search_str);
 	if(start_pos != string::npos) {

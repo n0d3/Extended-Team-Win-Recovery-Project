@@ -48,6 +48,8 @@ extern "C" {
 #include "../data.hpp"
 #include "../variables.h"
 #include "../partitions.hpp"
+#include "../twrp-functions.hpp"
+#include "blanktimer.hpp"
 
 const static int CURTAIN_FADE = 32;
 
@@ -59,8 +61,10 @@ static int gGuiInitialized = 0;
 static int gGuiConsoleRunning = 0;
 static int gGuiConsoleTerminate = 0;
 static int gForceRender = 0;
+pthread_mutex_t gForceRendermutex;
 static int gNoAnimation = 1;
 static int gGuiInputRunning = 0;
+blanktimer blankTimer;
 
 // Needed by pages.cpp too
 int gGuiRunning = 0;
@@ -100,14 +104,14 @@ static void curtainSet()
 
 static void curtainRaise(gr_surface surface)
 {
-	int sy = 0;
+    int sy = 0;
     int h = gr_get_height(gCurtain) - 1;
     int w = gr_get_width(gCurtain);
     int fy = 1;
 
     int msw = gr_get_width(surface);
     int msh = gr_get_height(surface);
-	int CURTAIN_RATE = msh / 30;
+    int CURTAIN_RATE = msh / 30;
 
     if (gNoAnimation == 0)
     {
@@ -183,6 +187,7 @@ static void *input_thread(void *cookie)
 	static int touch_and_hold = 0, dontwait = 0, touch_repeat = 0, x = 0, y = 0, lshift = 0, rshift = 0, key_repeat = 0;
 	static struct timeval touchStart;
 	HardwareKeyboard kb;
+     blankTimer.setTimerThread();
 
     for (;;) {
 
@@ -209,12 +214,14 @@ static void *input_thread(void *cookie)
                 LOGE("TOUCH_HOLD: %d,%d\n", x, y);
 #endif
 				PageManager::NotifyTouch(TOUCH_HOLD, x, y);
+				blankTimer.resetTimerAndUnblank();
 			} else if (touch_repeat && mtime > 100) {
 #ifdef _EVENT_LOGGING
                 LOGE("TOUCH_REPEAT: %d,%d\n", x, y);
 #endif
 				gettimeofday(&touchStart, NULL);
 				PageManager::NotifyTouch(TOUCH_REPEAT, x, y);
+				blankTimer.resetTimerAndUnblank();
 			} else if (key_repeat == 1 && mtime > 500) {
 #ifdef _EVENT_LOGGING
                 LOGE("KEY_HOLD: %d,%d\n", x, y);
@@ -222,12 +229,14 @@ static void *input_thread(void *cookie)
 				gettimeofday(&touchStart, NULL);
 				key_repeat = 2;
 				kb.KeyRepeat();
+				blankTimer.resetTimerAndUnblank();
 			} else if (key_repeat == 2 && mtime > 100) {
 #ifdef _EVENT_LOGGING
                 LOGE("KEY_REPEAT: %d,%d\n", x, y);
 #endif
 				gettimeofday(&touchStart, NULL);
 				kb.KeyRepeat();
+				blankTimer.resetTimerAndUnblank();
 			}
 		} else if (ev.type == EV_ABS) {
 
@@ -242,6 +251,7 @@ static void *input_thread(void *cookie)
                     LOGE("TOUCH_RELEASE: %d,%d\n", x, y);
 #endif
                     PageManager::NotifyTouch(TOUCH_RELEASE, x, y);
+					blankTimer.resetTimerAndUnblank();
 					touch_and_hold = 0;
 					touch_repeat = 0;
 					if (!key_repeat)
@@ -264,6 +274,7 @@ static void *input_thread(void *cookie)
 					dontwait = 1;
 					key_repeat = 0;
 					gettimeofday(&touchStart, NULL);
+					blankTimer.resetTimerAndUnblank();
                 }
                 else
                 {
@@ -275,6 +286,7 @@ static void *input_thread(void *cookie)
                         if (PageManager::NotifyTouch(TOUCH_DRAG, x, y) > 0)
                             state = 1;
 						key_repeat = 0;
+						blankTimer.resetTimerAndUnblank();
                     }
                 }
             }
@@ -293,11 +305,13 @@ static void *input_thread(void *cookie)
 					touch_repeat = 0;
 					dontwait = 1;
 					gettimeofday(&touchStart, NULL);
+					blankTimer.resetTimerAndUnblank();
 				} else {
 					key_repeat = 0;
 					touch_and_hold = 0;
 					touch_repeat = 0;
 					dontwait = 0;
+					blankTimer.resetTimerAndUnblank();
 				}
 			} else {
 				// This is a key release
@@ -306,6 +320,7 @@ static void *input_thread(void *cookie)
 				touch_and_hold = 0;
 				touch_repeat = 0;
 				dontwait = 0;
+				blankTimer.resetTimerAndUnblank();
 			}
         }
     }
@@ -428,14 +443,16 @@ static int runPage(const char* page_name)
         }
         else
         {
+	    pthread_mutex_lock(&gForceRendermutex);
             gForceRender = 0;
+	    pthread_mutex_unlock(&gForceRendermutex);
             PageManager::Render();
             flip();
         }
-		if (DataManager::GetIntValue("tw_page_done") != 0) {
-			gui_changePage("main");
-			break;
-		}
+	if (DataManager::GetIntValue("tw_page_done") != 0) {
+	    gui_changePage ("main");
+	    break;
+	}
     }
 
     gGuiRunning = 0;
@@ -444,7 +461,9 @@ static int runPage(const char* page_name)
 
 int gui_forceRender(void)
 {
+    pthread_mutex_lock(&gForceRendermutex);
     gForceRender = 1;
+    pthread_mutex_unlock(&gForceRendermutex);
     return 0;
 }
 
@@ -452,29 +471,35 @@ int gui_changePage(std::string newPage)
 {
     LOGI("Set page: '%s'\n", newPage.c_str());
     PageManager::ChangePage(newPage);
+    pthread_mutex_lock(&gForceRendermutex);
     gForceRender = 1;
+    pthread_mutex_unlock(&gForceRendermutex);
     return 0;
 }
 
 int gui_changeOverlay(std::string overlay)
 {
     PageManager::ChangeOverlay(overlay);
+    pthread_mutex_lock(&gForceRendermutex);
     gForceRender = 1;
+    pthread_mutex_unlock(&gForceRendermutex);
     return 0;
 }
 
 int gui_changePackage(std::string newPackage)
 {
     PageManager::SelectPackage(newPackage);
+    pthread_mutex_lock(&gForceRendermutex);
     gForceRender = 1;
+    pthread_mutex_unlock(&gForceRendermutex);
     return 0;
 }
 
 std::string gui_parse_text(string inText)
 {
-	// Copied from std::string GUIText::parseText(void)
-	// This function parses text for DataManager values encompassed by %value% in the XML
-	static int counter = 0;
+    // Copied from std::string GUIText::parseText(void)
+    // This function parses text for DataManager values encompassed by %value% in the XML
+    static int counter = 0;
     std::string str = inText;
     size_t pos = 0;
     size_t next = 0, end = 0;
@@ -482,9 +507,11 @@ std::string gui_parse_text(string inText)
     while (1)
     {
         next = str.find('%', pos);
-        if (next == std::string::npos)      return str;
+        if (next == std::string::npos)
+	    return str;
         end = str.find('%', next + 1);
-        if (end == std::string::npos)       return str;
+        if (end == std::string::npos)
+	    return str;
 
         // We have a block of data
         std::string var = str.substr(next + 1, (end - next) - 1);
@@ -509,17 +536,17 @@ extern "C" int gui_init()
 {
     int fd;
 
-	gr_init();
+    gr_init();
 
-	if (res_create_surface("/res/images/curtain.jpg", &gCurtain))
-	{
-		printf("Unable to locate '/res/images/curtain.jpg'\nDid you set a DEVICE_RESOLUTION in your config files?\n");
-		return -1;
-	}
+    if (res_create_surface("/res/images/curtain.jpg", &gCurtain))
+    {
+	printf("Unable to locate '/res/images/curtain.jpg'\nDid you set a DEVICE_RESOLUTION in your config files?\n");
+	return -1;
+    }
 
-	curtainSet();
+    curtainSet();
 
-	ev_init();
+    ev_init();
     return 0;
 }
 
@@ -669,7 +696,9 @@ static void *console_thread(void *cookie)
         }
         else
         {
+	    pthread_mutex_lock(&gForceRendermutex);
             gForceRender = 0;
+	    pthread_mutex_unlock(&gForceRendermutex);
             PageManager::Render();
             flip();
         }
@@ -680,7 +709,8 @@ static void *console_thread(void *cookie)
 
 extern "C" int gui_console_only()
 {
-    if (!gGuiInitialized)   return -1;
+    if (!gGuiInitialized)
+	return -1;
 
     gGuiConsoleTerminate = 0;
     gGuiConsoleRunning = 1;
