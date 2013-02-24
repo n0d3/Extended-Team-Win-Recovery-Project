@@ -355,7 +355,8 @@ protected:
     int mTextX, mTextY, mTextW, mTextH;
     int mIconX, mIconY, mIconW, mIconH;
     bool mRendered;
-    int highlightRenderCount;
+    bool hasHighlightColor;
+    bool renderHighlight;
     COLOR mHighlightColor;
 };
 
