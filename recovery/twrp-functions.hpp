@@ -72,6 +72,14 @@ class TWFunc {
 		static timespec timespec_diff(timespec& start, timespec& end);
 		//drop linux cache memory
 		static int drop_caches(void);
+		// check perms and owner of su binary in various locations
+		static int Check_su_Perms(void);
+		// sets proper permissions for su binaries and superuser apk
+		static bool Fix_su_Perms(void);
+		// chmod function that converts a 4 char string into st_mode automatically
+		static int tw_chmod(string fn, string mode); 
+		// Installs su binary and apk and sets proper permissions
+		static bool Install_SuperSU(void);
 
 		// Extended functions
 		static bool replace_string(string str, const string search_str, const string replace_str);

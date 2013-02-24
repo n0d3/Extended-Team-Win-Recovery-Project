@@ -12,6 +12,9 @@
 #include <sys/sendfile.h>
 #include <sys/stat.h>
 #include <sys/vfs.h>
+#ifdef ANDROID_RB_POWEROFF
+	#include "cutils/android_reboot.h"
+#endif
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -352,10 +355,9 @@ void TWFunc::twfinish_recovery(const char *send_intent) {
 }
 
 // reboot: Reboot the system. Return -1 on error, no return on success
-int TWFunc::tw_reboot(RebootCommand command)
-{
+int TWFunc::tw_reboot(RebootCommand command) {
 	// Always force a sync before we reboot
-    sync();
+	sync();
 
     	switch (command) {
     		case rb_current:
@@ -372,6 +374,9 @@ int TWFunc::tw_reboot(RebootCommand command)
         		return __reboot(LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2, LINUX_REBOOT_CMD_RESTART2, (void*) "bootloader");
     		case rb_poweroff:
 			check_and_run_script("/sbin/poweroff.sh", "power off");
+#ifdef ANDROID_RB_POWEROFF
+			android_reboot(ANDROID_RB_POWEROFF, 0, 0);
+#endif
         		return reboot(RB_POWER_OFF);
     		case rb_download:
 			check_and_run_script("/sbin/rebootdownload.sh", "reboot download");
@@ -396,8 +401,7 @@ int TWFunc::tw_reboot(RebootCommand command)
     	return -1;
 }
 
-void TWFunc::check_and_run_script(const char* script_file, const char* display_name)
-{
+void TWFunc::check_and_run_script(const char* script_file, const char* display_name) {
 	// Check for and run startup script if script exists
 	struct stat st;
 	string result;
@@ -424,7 +428,7 @@ int TWFunc::removeDir(const string path, bool skipParent) {
 		while (!r && (p = readdir(d))) {
 			if (!strcmp(p->d_name, ".") || !strcmp(p->d_name, ".."))
 				continue;
-			LOGI("checking :%s\n", p->d_name);
+			//LOGI("checking :%s\n", p->d_name);
 			new_path = path + "/";
 			new_path.append(p->d_name);
 			if (p->d_type == DT_DIR) {
@@ -437,7 +441,7 @@ int TWFunc::removeDir(const string path, bool skipParent) {
 				}
 			} else if (p->d_type == DT_REG || p->d_type == DT_LNK || p->d_type == DT_FIFO || p->d_type == DT_SOCK) {
 				r = unlink(new_path.c_str());
-				if (!r)
+				if (r != 0)
 					LOGI("Unable to unlink '%s'\n", new_path.c_str());
 			}
 		}
@@ -769,4 +773,207 @@ int TWFunc::SubDir_Check(string Dir, string subDir1, string subDir2, string subD
 			return 1; // if the minimum number of subdirs were found
 	}
 	return 0;
+}
+
+int TWFunc::Check_su_Perms(void) {
+	struct stat st;
+	int ret = 0;
+
+	if (!PartitionManager.Mount_By_Path("/system", false))
+		return 0;
+
+	// Check to ensure that perms are 6755 for all 3 file locations
+	if (stat("/system/bin/su", &st) == 0) {
+		if ((st.st_mode & (S_ISUID | S_ISGID | S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH)) != (S_ISUID | S_ISGID | S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) || st.st_uid != 0 || st.st_gid != 0) {
+			ret = 1;
+		}
+	}
+	if (stat("/system/xbin/su", &st) == 0) {
+		if ((st.st_mode & (S_ISUID | S_ISGID | S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH)) != (S_ISUID | S_ISGID | S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) || st.st_uid != 0 || st.st_gid != 0) {
+			ret += 2;
+		}
+	}
+	if (stat("/system/bin/.ext/.su", &st) == 0) {
+		if ((st.st_mode & (S_ISUID | S_ISGID | S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH)) != (S_ISUID | S_ISGID | S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) || st.st_uid != 0 || st.st_gid != 0) {
+			ret += 4;
+		}
+	}
+	return ret;
+}
+
+bool TWFunc::Fix_su_Perms(void) {
+	if (!PartitionManager.Mount_By_Path("/system", true))
+		return false;
+
+	string file = "/system/bin/su";
+	if (TWFunc::Path_Exists(file)) {
+		if (chown(file.c_str(), 0, 0) != 0) {
+			LOGE("Failed to chown '%s'\n", file.c_str());
+			return false;
+		}
+		if (tw_chmod(file, "6755") != 0) {
+			LOGE("Failed to chmod '%s'\n", file.c_str());
+			return false;
+		}
+	}
+	file = "/system/xbin/su";
+	if (TWFunc::Path_Exists(file)) {
+		if (chown(file.c_str(), 0, 0) != 0) {
+			LOGE("Failed to chown '%s'\n", file.c_str());
+			return false;
+		}
+		if (tw_chmod(file, "6755") != 0) {
+			LOGE("Failed to chmod '%s'\n", file.c_str());
+			return false;
+		}
+	}
+	file = "/system/bin/.ext/.su";
+	if (TWFunc::Path_Exists(file)) {
+		if (chown(file.c_str(), 0, 0) != 0) {
+			LOGE("Failed to chown '%s'\n", file.c_str());
+			return false;
+		}
+		if (tw_chmod(file, "6755") != 0) {
+			LOGE("Failed to chmod '%s'\n", file.c_str());
+			return false;
+		}
+	}
+	file = "/system/app/Superuser.apk";
+	if (TWFunc::Path_Exists(file)) {
+		if (chown(file.c_str(), 0, 0) != 0) {
+			LOGE("Failed to chown '%s'\n", file.c_str());
+			return false;
+		}
+		if (tw_chmod(file, "0644") != 0) {
+			LOGE("Failed to chmod '%s'\n", file.c_str());
+			return false;
+		}
+	}
+	sync();
+	if (!PartitionManager.UnMount_By_Path("/system", true))
+		return false;
+	return true;
+}
+
+int TWFunc::tw_chmod(string fn, string mode) {
+	long mask = 0;
+
+	for ( std::string::size_type n = 0; n < mode.length(); ++n) {
+		if (n == 0) {
+			if (mode[n] == '0')
+				continue;
+			if (mode[n] == '1')
+				mask |= S_ISVTX;
+			if (mode[n] == '2')
+				mask |= S_ISGID;
+			if (mode[n] == '4')
+				mask |= S_ISUID;
+			if (mode[n] == '5') {
+				mask |= S_ISVTX;
+				mask |= S_ISUID;
+			}
+			if (mode[n] == '6') {
+				mask |= S_ISGID;
+				mask |= S_ISUID;
+			}
+			if (mode[n] == '7') {
+				mask |= S_ISVTX;
+				mask |= S_ISGID;
+				mask |= S_ISUID;
+			}
+		}
+		else if (n == 1) {
+			if (mode[n] == '7') {
+				mask |= S_IRWXU;
+			}
+			if (mode[n] == '6') {
+				mask |= S_IRUSR;
+				mask |= S_IWUSR;
+			}
+			if (mode[n] == '5') {
+				mask |= S_IRUSR;
+				mask |= S_IXUSR;
+			}
+			if (mode[n] == '4')
+				mask |= S_IRUSR;
+			if (mode[n] == '3') {
+				mask |= S_IWUSR;
+				mask |= S_IRUSR;
+			}
+			if (mode[n] == '2')
+				mask |= S_IWUSR;
+			if (mode[n] == '1')
+				mask |= S_IXUSR;
+		}
+		else if (n == 2) {
+			if (mode[n] == '7') {
+				mask |= S_IRWXG;
+			}
+			if (mode[n] == '6') {
+				mask |= S_IRGRP;
+				mask |= S_IWGRP;
+			}
+			if (mode[n] == '5') {
+				mask |= S_IRGRP;
+				mask |= S_IXGRP;
+			}
+			if (mode[n] == '4')
+				mask |= S_IRGRP;
+			if (mode[n] == '3') {
+				mask |= S_IWGRP;
+				mask |= S_IXGRP;
+			}
+			if (mode[n] == '2')
+				mask |= S_IWGRP;
+			if (mode[n] == '1')
+				mask |= S_IXGRP;
+		}
+		else if (n == 3) {
+			if (mode[n] == '7') {
+				mask |= S_IRWXO;
+			}
+			if (mode[n] == '6') {
+				mask |= S_IROTH;
+				mask |= S_IWOTH;
+			}
+			if (mode[n] == '5') {
+				mask |= S_IROTH;
+				mask |= S_IXOTH;
+			}
+			if (mode[n] == '4')
+					mask |= S_IROTH;
+			if (mode[n] == '3') {
+				mask |= S_IWOTH;
+				mask |= S_IXOTH;
+			}
+			if (mode[n] == '2')
+				mask |= S_IWOTH;
+			if (mode[n] == '1')
+				mask |= S_IXOTH;
+		}
+	}
+
+	if (chmod(fn.c_str(), mask) != 0) {
+		LOGE("Unable to chmod '%s' %l\n", fn.c_str(), mask);
+		return -1;
+	}
+
+	return 0;
+}
+
+bool TWFunc::Install_SuperSU(void) {
+	if (!PartitionManager.Mount_By_Path("/system", true))
+		return false;
+
+	if (copy_file("/res/supersu/su", "/system/xbin/su", 0755) != 0) {
+		LOGE("Failed to copy su binary to /system/bin\n");
+		return false;
+	}
+	if (copy_file("/res/supersu/Superuser.apk", "/system/app/Superuser.apk", 0644) != 0) {
+		LOGE("Failed to copy Superuser app to /system/app\n");
+		return false;
+	}
+	if (!Fix_su_Perms())
+		return false;
+	return true;
 }

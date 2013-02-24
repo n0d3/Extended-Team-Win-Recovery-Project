@@ -314,34 +314,9 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 	if (function == "reboot") {
 		//curtainClose(); this sometimes causes a crash
 		sync();
-
-		if (arg == "recovery")
-			TWFunc::tw_reboot(rb_recovery);
-		else if (arg == "poweroff")
-			TWFunc::tw_reboot(rb_poweroff);
-		else if (arg == "bootloader")
-			TWFunc::tw_reboot(rb_bootloader);
-		else if (arg == "download")
-			TWFunc::tw_reboot(rb_download);
-		else if (arg == "sboot")
-			TWFunc::tw_reboot(rb_sboot);
-		else if (arg == "tboot")
-			TWFunc::tw_reboot(rb_tboot);
-		else if (arg == "vboot")
-			TWFunc::tw_reboot(rb_vboot);
-		else if (arg == "wboot")
-			TWFunc::tw_reboot(rb_wboot);
-		else if (arg == "xboot")
-			TWFunc::tw_reboot(rb_xboot);
-		else if (arg == "yboot")
-			TWFunc::tw_reboot(rb_yboot);
-		else if (arg == "zboot")
-			TWFunc::tw_reboot(rb_zboot);
-		else
-			TWFunc::tw_reboot(rb_system);
-
-		// This should never occur
-		return -1;
+		DataManager::SetValue("tw_gui_done", 1);
+		DataManager::SetValue("tw_reboot_arg", arg);
+		return 0;
 	}
 	if (function == "home") {
 		PageManager::SelectPackage("TWRP");
@@ -359,7 +334,6 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 	}
 
 	if (function == "reload") {
-		struct stat st;
 		int check = 0, ret_val = 0;
 		std::string root_path;
 		std::string theme_path;
@@ -1463,6 +1437,34 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 					DataManager::SetValue("tw_page_done", 1);
 				}
 			}
+		}
+		if (function == "installsu") {
+			int op_status = 0;
+
+			operation_start("Install SuperSU");
+			if (simulate) {
+				simulate_progress_bar();
+			} else {
+				if (!TWFunc::Install_SuperSU())
+					op_status = 1;
+			}
+
+			operation_end(op_status, simulate);
+			return 0;
+		}
+		if (function == "fixsu") {
+			int op_status = 0;
+
+			operation_start("Fixing Superuser Permissions");
+			if (simulate) {
+				simulate_progress_bar();
+			} else {
+				if (!TWFunc::Fix_su_Perms())
+					op_status = 1;
+			}
+
+			operation_end(op_status, simulate);
+			return 0;
 		}
 	} else {
 		pthread_t t;

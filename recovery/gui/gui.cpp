@@ -390,6 +390,8 @@ static int runPages(void)
             PageManager::Render();
             flip();
         }
+	if (DataManager::GetIntValue("tw_gui_done") != 0)
+	    break;
     }
 
     gGuiRunning = 0;
@@ -614,7 +616,7 @@ static void *time_update_thread(void *cookie)
 		usleep(998);
 	}
 	
-	return NULL; // needless :)
+	return NULL;
 }
 
 extern "C" int gui_start()
@@ -642,10 +644,12 @@ extern "C" int gui_start()
 
 extern "C" int gui_startPage(const char* page_name)
 {
-    if (!gGuiInitialized) return -1;
+    if (!gGuiInitialized)
+	return -1;
 
     gGuiConsoleTerminate = 1;
-    while (gGuiConsoleRunning) loopTimer();
+    while (gGuiConsoleRunning)
+	loopTimer();
 
     // Set the default package
     PageManager::SelectPackage("TWRP");
