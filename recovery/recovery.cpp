@@ -926,23 +926,9 @@ int main(int argc, char **argv) {
 				status = INSTALL_SUCCESS;
 			else
 				status = INSTALL_ERROR;
-			/*
-			status = install_package(update_package, &wipe_cache, TEMPORARY_INSTALL_FILE);
-			if (status == INSTALL_SUCCESS && wipe_cache) {
-				if (erase_volume("/cache")) {
-					LOGE("Cache wipe (requested by package) failed.");
-				}
-			}
-			if (status != INSTALL_SUCCESS) ui->Print("Installation aborted.\n");
-			*/
 		} else if (wipe_data) {
 			if (!OpenRecoveryScript::Insert_ORS_Command("wipe data\n"))
 				status = INSTALL_ERROR;
-			/*
-			if (device->WipeData()) status = INSTALL_ERROR;
-			if (erase_volume("/data")) status = INSTALL_ERROR;
-			if (wipe_cache && erase_volume("/cache")) status = INSTALL_ERROR;
-			*/
 			if (status != INSTALL_SUCCESS) ui->Print("Data wipe failed.\n");
 		} else if (wipe_cache) {
 			if (!OpenRecoveryScript::Insert_ORS_Command("wipe cache\n"))
@@ -953,36 +939,81 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	//if (status != INSTALL_SUCCESS) ui->SetBackground(RecoveryUI::ERROR);
-	if (1) {
-		finish_recovery(NULL);
-		if (PartitionManager.Mount_By_Path("/system", false)) {
-			if (TWFunc::Path_Exists("/system/recovery-from-boot.p")) {
-				rename("/system/recovery-from-boot.p", "/system/recovery-from-boot.bak");
-				ui_print("Renamed stock recovery file in /system to prevent\nthe stock ROM from replacing TWRP.\n");
-			}
-			PartitionManager.UnMount_By_Path("/system", false);
+	finish_recovery(NULL);
+	// Offer to decrypt if the device is encrypted
+	if (DataManager_GetIntValue(TW_IS_ENCRYPTED) != 0) {
+		LOGI("Is encrypted, do decrypt page first\n");
+		if (gui_startPage("decrypt") != 0) {
+			LOGE("Failed to start decrypt GUI page.\n");
 		}
-		if (DataManager_GetIntValue(TW_IS_ENCRYPTED) != 0) {
-			LOGI("Is encrypted, do decrypt page first\n");
-			if (gui_startPage("decrypt") != 0) {
-				LOGE("Failed to start decrypt GUI page.\n");
-			}
-		}
-		DataManager_ReadSettingsFile();
+	}
+	// Read the settings file
+	DataManager_ReadSettingsFile();
 #if 0
-		DataManager_DumpValues();
+	DataManager_DumpValues();
 #endif
-		if (DataManager_GetIntValue(TW_IS_ENCRYPTED) == 0 && (TWFunc::Path_Exists(SCRIPT_FILE_TMP) || TWFunc::Path_Exists(SCRIPT_FILE_CACHE))) {
-			OpenRecoveryScript::Run_OpenRecoveryScript();
+	// Run any outstanding OpenRecoveryScript
+	if (DataManager_GetIntValue(TW_IS_ENCRYPTED) == 0 && (TWFunc::Path_Exists(SCRIPT_FILE_TMP) || TWFunc::Path_Exists(SCRIPT_FILE_CACHE))) {
+		OpenRecoveryScript::Run_OpenRecoveryScript();
+	}
+	// Launch the main GUI
+	gui_start();
+
+	if (PartitionManager.Mount_By_Path("/system", false)) {
+		if (TWFunc::Path_Exists("/system/recovery-from-boot.p")) {
+			rename("/system/recovery-from-boot.p", "/system/recovery-from-boot.bak");
+			ui_print("Renamed stock recovery file in /system to prevent\nthe stock ROM from replacing TWRP.\n");
 		}
-		gui_start();
-		//prompt_and_wait(device);
+
+		if (TWFunc::Path_Exists("/res/supersu/su") && !TWFunc::Path_Exists("/system/bin/su") && !TWFunc::Path_Exists("/system/xbin/su") && !TWFunc::Path_Exists("/system/bin/.ext/.su")) {
+			// Device doesn't have su installed
+			DataManager_SetIntValue("tw_busy", 1);
+			if (gui_startPage("installsu") != 0) {
+				LOGE("Failed to start InstallSU GUI page.\n");
+			}
+		} else if (TWFunc::Check_su_Perms() > 0) {
+			// su perms are set incorrectly
+			DataManager_SetIntValue("tw_busy", 1);
+			if (gui_startPage("fixsu") != 0) {
+				LOGE("Failed to start FixSU GUI page.\n");
+			}
+		}
+		sync();
+
+		PartitionManager.UnMount_By_Path("/system", false);
 	}
 
 	// Otherwise, get ready to boot the main system...
 	finish_recovery(send_intent);
 	ui->Print("Rebooting...\n");
+	char backup_arg_char[50];
+	strcpy(backup_arg_char, DataManager_GetStrValue("tw_reboot_arg"));
+	string backup_arg = backup_arg_char;
+	if (backup_arg == "recovery")
+		TWFunc::tw_reboot(rb_recovery);
+	else if (backup_arg == "poweroff")
+		TWFunc::tw_reboot(rb_poweroff);
+	else if (backup_arg == "bootloader")
+		TWFunc::tw_reboot(rb_bootloader);
+	else if (backup_arg == "download")
+		TWFunc::tw_reboot(rb_download);
+	else if (backup_arg == "sboot")
+		TWFunc::tw_reboot(rb_sboot);
+	else if (backup_arg == "tboot")
+		TWFunc::tw_reboot(rb_tboot);
+	else if (backup_arg == "vboot")
+		TWFunc::tw_reboot(rb_vboot);
+	else if (backup_arg == "wboot")
+		TWFunc::tw_reboot(rb_wboot);
+	else if (backup_arg == "xboot")
+		TWFunc::tw_reboot(rb_xboot);
+	else if (backup_arg == "yboot")
+		TWFunc::tw_reboot(rb_yboot);
+	else if (backup_arg == "zboot")
+		TWFunc::tw_reboot(rb_zboot);
+	else
+		TWFunc::tw_reboot(rb_system);
+
 #ifdef ANDROID_RB_RESTART
 	android_reboot(ANDROID_RB_RESTART, 0, 0);
 #else
