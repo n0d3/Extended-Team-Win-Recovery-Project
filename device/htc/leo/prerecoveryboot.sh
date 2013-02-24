@@ -1,25 +1,5 @@
 #!/sbin/sh
 
-sleep 3
-
-# Bootloader check
-if grep -Fxq "clk=" /proc/cmdline
-then
-sed -i '
-/\/boot/ {
-c\
-/boot		mtd		boot
-}
-' /etc/recovery.fstab
-else
-sed -i '
-/\/boot/ {
-c\
-/boot		yaffs2		boot
-}
-' /etc/recovery.fstab
-fi
-
 sleep 2
 
 # /sdcard check
