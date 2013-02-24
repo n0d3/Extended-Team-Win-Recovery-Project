@@ -1300,8 +1300,11 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 				if((restore_sdext != NULL && !dalvik_found_on_sdext)
 				/* or sdext2 backup is to be restored, BUT no dalvik-cache was detected inside	  */
 				|| (restore_sdext2 != NULL && !dalvik_found_on_sdext2)) {
-					// increase by 40% data's new size just to be safe
-					data_size = " data:" + TWFunc::to_string((int)(1.4*dt_size/1048576LLU));
+						int i = 1; float incr = 1.0;
+						DataManager::GetValue(TW_INCR_SIZE, i);
+						incr += (float)i / (float)100;
+						// increase data's new size just to be safe
+						data_size = " data:" + TWFunc::to_string((int)(incr*dt_size/1048576LLU));
 				}
 			}
 			part_size += data_size;

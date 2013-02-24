@@ -209,7 +209,7 @@ void DataManager::get_device_id(void) {
 	return;
 }
 
-int DataManager::Detect_BLDR(void) {
+int DataManager::Detect_BLDR() {
 	if (BLDR == -1) {
 		string cmd = "grep -Fxq \"clk=\" /proc/cmdline";
 
@@ -710,6 +710,7 @@ void DataManager::SetDefaultValues()
 	mValues.insert(make_pair(TW_RESTORE_IS_DATAONEXT, make_pair("0", 1)));
 
 	mValues.insert(make_pair(TW_NUM_OF_MOUNTS_FOR_FS_CHK, make_pair("10", 1)));
+	mValues.insert(make_pair(TW_INCR_SIZE, make_pair("40", 1)));
 
 	mValues.insert(make_pair(TW_RESCUE_EXT_CONTENTS, make_pair("0", 1)));
 	mValues.insert(make_pair(TW_HANDLE_RESTORE_SIZE, make_pair("0", 1)));
@@ -991,10 +992,8 @@ void DataManager::SetDefaultValues()
 	
 	mValues.insert(make_pair(TW_REBOOT_AFTER_FLASH_VAR, make_pair("0", 1)));
 	mValues.insert(make_pair(TW_SIGNED_ZIP_VERIFY_VAR, make_pair("0", 1)));
-	mValues.insert(make_pair(TW_FORCE_MD5_CHECK_VAR, make_pair("0", 1)));
 	mValues.insert(make_pair(TW_COLOR_THEME_VAR, make_pair("0", 1)));
 	mValues.insert(make_pair(TW_USE_COMPRESSION_VAR, make_pair("0", 1)));
-	//mValues.insert(make_pair(TW_IGNORE_IMAGE_SIZE, make_pair("0", 1)));
 	mValues.insert(make_pair(TW_SHOW_SPAM_VAR, make_pair("0", 1)));
 	mValues.insert(make_pair(TW_TIME_ZONE_VAR, make_pair("CST6CDT", 1)));
 	mValues.insert(make_pair(TW_SORT_FILES_BY_DATE_VAR, make_pair("0", 1)));
@@ -1348,4 +1347,14 @@ extern "C" void DataManager_ReadSettingsFile()
 extern "C" void DataManager_SetupTwrpFolder()
 {
 	return DataManager::SetupTwrpFolder();
+}
+
+extern "C" int DataManager_Detect_BLDR()
+{
+	return DataManager::Detect_BLDR();
+}
+
+extern "C" int DataManager_Pause_For_Battery_Charge()
+{
+	return DataManager::Pause_For_Battery_Charge();
 }
