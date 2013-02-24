@@ -32,6 +32,8 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <iomanip>
 #include "variables.h"
 #include "common.h"
@@ -996,9 +998,9 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 	time_t rStart, rStop;
 	time(&rStart);
 	// Needed for any size checks
-	string Full_FileName, part_size, parts, Command, data_size;
-	int dataonext, dalvik_found_on_data = 1, dalvik_found_on_sdext = 1, dalvik_found_on_sdext2 = 1;
-	unsigned long long min_size, dt_size;
+	string Full_FileName, part_size, parts, Command, data_size, dalvik_nfo, dalvik_host;
+	int dataonext, dalvik_found_on_data = 1, dalvik_found_on_sdext = 1, dalvik_found_on_sdext2 = 1, nodalvikcache = 0;
+	unsigned long long min_size = 0, dt_size = 0, dc_size = 0;
 	
 	ui_print("\n[RESTORE STARTED]\n\n");
 	ui_print(" * Restore folder:%s\n @ %s\n", TWFunc::Get_Filename(Restore_Name).c_str(), TWFunc::Get_Path(Restore_Name).c_str());
@@ -1007,9 +1009,21 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 
 	// Handle size errors?
 	DataManager::GetValue("tw_handle_restore_size", hserr);
-	if (hserr > 0)
+	if (hserr > 0) {
 		LOGI("TWRP will adjust partitions' size if needed.\n");
-	
+		// Check if this is a backup without dalvik-cache
+		nodalvikcache = TWFunc::Path_Exists(Restore_Name + "/.nodalvikcache");
+		if (nodalvikcache) {
+			TWFunc::read_file(Restore_Name + "/.nodalvikcache", dalvik_nfo);
+			vector<string> split;
+			split = TWFunc::split_string(dalvik_nfo, ':');
+			if (split.size() > 0) {
+				dalvik_host = split[0]; // path of the partition that dalvik-cache is located
+				stringstream ss(split[1]);
+				ss >> dc_size; // stored size of dalvik-cache (in bytes)
+			}
+		}
+	}
 	DataManager::GetValue(TW_RESTORE_IS_DATAONEXT, dataonext);
 	DataManager::GetValue(TW_SKIP_MD5_CHECK_VAR, check_md5);
 	DataManager::GetValue(TW_RESTORE_SYSTEM_VAR, check);
@@ -1067,12 +1081,14 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 				} else {
 					// This is an archive
 					min_size += TWFunc::Get_Archive_Uncompressed_Size(Full_FileName);
-					dt_size = min_size;
 					// check if the archive contains dalvik-cache.
 					// If not we must add enough space for it
 					if (!dataonext && !TWFunc::Tar_Entry_Exists(Full_FileName, "dalvik-cache", 0))
 						dalvik_found_on_data = 0;
 				}
+				if (nodalvikcache && dalvik_host == "/data")
+					min_size += dc_size;
+				dt_size = min_size;
 				// Now compare the size of the partition and the minimum required size
 				if (restore_data->Size >= min_size) {
 					LOGI("%s's size is adequate to restore %s.\n", restore_data->Backup_Name.c_str(), restore_data->Backup_FileName.c_str());
@@ -1112,6 +1128,59 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 		if (restore_boot == NULL)
 			LOGE("Unable to locate boot partition.\n");
 		else {
+			LOGI("TW_RESTORE_BOOT_VAR = %i\n", check);
+			if (check == 2) {
+				if (!TWFunc::Path_Exists(Restore_Name + "/boot.mtd.win")) {
+					string cmd = "cd " + Restore_Name + " && tar -xf " + restore_boot->Backup_FileName + " ./initrd.gz ./zImage";
+					if (system(cmd.c_str()) == 0) {
+						if(TWFunc::Path_Exists(Restore_Name + "/initrd.gz")
+						&& TWFunc::Path_Exists(Restore_Name + "/zImage")) {
+							// Create 'boot' mtd image
+							cmd = "mkbootimg --kernel " + Restore_Name + "/zImage\
+									 --ramdisk " + Restore_Name + "/initrd.gz\
+									 --cmdline \"\"\
+									 --base 0x11800000\
+									 --output " + Restore_Name + "/boot.mtd.win";
+							if (system(cmd.c_str()) == 0) {
+								if (TWFunc::Path_Exists(Restore_Name + "/boot.mtd.win")) {
+									// Remove the tar
+									cmd = "cd " + Restore_Name + " && rm -f " + restore_boot->Backup_FileName;
+									system(cmd.c_str());
+									// Set new backup name
+									restore_boot->Backup_FileName = "boot.mtd.win";
+								}
+							}
+						}
+					}
+				}
+			}
+			if (check == 3) {
+				if (!TWFunc::Path_Exists(Restore_Name + "/boot.yaffs2.win")) {
+					string cmd = "cd " + Restore_Name + " && unpackbootimg -i " + restore_boot->Backup_FileName;
+					if (system(cmd.c_str()) == 0) {
+						string ramdisk = Restore_Name + "/" + restore_boot->Backup_FileName + "-ramdisk.gz";
+						string kernel = Restore_Name + "/" + restore_boot->Backup_FileName + "-zImage";
+						if(TWFunc::Path_Exists(ramdisk)
+						&& TWFunc::Path_Exists(kernel)) {
+							string initrd = Restore_Name + "/initrd.gz";
+							string zImage = Restore_Name + "/zImage";
+							rename(ramdisk.c_str(), initrd.c_str());
+							rename(kernel.c_str(), zImage.c_str());
+							// Create 'boot' tar
+							cmd = "cd " + Restore_Name + " && tar -cf boot.yaffs2.win initrd.gz zImage";
+							if (system(cmd.c_str()) == 0) {
+								if (TWFunc::Path_Exists(Restore_Name + "/boot.yaffs2.win")) {
+									// Remove the image
+									cmd = "cd " + Restore_Name + " && rm -f " + restore_boot->Backup_FileName;
+									system(cmd.c_str());
+									// Set new backup name
+									restore_boot->Backup_FileName = "boot.yaffs2.win";
+								}
+							}
+						}
+					}
+				}
+			}
 			if (hserr > 0) {
 				LOGI("Comparing %s's size to %s's size...\n", restore_boot->Backup_FileName.c_str(), restore_boot->Backup_Name.c_str());
 				min_size = 0;
@@ -1187,6 +1256,8 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 					if (!TWFunc::Tar_Entry_Exists(Full_FileName, "dalvik-cache", 0))
 						dalvik_found_on_sdext = 0;
 				}
+				if (nodalvikcache && dalvik_host == "/sd-ext")
+					min_size += dc_size;
 				// Now compare the size of the partition and the minimum required size
 				if (restore_sdext->Size >= min_size) {
 					LOGI("%s's size is adequate to restore %s.\n", restore_sdext->Backup_Name.c_str(), restore_sdext->Backup_FileName.c_str());
@@ -1235,6 +1306,8 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 					if (!TWFunc::Tar_Entry_Exists(Full_FileName, "dalvik-cache", 0))
 						dalvik_found_on_sdext2 = 0;
 				}
+				if (nodalvikcache && dalvik_host == "/sd-ext")
+					min_size += dc_size;
 				// Now compare the size of the partition and the minimum required size
 				if (restore_sdext2->Size >= min_size) {
 					LOGI("%s's size is adequate to restore %s.\n", restore_sdext2->Backup_Name.c_str(), restore_sdext2->Backup_FileName.c_str());
@@ -1294,17 +1367,20 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 	
 	if (hserr > 0 && DataManager::Detect_BLDR() == 1) {
 		if (!data_size.empty()) {
-			// data backup is to be restored, BUT no dalvik-cache was detected inside
-			if (restore_data != NULL && !dalvik_found_on_data) {
-				// Either sdext backup is to be restored, BUT no dalvik-cache was detected inside
-				if((restore_sdext != NULL && !dalvik_found_on_sdext)
-				/* or sdext2 backup is to be restored, BUT no dalvik-cache was detected inside	  */
-				|| (restore_sdext2 != NULL && !dalvik_found_on_sdext2)) {
+			// .nodalvikcache file was not found
+			if (!nodalvikcache) {
+				// data backup is to be restored, BUT no dalvik-cache was detected inside 
+				if (restore_data != NULL && !dalvik_found_on_data) {
+					// Either sdext backup is to be restored, BUT no dalvik-cache was detected inside
+					if((restore_sdext != NULL && !dalvik_found_on_sdext)
+					/* or sdext2 backup is to be restored, BUT no dalvik-cache was detected inside	  */
+					|| (restore_sdext2 != NULL && !dalvik_found_on_sdext2)) {
 						int i = 1; float incr = 1.0;
 						DataManager::GetValue(TW_INCR_SIZE, i);
 						incr += (float)i / (float)100;
 						// increase data's new size just to be safe
-						data_size = " data:" + TWFunc::to_string((int)(incr*dt_size/1048576LLU));
+						data_size = " data:" + TWFunc::to_string((int)(incr*dt_size/1048576LLU));						
+					}
 				}
 			}
 			part_size += data_size;
@@ -1515,7 +1591,7 @@ void TWPartitionManager::Set_Restore_Files(string Restore_Name) {
 			// Check if the backed up partition exists in current ptable
 			TWPartition* Part = Find_Partition_By_Path(label);
 			if (Part == NULL) {
-				LOGE(" Unable to locate partition by backup name: '%s'\n", label);
+				LOGE("Unable to locate partition by backup name: '%s'\n", label.c_str());
 				continue;
 			}
 
@@ -1535,29 +1611,29 @@ void TWPartitionManager::Set_Restore_Files(string Restore_Name) {
 			LOGI("*Backup_FileName = %s\n", Part->Backup_FileName.c_str());
 			LOGI("*Backup_Path = %s\n", Part->Backup_Path.c_str());
 
-			// Now, we just need to find the correct label
+			// HD2's boot partition depends on which bootloader we have
+			// *** TODO: What if MAGLDR's boot partition is created as rboot? ***
 			if (Part->Backup_Path == "/boot") {
-				// HD2's boot partition depends on which bootloader we have
-				if((fstype == "mtd" && DataManager::Detect_BLDR() == 1/*cLK*/)
-				|| (fstype == "yaffs2" && DataManager::Detect_BLDR() == 2/*MAGLDR*/))
+				// cLK installed
+				if (DataManager::Detect_BLDR() == 1) {
+					if (fstype == "mtd")
+						tw_restore_boot = 1;
+					else if (fstype == "yaffs2") {
+						tw_restore_boot = -1;
+						tw_restore_system = -1;
+						break;
+					}
+				// MAGLDR installed
+				} else if (DataManager::Detect_BLDR() == 2) {
+					if((fstype == "mtd" && Part->Current_File_System == "mtd")
+					|| (fstype == "yaffs2" && Part->Current_File_System == "yaffs2"))
+						tw_restore_boot = 1;
+					else if (fstype == "yaffs2" && Part->Current_File_System == "mtd")
+						tw_restore_boot = 2;
+					else if (fstype == "mtd" && Part->Current_File_System == "yaffs2")
+						tw_restore_boot = 3;
+				} else
 					tw_restore_boot = 1;
-				else {
-					// We are trying to restore an incompatible backup
-					// Set all values to -1 and break
-					tw_restore_system = -1;
-					tw_restore_data = -1;
-					tw_restore_cache = -1;
-					tw_restore_recovery = -1;
-					tw_restore_boot = -1;
-					tw_restore_andsec = -1;
-					tw_restore_sdext = -1;
-					tw_restore_sdext2 = -1;
-					tw_restore_sp1 = -1;
-					tw_restore_sp2 = -1;
-					tw_restore_sp3 = -1;
-					tw_restore_is_dataonext = 0;
-					break;
-				}
 			}
 			else if (Part->Backup_Path == "/system")
 				tw_restore_system = 1;
@@ -2851,9 +2927,10 @@ int TWPartitionManager::NativeSD_Backup(string RomPath) {
 			sprintf(back_name, "%s/system", RomPath.c_str());
 #ifdef TW_INCLUDE_LIBTAR
 			twrpTar tar;
+			tar.setexcl("");
 			tar.setdir(back_name);
 			tar.setfn(Full_FileName);
-			backup_count = tar.splitArchiveThread();
+			backup_count = tar.splitArchiveFork();
 			if (backup_count == -1) {
 				LOGE("Error tarring split files!\n");
 				return false;
@@ -2886,15 +2963,16 @@ int TWPartitionManager::NativeSD_Backup(string RomPath) {
 			Full_FileName = Full_Backup_Path + SYS_Backup_FileName;
 #ifdef TW_INCLUDE_LIBTAR
 			twrpTar tar;
+			tar.setexcl("");
 			tar.setdir(extpath + "/" + Rom_Name + "/system");
 			tar.setfn(Full_FileName);
 			if (use_compression) {
-				if (tar.createTarGZThread() != 0)
+				if (tar.createTarGZFork() != 0)
 					return -1;
 				string gzname = Full_FileName + ".gz";
 				rename(gzname.c_str(), Full_FileName.c_str());
 			} else {
-				if (tar.createTarThread() != 0)
+				if (tar.createTarFork() != 0)
 					return -1;
 			}
 #else
@@ -2921,7 +2999,11 @@ int TWPartitionManager::NativeSD_Backup(string RomPath) {
 		int skip_dalvik;
 		DataManager::GetValue(TW_SKIP_DALVIK, skip_dalvik);
 		if (skip_dalvik)
+#ifdef TW_INCLUDE_LIBTAR
+			Tar_Excl = "dalvik-cache";
+#else
 			Tar_Excl = " --exclude='dalvik-cache' --exclude='dalvik-cache/*'";
+#endif
 		ui_print("Backing up %s's data...\n", Rom_Name.c_str());
 		string DATA_Backup_FileName = "data.tar";
 		remain_time = remaining_bytes / (unsigned long)file_bps;
@@ -2936,9 +3018,10 @@ int TWPartitionManager::NativeSD_Backup(string RomPath) {
 			sprintf(back_name, "%s/data", RomPath.c_str());
 #ifdef TW_INCLUDE_LIBTAR
 			twrpTar tar;
+			tar.setexcl(Tar_Excl);
 			tar.setdir(back_name);
 			tar.setfn(Full_FileName);
-			backup_count = tar.splitArchiveThread();
+			backup_count = tar.splitArchiveFork();
 			if (backup_count == -1) {
 				LOGE("Error tarring split files!\n");
 				return false;
@@ -2971,15 +3054,16 @@ int TWPartitionManager::NativeSD_Backup(string RomPath) {
 			Full_FileName = Full_Backup_Path + DATA_Backup_FileName;
 #ifdef TW_INCLUDE_LIBTAR
 			twrpTar tar;
+			tar.setexcl(Tar_Excl);
 			tar.setdir(extpath + "/" + Rom_Name + "/data");
 			tar.setfn(Full_FileName);
 			if (use_compression) {
-				if (tar.createTarGZThread() != 0)
+				if (tar.createTarGZFork() != 0)
 					return -1;
 				string gzname = Full_FileName + ".gz";
 				rename(gzname.c_str(), Full_FileName.c_str());
 			} else {
-				if (tar.createTarThread() != 0)
+				if (tar.createTarFork() != 0)
 					return -1;
 			}
 #else
@@ -3014,15 +3098,16 @@ int TWPartitionManager::NativeSD_Backup(string RomPath) {
 		Full_FileName = Full_Backup_Path + BOOT_Backup_FileName;
 #ifdef TW_INCLUDE_LIBTAR
 		twrpTar tar;
+		tar.setexcl("");
 		tar.setdir("/sdcard/NativeSD/" + Rom_Name);
 		tar.setfn(Full_FileName);
 		if (use_compression) {
-			if (tar.createTarGZThread() != 0)
+			if (tar.createTarGZFork() != 0)
 				return -1;
 			string gzname = Full_FileName + ".gz";
 			rename(gzname.c_str(), Full_FileName.c_str());
 		} else {
-			if (tar.createTarThread() != 0)
+			if (tar.createTarFork() != 0)
 				return -1;
 		}
 #else
@@ -3189,7 +3274,7 @@ int TWPartitionManager::NativeSD_Restore(string RomPath) {
 				twrpTar tar;
 				tar.setdir("/");
 				tar.setfn(Full_FileName);
-				if (tar.extractTarThread() != 0)
+				if (tar.extractTarFork() != 0)
 					return false;
 #else
 				Command = "cd / && tar -xvf '" + Full_FileName + "'";
@@ -3209,7 +3294,7 @@ int TWPartitionManager::NativeSD_Restore(string RomPath) {
 			twrpTar tar;
 			tar.setdir(extpath);
 			tar.setfn(Full_FileName);
-			if (tar.extractTarThread() != 0)
+			if (tar.extractTarFork() != 0)
 				return false;
 #else
 			Command = "cd " + extpath + " && tar -xvf '" + Full_FileName + "'";
@@ -3236,7 +3321,7 @@ int TWPartitionManager::NativeSD_Restore(string RomPath) {
 				twrpTar tar;
 				tar.setdir("/");
 				tar.setfn(Full_FileName);
-				if (tar.extractTarThread() != 0)
+				if (tar.extractTarFork() != 0)
 					return false;
 #else
 				Command = "cd / && tar -xvf '" + Full_FileName + "'";
@@ -3256,7 +3341,7 @@ int TWPartitionManager::NativeSD_Restore(string RomPath) {
 			twrpTar tar;
 			tar.setdir(extpath);
 			tar.setfn(Full_FileName);
-			if (tar.extractTarThread() != 0)
+			if (tar.extractTarFork() != 0)
 				return false;
 #else
 			Command = "cd " + extpath + " && tar -xvf '" + Full_FileName + "'";
@@ -3279,7 +3364,7 @@ int TWPartitionManager::NativeSD_Restore(string RomPath) {
 		twrpTar tar;
 		tar.setdir(Boot_Restore_Path);
 		tar.setfn(Full_FileName);
-		if (tar.extractTarThread() != 0)
+		if (tar.extractTarFork() != 0)
 			return false;
 #else
 		Command = "cd " + Boot_Restore_Path + " && tar -xvf '" + Full_FileName + "'";
@@ -3287,10 +3372,9 @@ int TWPartitionManager::NativeSD_Restore(string RomPath) {
 		system(Command.c_str());	
 #endif
 #ifdef TW_INCLUDE_LIBTAR
-		twrpTar tar;
 		tar.setdir("/sdcard/NativeSD");
 		tar.setfn(Full_FileName);
-		if (tar.extractTarThread() != 0)
+		if (tar.extractTarFork() != 0)
 			return false;
 #else
 		Command = "cd /sdcard/NativeSD && tar -xvf '" + Full_FileName + "'";

@@ -86,7 +86,9 @@ class TWPartition {
 		// Actual block device (one of primary, alternate, or decrypted)
 		string Actual_Block_Device;                                               
 		// Name of the partition for MTD devices
-		string MTD_Name;                                                          
+		string MTD_Name;                                              
+		// dev/mtd/mtd# for MTD devices
+		string MTD_Dev;
 
 	// Extended functions
 		// Size of dalvik-cache folder (used when calculating the backup size if we skip dalvik during backup)

@@ -84,6 +84,7 @@ static const char *SIDELOAD_TEMP_DIR = "/tmp/sideload";
 #ifdef TW_INCLUDE_NTFS_3G
 	static const char *NTFS_3G = "/sbin/ntfs-3g";
 #endif
+static int pause_for_battery_charge = 0;
 RecoveryUI* ui = NULL;
 
 /*
@@ -782,13 +783,14 @@ int main(int argc, char **argv) {
 	}
 
 	printf("Starting Extended TWRP %s on %s", TW_VERSION_STR, ctime(&start));
-
+	// Detect bootloader
+	if (DataManager_Detect_BLDR() == 1) {
+		// If cLK detected, check cmdline for offmode-charging
+		pause_for_battery_charge = DataManager_Pause_For_Battery_Charge();			
+	}
+	
 	Device* device = make_device();
 	ui = device->GetUI();
-
-	//ui->Init();
-	//ui->SetBackground(RecoveryUI::NONE);
-	//load_volume_table();
 
 	// Load default values to set DataManager constants and handle ifdefs
 	DataManager_LoadDefaults();

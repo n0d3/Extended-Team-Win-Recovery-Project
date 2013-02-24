@@ -61,7 +61,8 @@ class DataManager {
 	// Extended functions
 		// Formats mtd ptn by given name
 		static int Wipe_MTD_By_Name(string ptnName);
-		static int Detect_BLDR(void);
+		static int Detect_BLDR();
+		static int Pause_For_Battery_Charge();
 		static void SetBackupFolder(string storage_path);
 		static void SetAdditionalFolders(string storage_path);
 		static void SetupTwrpFolder();
@@ -79,10 +80,10 @@ class DataManager {
 	// Extended functions
 	   	static int SettingsFileRead;
 	   	static int BLDR;
+	   	static int pause;
 
 	protected:
 		static int SaveValues();
-		static int GetMagicValue(string varName, string& value);
 
 	private:
 		static void sanitize_device_id(char* device_id);

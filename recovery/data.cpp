@@ -66,6 +66,7 @@ string					DataManager::mBackingFile;
 int					DataManager::mInitialized = 0;
 int                                     DataManager::SettingsFileRead = 0;
 int                                     DataManager::BLDR = -1;
+int                                     DataManager::pause = -1;
 
 extern blanktimer blankTimer;
 
@@ -207,6 +208,29 @@ void DataManager::get_device_id(void) {
 	sanitize_device_id((char *)device_id);
 	mConstValues.insert(make_pair("tw_device_id", device_id));
 	return;
+}
+
+#define OFFMODE_CHARGING	"androidboot.mode=offmode_charging"
+#define OFFMODE_CHARGING_LEN	(strlen(OFFMODE_CHARGING))
+int DataManager::Pause_For_Battery_Charge() {
+	if (pause == -1) {
+		FILE *fp = fopen("/proc/cmdline", "rt");
+		if (fp != NULL) {
+			pause = 0;
+			char line[2048];
+			fgets(line, sizeof(line), fp);
+			fclose(fp);
+			char* token = strtok(line, " ");
+			while (token) {
+				if (memcmp(token, OFFMODE_CHARGING, OFFMODE_CHARGING_LEN) == 0)	{	
+					pause = 1;
+					break;
+				}
+				token = strtok(NULL, " ");
+			}
+		}
+	}
+	return pause;
 }
 
 int DataManager::Detect_BLDR() {
@@ -420,8 +444,6 @@ int DataManager::GetValue(const string varName, string& value)
 	}
 
 	// Handle magic values
-	if (GetMagicValue(localStr, value) == 0)
-		return 0;
 
 	map<string, string>::iterator constPos;
 	constPos = mConstValues.find(localStr);
@@ -523,7 +545,7 @@ int DataManager::SetValue(const string varName, string value, int persist /* = 0
 	if (pos->second.second != 0)
 		SaveValues();
 	if (varName == "tw_screen_timeout_secs") {
-		blankTimer.setTime(atoi(value.c_str()));
+		if (pause == 0) blankTimer.setTime(atoi(value.c_str()));
 	} else
 		gui_notifyVarChange(varName.c_str(), value.c_str());
 	return 0;

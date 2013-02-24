@@ -29,6 +29,12 @@ extern "C" {
 	#include "libcrecovery/common.h"
 }
 
+#define TW_DEFAULT_POWER_MODE	0
+#define TW_POWER_SAVE_MODE	1
+unsigned cpu_settings = 0;
+#define TW_SCREEN_OFF		0
+unsigned screen_state = 1;
+
 /* Execute a command */
 int TWFunc::Exec_Cmd(string cmd, string &result) {
 	FILE* exec;
@@ -464,6 +470,9 @@ int TWFunc::copy_file(string src, string dst, int mode) {
 	dstfile << srcfile.rdbuf();
 	srcfile.close();
 	dstfile.close();
+	if (chmod(dst.c_str(), mode) != 0)
+		return -1;
+
 	return 0;
 }
 
@@ -532,9 +541,56 @@ int TWFunc::drop_caches(void) {
 	return 0;
 }
 
-bool TWFunc::replace_string(string str, const string search_str, const string replace_str) {
+// Screen off
+void TWFunc::screen_off(void) {
+	if (screen_state != TW_SCREEN_OFF) {
+		screen_state = TW_SCREEN_OFF;
+		string lcd_brightness;
+		string off = "0\n";
+		string brightness_file = EXPAND(TW_BRIGHTNESS_PATH);
+		TWFunc::write_file(brightness_file, off);
+		LOGI("Screen turned off to save power.\n");
+	}
+}
+
+// Powersave cpu settings
+void TWFunc::power_save(void) {
+	if (cpu_settings != TW_POWER_SAVE_MODE) {
+		cpu_settings = TW_POWER_SAVE_MODE;
+		string powersave = "powersave\n";
+		string cpu_governor = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor";
+		TWFunc::write_file(cpu_governor, powersave);
+		string low_power_freq = "245000\n";
+		string cpu_max_freq = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq";
+		TWFunc::write_file(cpu_max_freq, low_power_freq);
+		string cpu_min_freq = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq";
+		TWFunc::write_file(cpu_min_freq, low_power_freq);
+		LOGI("Powersave cpu settings loaded.\n");
+		sync();
+	}
+}
+
+// Restore default cpu settings
+void TWFunc::power_restore(int charge_mode) {
+	if (cpu_settings != TW_DEFAULT_POWER_MODE && charge_mode == 0) {
+		cpu_settings = TW_DEFAULT_POWER_MODE;
+		string powersave = "smartassV2\n";
+		string cpu_governor = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor";
+		TWFunc::write_file(cpu_governor, powersave);
+		string max_power_freq = "1190400\n";
+		string cpu_max_freq = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq";
+		TWFunc::write_file(cpu_max_freq, max_power_freq);
+		string low_power_freq = "384000\n";
+		string cpu_min_freq = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq";
+		TWFunc::write_file(cpu_min_freq, low_power_freq);
+		LOGI("Default cpu settings loaded.\n");
+		sync();
+	}
+}
+
+bool TWFunc::replace_string(string& str, const string& search_str, const string& replace_str) {
 	size_t start_pos = str.find(search_str);
-	if(start_pos != string::npos) {
+	if (start_pos != string::npos) {
 		str.replace(start_pos, search_str.length(), replace_str);
         	return true;
 	}
@@ -555,6 +611,61 @@ string TWFunc::to_string(int number) {
 	ss << number;
 
 	return ss.str();
+}
+
+vector<string> TWFunc::split_string(const string &in, char del) {		
+	vector<string> res;
+
+	if (in.empty() || del == '\0')
+		return res;
+
+	string field;
+	istringstream f(in);
+	while(getline(f, field, del)) {
+		if (field.empty())
+			continue;
+		res.push_back(field);
+	}
+	return res;
+}
+
+unsigned int TWFunc::Get_FS_Via_statfs(string Mount_Point) {
+	struct statfs st;
+
+	string Local_Path = Mount_Point + "/.";
+	if (statfs(Local_Path.c_str(), &st) != 0)
+		return 0;
+
+	return st.f_type;
+}
+
+// TODO: Basic check for boot partition
+// If 'ANDROID!' is detected then a boot.img is flashed => FS is mtd (returns 1)
+// Else							=> FS can be either mtd or yaffs2 (returns 0 or 2)
+int TWFunc::mtdchk(string mtd_dev) {
+	if (mtd_dev.empty())
+		return -1;
+
+        int st = 0;
+        string::size_type i = 0;
+	char header[9];
+        
+        ifstream f;
+        f.open(mtd_dev.c_str(), ios::in | ios::binary);
+        f.get(header, 9);
+        f.close();
+	for (i=0; i<9; i++) {
+		header[i] &= 0xff;
+	}
+
+	if (header[0] == 0x41 && header[1] == 0x4e && header[2] == 0x44 && header[3] == 0x52 && header[4] == 0x4f && header[5] == 0x49 && header[6] == 0x44 && header[7] == 0x21)		
+		st = 1;
+	else if (header[0] == 0xff && header[1] == 0xff && header[2] == 0xff && header[3] == 0xff && header[4] == 0xff && header[5] == 0xff && header[6] == 0xff && header[7] == 0xff)		
+		st = 2;
+	else
+		st = 0;
+
+	return st;
 }
 
 // Check a tar file for a given entry

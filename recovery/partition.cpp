@@ -91,6 +91,7 @@ TWPartition::TWPartition(void) {
 	Backup_Name = "";
 	Backup_FileName = "";
 	MTD_Name = "";
+	MTD_Dev = "";
 	Backup_Method = NONE;
 	Has_Data_Media = false;
 	Has_Android_Secure = false;
@@ -144,6 +145,8 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 			if (Fstab_File_System == "mtd" || Fstab_File_System == "yaffs2") {
 				MTD_Name = ptr;
 				Find_MTD_Block_Device(MTD_Name);
+				if (!Primary_Block_Device.empty())
+					MTD_Dev = "/dev/mtd/mtd" + Primary_Block_Device.substr(Primary_Block_Device.size() - 1, 1);
 			} else if (Fstab_File_System == "bml") {
 				if (Mount_Point == "/boot")
 					MTD_Name = "boot";
@@ -236,38 +239,38 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 				}
 #endif
 #ifdef TW_INCLUDE_CRYPTO
-			Can_Be_Encrypted = true;
-			char crypto_blkdev[255];
-			property_get("ro.crypto.fs_crypto_blkdev", crypto_blkdev, "error");
-			if (strcmp(crypto_blkdev, "error") != 0) {
-				DataManager::SetValue(TW_DATA_BLK_DEVICE, Primary_Block_Device);
-				DataManager::SetValue(TW_IS_DECRYPTED, 1);
-				Is_Encrypted = true;
-				Is_Decrypted = true;
-				Decrypted_Block_Device = crypto_blkdev;
-				LOGI("Data already decrypted, new block device: '%s'\n", crypto_blkdev);
-			} else if (!Mount(false)) {
-				Is_Encrypted = true;
-				Is_Decrypted = false;
-				Can_Be_Mounted = false;
-				Current_File_System = "emmc";
-				Setup_Image(Display_Error);
-				DataManager::SetValue(TW_IS_ENCRYPTED, 1);
-				DataManager::SetValue(TW_CRYPTO_PASSWORD, "");
-				DataManager::SetValue("tw_crypto_display", "");
-			} else {
-				// Filesystem is not encrypted and the mount
-				// succeeded, so get it back to the original
-				// unmounted state
-				UnMount(false);
-			}
+				Can_Be_Encrypted = true;
+				char crypto_blkdev[255];
+				property_get("ro.crypto.fs_crypto_blkdev", crypto_blkdev, "error");
+				if (strcmp(crypto_blkdev, "error") != 0) {
+					DataManager::SetValue(TW_DATA_BLK_DEVICE, Primary_Block_Device);
+					DataManager::SetValue(TW_IS_DECRYPTED, 1);
+					Is_Encrypted = true;
+					Is_Decrypted = true;
+					Decrypted_Block_Device = crypto_blkdev;
+					LOGI("Data already decrypted, new block device: '%s'\n", crypto_blkdev);
+				} else if (!Mount(false)) {
+					Is_Encrypted = true;
+					Is_Decrypted = false;
+					Can_Be_Mounted = false;
+					Current_File_System = "emmc";
+					Setup_Image(Display_Error);
+					DataManager::SetValue(TW_IS_ENCRYPTED, 1);
+					DataManager::SetValue(TW_CRYPTO_PASSWORD, "");
+					DataManager::SetValue("tw_crypto_display", "");
+				} else {
+					// Filesystem is not encrypted and the mount
+					// succeeded, so get it back to the original
+					// unmounted state
+					UnMount(false);
+				}
 	#ifdef RECOVERY_SDCARD_ON_DATA
-			if (!Is_Encrypted || (Is_Encrypted && Is_Decrypted))
-				Recreate_Media_Folder();
+				if (!Is_Encrypted || (Is_Encrypted && Is_Decrypted))
+					Recreate_Media_Folder();
 	#endif
 #else
 	#ifdef RECOVERY_SDCARD_ON_DATA
-			Recreate_Media_Folder();
+				Recreate_Media_Folder();
 	#endif
 #endif
 			} else {
@@ -338,9 +341,26 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 				DataManager::SetValue(TW_SDEXT2_SIZE, 0);
 			}
 		} else if (Mount_Point == "/boot") {
-			Display_Name = "Boot";
-			DataManager::SetValue("tw_boot_is_mountable", 1);
-		}
+			if (DataManager::Detect_BLDR() == 1/*cLK*/) {
+				Fstab_File_System = "mtd";
+				Current_File_System = "mtd";
+				Setup_Image(Display_Error);
+				DataManager::SetValue("tw_boot_is_mountable", 0);
+			} else if (DataManager::Detect_BLDR() == 2/*MAGLDR*/) {
+				unsigned int fs = TWFunc::Get_FS_Via_statfs(Mount_Point);
+				int hdr = TWFunc::mtdchk(MTD_Dev);
+				LOGI("%s fs: 0x%x.\n", Mount_Point.c_str(), fs);
+				if (fs == YAFFS_MAGIC)
+					DataManager::SetValue("tw_boot_is_mountable", 1);
+				else if (fs == RAMFS_MAGIC || hdr > 0) {
+					Fstab_File_System = "mtd";
+					Current_File_System = "mtd";
+					Setup_Image(Display_Error);
+					DataManager::SetValue("tw_boot_is_mountable", 0);
+				}
+			} else		
+				DataManager::SetValue("tw_boot_is_mountable", 1);
+		}	
 #ifdef TW_EXTERNAL_STORAGE_PATH
 		if (Mount_Point == EXPAND(TW_EXTERNAL_STORAGE_PATH)) {
 			Is_Storage = true;
@@ -370,26 +390,40 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 		if (Mount_Point == EXPAND(TW_INTERNAL_STORAGE_PATH)) {
 			Is_Storage = true;
 			Storage_Path = EXPAND(TW_INTERNAL_STORAGE_PATH);
-#ifndef RECOVERY_SDCARD_ON_DATA
+	#ifndef RECOVERY_SDCARD_ON_DATA
 			Setup_AndSec();
 			Mount_Storage_Retry();
-#endif
+	#endif
 		}
 #else
 		if (Mount_Point == "/emmc") {
 			Is_Storage = true;
 			Storage_Path = "/emmc";
-#ifndef RECOVERY_SDCARD_ON_DATA
+	#ifndef RECOVERY_SDCARD_ON_DATA
 			Setup_AndSec();
 			Mount_Storage_Retry();
-#endif
+	#endif
 		}
 #endif
 	} else if (Is_Image(Fstab_File_System)) {
 		Find_Actual_Block_Device();
 		Setup_Image(Display_Error);
 		if (Mount_Point == "/boot") {
-			DataManager::SetValue("tw_boot_is_mountable", 0);
+			if (DataManager::Detect_BLDR() == 1/*cLK*/)
+				DataManager::SetValue("tw_boot_is_mountable", 0);
+			else if (DataManager::Detect_BLDR() == 2/*MAGLDR*/) {
+				unsigned int fs = TWFunc::Get_FS_Via_statfs(Mount_Point);
+				int hdr = TWFunc::mtdchk(MTD_Dev);
+				LOGI("%s fs: 0x%x.\n", Mount_Point.c_str(), fs);
+				if (fs == YAFFS_MAGIC) {
+					Fstab_File_System = "yaffs2";
+					Current_File_System = "yaffs2";
+					Setup_File_System(Display_Error);
+					DataManager::SetValue("tw_boot_is_mountable", 1);
+				} else if (fs == RAMFS_MAGIC || hdr > 0)
+					DataManager::SetValue("tw_boot_is_mountable", 0);	
+			} else		
+				DataManager::SetValue("tw_boot_is_mountable", 1);
 		}
 	} else if (Is_Swap(Fstab_File_System)) {
 		LOGI("Swap detected.\n");
@@ -954,7 +988,30 @@ bool TWPartition::Find_Partition_Size(void) {
 	FILE* fp;
 	char line[512];
 	string tmpdevice;
+/*
+	fp = fopen("/proc/dumchar_info", "rt");
+	if (fp != NULL) {
+		while (fgets(line, sizeof(line), fp) != NULL)
+		{
+			char label[32], device[32];
+			unsigned long size = 0;
 
+			sscanf(line, "%s %lx %*lx %*lu %s", label, &size, device);
+
+			// Skip header, annotation  and blank lines
+			if ((strncmp(device, "/dev/", 5) != 0) || (strlen(line) < 8))
+				continue;
+
+			tmpdevice = "/dev/";
+			tmpdevice += label;
+			if (tmpdevice == Primary_Block_Device || tmpdevice == Alternate_Block_Device) {
+				Size = size;
+				fclose(fp);
+				return true;
+			}
+		}
+	}
+*/
 	// In this case, we'll first get the partitions we care about (with labels)
 	fp = fopen("/proc/partitions", "rt");
 	if (fp == NULL)
@@ -1019,9 +1076,14 @@ bool TWPartition::Mount(bool Display_Error) {
 		} else
 			return true;
 	}
+	if (Current_File_System == "auto" && Symlink_Mount_Point != "/and-sec") {
+		Command = "mount " + Actual_Block_Device + " " + Mount_Point;
+		if (system(Command.c_str()) == 0)
+			return true;
+	}
 	if (Current_File_System == "exfat") {
 		if (TWFunc::Path_Exists("/sbin/exfat-fuse")) {
-			Command = "exfat-fuse -o nonempty " + Actual_Block_Device + " " + Mount_Point;
+			Command = "exfat-fuse -o nonempty,big_writes,max_read=131072,max_write=131072 " + Actual_Block_Device + " " + Mount_Point;
 			if (system(Command.c_str()) == 0)
 				return true;
 			else
@@ -1599,7 +1661,7 @@ string TWPartition::Backup_Method_By_Name() {
 bool TWPartition::Backup_Tar(string backup_folder) {
 	char back_name[255], split_index[5];
 	string Full_FileName, Split_FileName, Tar_Args = "", Tar_Excl = "", Command, data_pth, pathTodatafolder;
-	int use_compression, index, backup_count, dataonext;
+	int use_compression, index, backup_count, dataonext, skip_dalvik, skip_native;
 	struct stat st;
 	unsigned long long total_bsize = 0, file_size;
 #ifdef TW_INCLUDE_LIBTAR
@@ -1608,6 +1670,8 @@ bool TWPartition::Backup_Tar(string backup_folder) {
 	if (!Mount(true))
 		return false;
 
+	DataManager::GetValue(TW_SKIP_NATIVESD, skip_native);
+	DataManager::GetValue(TW_SKIP_DALVIK, skip_dalvik);
 	DataManager::GetValue(TW_DATA_ON_EXT, dataonext);
 	if (Backup_Path == "/and-sec") {
 		TWFunc::GUI_Operation_Text(TW_BACKUP_TEXT, "Android Secure", "Backing Up");
@@ -1626,18 +1690,16 @@ bool TWPartition::Backup_Tar(string backup_folder) {
 	}
 
 	// Skip dalvik-cache during backup?
-	if (Backup_Path == "/data" || Backup_Path == "/sd-ext" || Backup_Path == "/sdext2") {
-		int skip_dalvik;
-		DataManager::GetValue(TW_SKIP_DALVIK, skip_dalvik);
-		if (skip_dalvik)
-			Tar_Excl += " --exclude='dalvik-cache' --exclude='dalvik-cache/*'";
+	if ((Backup_Path == "/data" || Backup_Path == "/sd-ext" || Backup_Path == "/sdext2") && skip_dalvik) {
+#ifdef TW_INCLUDE_LIBTAR
+		Tar_Excl += "dalvik-cache";
+#else
+		Tar_Excl += " --exclude='dalvik-cache' --exclude='dalvik-cache/*'";
+#endif
 	}
 	// Skip any NativeSD Rom during backup of sd-ext
-	if (Backup_Path == "/sd-ext" || Backup_Path == "/sdext2") {
-		int skip_native;
-		DataManager::GetValue(TW_SKIP_NATIVESD, skip_native);
-		if (skip_native)
-			Tar_Excl += Tar_exclude;
+	if ((Backup_Path == "/sd-ext" || Backup_Path == "/sdext2") && skip_native) {
+		Tar_Excl += Tar_exclude;
 	}
 
 	// Use Compression?
@@ -1660,9 +1722,10 @@ bool TWPartition::Backup_Tar(string backup_folder) {
 		else 
 			sprintf(back_name, "%s", Backup_Path.c_str());		
 #ifdef TW_INCLUDE_LIBTAR
+		tar.setexcl(Tar_Excl);
 		tar.setdir(back_name);
 		tar.setfn(Full_FileName);
-		backup_count = tar.splitArchiveThread();
+		backup_count = tar.splitArchiveFork();
 		if (backup_count == -1) {
 			LOGE("Error tarring split files!\n");
 			return false;
@@ -1694,18 +1757,19 @@ bool TWPartition::Backup_Tar(string backup_folder) {
 	} else {
 		Full_FileName = backup_folder + Backup_FileName;
 #ifdef TW_INCLUDE_LIBTAR
+		tar.setexcl(Tar_Excl);
 		if (Backup_Path == "/sd-ext" && dataonext)
 			tar.setdir(Backup_Path + "/" + pathTodatafolder);
 		else
 			tar.setdir(Backup_Path);
 		tar.setfn(Full_FileName);
 		if (use_compression) {
-			if (tar.createTarGZThread() != 0)
+			if (tar.createTarGZFork() != 0)
 				return -1;
 			string gzname = Full_FileName + ".gz";
 			rename(gzname.c_str(), Full_FileName.c_str());
 		} else {
-			if (tar.createTarThread() != 0)
+			if (tar.createTarFork() != 0)
 				return -1;
 		}
 #else
@@ -1735,18 +1799,27 @@ bool TWPartition::Backup_Tar(string backup_folder) {
 		Command = "echo /sd-ext" + pathTodatafolder + ">" + backup_folder + ".dataonext";
 		system(Command.c_str());
 	}
+	if (skip_dalvik && Dalvik_Cache_Size > 0) {
+		// Create a file to recognize that this is a backup without dalvik-cache
+		// and store the size of dalvik-cache inside for restore purposes
+		Command = "echo " + Backup_Path + ":" + TWFunc::to_string((int)Dalvik_Cache_Size) + ">" + backup_folder + ".nodalvikcache";
+		system(Command.c_str());
+	}
 	return true;
 }
 
 bool TWPartition::Backup_DD(string backup_folder) {
-	string Full_FileName, Command, result;
+	char backup_size[32];
+	string Full_FileName, Command, result, DD_BS;
 	TWFunc::GUI_Operation_Text(TW_BACKUP_TEXT, Display_Name, "Backing Up");
 	ui_print("Backing up %s...\n", Display_Name.c_str());
 
 	Backup_FileName = Backup_Name + "." + Current_File_System + ".win";
 	Full_FileName = backup_folder + Backup_FileName;
+	sprintf(backup_size, "%llu", Backup_Size);
+	DD_BS = backup_size;
 
-	Command = "dd if=" + Actual_Block_Device + " of='" + Full_FileName + "'";
+	Command = "dd if=" + Actual_Block_Device + " of='" + Full_FileName + "'" + " bs=" + DD_BS + "c count=1";
 	LOGI("Backup command: '%s'\n", Command.c_str());
 	TWFunc::Exec_Cmd(Command, result);
 	if (TWFunc::Get_File_Size(Full_FileName) == 0) {
@@ -1909,7 +1982,7 @@ bool TWPartition::Restore_Tar(string restore_folder, string Restore_File_System)
 			twrpTar tar;
 			tar.setdir("/");
 			tar.setfn(Full_FileName);
-			if (tar.extractTarThread() != 0)
+			if (tar.extractTarFork() != 0)
 				return false;
 #else
 			if (TWFunc::Tar_Entry_Exists(Full_FileName, "sd-ext", 1) || TWFunc::Tar_Entry_Exists(Full_FileName, "system", 1) || TWFunc::Tar_Entry_Exists(Full_FileName, "data", 1))
@@ -1939,7 +2012,7 @@ bool TWPartition::Restore_Tar(string restore_folder, string Restore_File_System)
 		else
 			tar.setdir(Backup_Path);
 		tar.setfn(Full_FileName);
-		if (tar.extractTarThread() != 0)
+		if (tar.extractTarFork() != 0)
 			return false;
 #else
 		// For restoring a CWM backup of sd-ext
@@ -2208,7 +2281,11 @@ void TWPartition::CheckFor_NativeSD(void) {
 									count++;
 									LOGI("Excluding : %s\n", pathToCheck.c_str());
 									NativeSD_Size += TWFunc::Get_Folder_Size(pathToCheck, true);
+#ifdef TW_INCLUDE_LIBTAR
+									Tar_exclude += (" " + dname);
+#else
 									Tar_exclude += (" --exclude='" + dname + "' --exclude='" + dname + "/*'");
+#endif
 								}
 							}
 						} else {
@@ -2216,7 +2293,11 @@ void TWPartition::CheckFor_NativeSD(void) {
 							if (TWFunc::Path_Exists(pathToCheck)) {
 								count++;
 								NativeSD_Size += TWFunc::Get_Folder_Size(pathToCheck, true);
+#ifdef TW_INCLUDE_LIBTAR
+								Tar_exclude += (" " + dname);
+#else
 								Tar_exclude += (" --exclude='" + dname + "' --exclude='" + dname + "/*'");
+#endif
 							}
 						}
 					} else

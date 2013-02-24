@@ -296,6 +296,7 @@ void GUIAction::operation_end(const int operation_status, const int simulate) {
 	}
 	DataManager::SetValue("tw_operation_state", 1);
 	DataManager::SetValue(TW_ACTION_BUSY, 0);
+	if (!DataManager::Pause_For_Battery_Charge())
 		blankTimer.resetTimerAndUnblank();
 }
 

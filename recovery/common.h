@@ -45,6 +45,13 @@ static long tmplog_offset = 0;
 #define STRINGIFY(x) #x
 #define EXPAND(x) STRINGIFY(x)
 
+#ifndef RAMFS_MAGIC
+    #define RAMFS_MAGIC 0x858458f6
+#endif
+#ifndef YAFFS_MAGIC
+    #define YAFFS_MAGIC 0x5941ff53
+#endif
+
 typedef struct {
     const char* mount_point;  // eg. "/cache".  must live in the root directory.
 

@@ -69,6 +69,10 @@ blanktimer blankTimer;
 // Needed by pages.cpp too
 int gGuiRunning = 0;
 
+// Needed for offmode-charging
+static int offmode_charge = 0;
+int key_pressed = 0;
+
 static int gRecorder = -1;
 
 extern "C" void gr_write_frame_to_file(int fd);
@@ -171,61 +175,61 @@ void curtainClose()
 static void *input_thread(void *cookie)
 {
     int drag = 0;
-	static int touch_and_hold = 0, dontwait = 0, touch_repeat = 0, x = 0, y = 0, lshift = 0, rshift = 0, key_repeat = 0;
-	static struct timeval touchStart;
-	HardwareKeyboard kb;
-     blankTimer.setTimerThread();
+    static int touch_and_hold = 0, dontwait = 0, touch_repeat = 0, x = 0, y = 0, lshift = 0, rshift = 0, key_repeat = 0;
+    static struct timeval touchStart;
+    HardwareKeyboard kb;
+    if (!offmode_charge)
+	blankTimer.setTimerThread();
 
     for (;;) {
-
         // wait for the next event
         struct input_event ev;
         int state = 0, ret = 0;
 
-		ret = ev_get(&ev, dontwait);
+	ret = ev_get(&ev, dontwait);
 
-		if (ret < 0) {
-			struct timeval curTime;
-			gettimeofday(&curTime, NULL);
-			long mtime, seconds, useconds;
+	if (ret < 0) {
+	    struct timeval curTime;
+	    gettimeofday(&curTime, NULL);
+	    long mtime, seconds, useconds;
 
-			seconds  = curTime.tv_sec  - touchStart.tv_sec;
-			useconds = curTime.tv_usec - touchStart.tv_usec;
+	    seconds  = curTime.tv_sec  - touchStart.tv_sec;
+	    useconds = curTime.tv_usec - touchStart.tv_usec;
 
-			mtime = ((seconds) * 1000 + useconds/1000.0) + 0.5;
-			if (touch_and_hold && mtime > 500) {
-				touch_and_hold = 0;
-				touch_repeat = 1;
-				gettimeofday(&touchStart, NULL);
+	    mtime = ((seconds) * 1000 + useconds/1000.0) + 0.5;
+	    if (touch_and_hold && mtime > 500) {
+		touch_and_hold = 0;
+		touch_repeat = 1;
+		gettimeofday(&touchStart, NULL);
 #ifdef _EVENT_LOGGING
                 LOGE("TOUCH_HOLD: %d,%d\n", x, y);
 #endif
-				PageManager::NotifyTouch(TOUCH_HOLD, x, y);
-				blankTimer.resetTimerAndUnblank();
-			} else if (touch_repeat && mtime > 100) {
+		PageManager::NotifyTouch(TOUCH_HOLD, x, y);
+		if (!offmode_charge) blankTimer.resetTimerAndUnblank();
+	    } else if (touch_repeat && mtime > 100) {
 #ifdef _EVENT_LOGGING
                 LOGE("TOUCH_REPEAT: %d,%d\n", x, y);
 #endif
-				gettimeofday(&touchStart, NULL);
-				PageManager::NotifyTouch(TOUCH_REPEAT, x, y);
-				blankTimer.resetTimerAndUnblank();
-			} else if (key_repeat == 1 && mtime > 500) {
+		gettimeofday(&touchStart, NULL);
+		PageManager::NotifyTouch(TOUCH_REPEAT, x, y);
+		if (!offmode_charge) blankTimer.resetTimerAndUnblank();
+	    } else if (key_repeat == 1 && mtime > 500) {
 #ifdef _EVENT_LOGGING
                 LOGE("KEY_HOLD: %d,%d\n", x, y);
 #endif
-				gettimeofday(&touchStart, NULL);
-				key_repeat = 2;
-				kb.KeyRepeat();
-				blankTimer.resetTimerAndUnblank();
-			} else if (key_repeat == 2 && mtime > 100) {
+		gettimeofday(&touchStart, NULL);
+		key_repeat = 2;
+		kb.KeyRepeat();
+		if (!offmode_charge) blankTimer.resetTimerAndUnblank();
+	    } else if (key_repeat == 2 && mtime > 100) {
 #ifdef _EVENT_LOGGING
                 LOGE("KEY_REPEAT: %d,%d\n", x, y);
 #endif
-				gettimeofday(&touchStart, NULL);
-				kb.KeyRepeat();
-				blankTimer.resetTimerAndUnblank();
-			}
-		} else if (ev.type == EV_ABS) {
+		gettimeofday(&touchStart, NULL);
+		kb.KeyRepeat();
+		if (!offmode_charge) blankTimer.resetTimerAndUnblank();
+	    }
+	} else if (ev.type == EV_ABS) {
 
             x = ev.value >> 16;
             y = ev.value & 0xFFFF;
@@ -238,11 +242,11 @@ static void *input_thread(void *cookie)
                     LOGE("TOUCH_RELEASE: %d,%d\n", x, y);
 #endif
                     PageManager::NotifyTouch(TOUCH_RELEASE, x, y);
-					blankTimer.resetTimerAndUnblank();
-					touch_and_hold = 0;
-					touch_repeat = 0;
-					if (!key_repeat)
-						dontwait = 0;
+		    if (!offmode_charge) blankTimer.resetTimerAndUnblank();
+		    touch_and_hold = 0;
+		    touch_repeat = 0;
+		    if (!key_repeat)
+			dontwait = 0;
                 }
                 state = 0;
                 drag = 0;
@@ -257,11 +261,11 @@ static void *input_thread(void *cookie)
                     if (PageManager::NotifyTouch(TOUCH_START, x, y) > 0)
                         state = 1;
                     drag = 1;
-					touch_and_hold = 1;
-					dontwait = 1;
-					key_repeat = 0;
-					gettimeofday(&touchStart, NULL);
-					blankTimer.resetTimerAndUnblank();
+		    touch_and_hold = 1;
+		    dontwait = 1;
+		    key_repeat = 0;
+		    gettimeofday(&touchStart, NULL);
+		    if (!offmode_charge) blankTimer.resetTimerAndUnblank();
                 }
                 else
                 {
@@ -272,44 +276,51 @@ static void *input_thread(void *cookie)
 #endif
                         if (PageManager::NotifyTouch(TOUCH_DRAG, x, y) > 0)
                             state = 1;
-						key_repeat = 0;
-						blankTimer.resetTimerAndUnblank();
+			key_repeat = 0;
+			if (!offmode_charge) blankTimer.resetTimerAndUnblank();
                     }
                 }
             }
-        }
-        else if (ev.type == EV_KEY)
-        {
+        } else if (ev.type == EV_KEY) {
             // Handle key-press here
 #ifdef _EVENT_LOGGING
             LOGE("TOUCH_KEY: %d\n", ev.code);
 #endif
-			if (ev.value != 0) {
-				// This is a key press
-				if (kb.KeyDown(ev.code)) {
-					key_repeat = 1;
-					touch_and_hold = 0;
-					touch_repeat = 0;
-					dontwait = 1;
-					gettimeofday(&touchStart, NULL);
-					blankTimer.resetTimerAndUnblank();
-				} else {
-					key_repeat = 0;
-					touch_and_hold = 0;
-					touch_repeat = 0;
-					dontwait = 0;
-					blankTimer.resetTimerAndUnblank();
-				}
-			} else {
-				// This is a key release
-				kb.KeyUp(ev.code);
-				key_repeat = 0;
-				touch_and_hold = 0;
-				touch_repeat = 0;
-				dontwait = 0;
-				blankTimer.resetTimerAndUnblank();
-			}
-        }
+	    if (ev.value != 0) {
+		// This is a key press
+		if (kb.KeyDown(ev.code)) {
+		    key_repeat = 1;
+		    touch_and_hold = 0;
+		    touch_repeat = 0;
+		    dontwait = 1;
+		    gettimeofday(&touchStart, NULL);
+		    if (offmode_charge)
+			key_pressed = 1;
+		    else
+			blankTimer.resetTimerAndUnblank();
+		} else {
+		    key_repeat = 0;
+		    touch_and_hold = 0;
+		    touch_repeat = 0;
+		    dontwait = 0;
+		    if (offmode_charge)
+			key_pressed = 1;
+		    else
+			blankTimer.resetTimerAndUnblank();
+		    }
+	   } else {
+		// This is a key release
+		kb.KeyUp(ev.code);
+		key_repeat = 0;
+		touch_and_hold = 0;
+		touch_repeat = 0;
+		dontwait = 0;
+		if (offmode_charge)
+		    key_pressed = 1;
+		else
+		    blankTimer.resetTimerAndUnblank();
+	    }
+    	}
     }
     return NULL;
 }
@@ -613,31 +624,112 @@ static void *time_update_thread(void *cookie)
 		sprintf(tmp, "%02d:%02d:%02d", current->tm_hour, current->tm_min, current->tm_sec);
 		current_time = tmp;
 		DataManager::SetValue("tw_time", current_time, 0);
-		usleep(998);
+		usleep(990000);
 	}
 	
 	return NULL;
 }
 
+static void *battery_thread(void *cookie)
+{
+	char tmp[16], cap_s[4];
+	int blink = 0, bat_capacity = -1;
+	string battery, battery_status, usb_cable_connected = "1";
+	string usb_cable_connect = "/sys/devices/platform/msm_hsusb/usb_cable_connect";
+	string status = "/sys/class/power_supply/battery/status";
+	string solid_amber = "/sys/class/leds/amber/brightness";
+	string solid_green = "/sys/class/leds/green/brightness";
+	string on = "1\n";
+	string off = "0\n";
+
+	FILE *capacity = NULL;
+	while ( (offmode_charge && !key_pressed && usb_cable_connected == "1")
+	     || (!offmode_charge)) {
+		capacity = fopen("/sys/class/power_supply/battery/capacity","rt");
+		if (capacity){
+			fgets(cap_s, 4, capacity);
+			fclose(capacity);
+			bat_capacity = atoi(cap_s);
+			if (bat_capacity < 0)	bat_capacity = 0;
+			if (bat_capacity > 100)	bat_capacity = 100;
+		}
+		sprintf(tmp, "%i%%", bat_capacity);
+		battery = tmp;
+		DataManager::SetValue("tw_battery", battery, 0);
+		usleep(800000);
+
+		if (TWFunc::read_file(usb_cable_connect, usb_cable_connected) == 0) {
+			if (usb_cable_connected == "1") {
+				TWFunc::power_restore(offmode_charge);
+				if (TWFunc::read_file(status, battery_status) == 0) {
+					if (battery_status == "Full") {
+						TWFunc::write_file(solid_amber, off);
+						TWFunc::write_file(solid_green, on);	
+					} else {
+						TWFunc::write_file(solid_amber, on);
+						TWFunc::write_file(solid_green, off);
+					}
+				}
+			} else {
+				TWFunc::write_file(solid_green, off);
+				if (bat_capacity > 10) {
+					TWFunc::power_restore(offmode_charge);
+					TWFunc::write_file(solid_amber, off);
+				} else {
+					TWFunc::power_save();
+					if (blink)
+						TWFunc::write_file(solid_amber, on);
+					else
+						TWFunc::write_file(solid_amber, off);
+					blink ^= 1;
+				}
+			}
+		}
+		usleep(1200000);
+	}
+	if (offmode_charge) {
+		TWFunc::write_file(solid_amber, off);
+		TWFunc::write_file(solid_green, off);
+		if (key_pressed)
+			TWFunc::tw_reboot(rb_system);
+		else if (usb_cable_connected != "1")
+			TWFunc::tw_reboot(rb_poweroff);
+	}
+	return NULL;
+}
+
 extern "C" int gui_start()
 {
-    if (!gGuiInitialized)   return -1;
+    if (!gGuiInitialized)
+    	return -1;
+
+    offmode_charge = DataManager::Pause_For_Battery_Charge();
 
     gGuiConsoleTerminate = 1;
-    while (gGuiConsoleRunning)  loopTimer();
+    while (gGuiConsoleRunning)
+	loopTimer();
 
     // Set the default package
     PageManager::SelectPackage("TWRP");
 
     if (!gGuiInputRunning) {
-		// Start by spinning off an input handler.
-		pthread_t t;
-		pthread_create(&t, NULL, input_thread, NULL);
-		// time handler
-		pthread_t t_update;
-		pthread_create(&t_update, NULL, time_update_thread, NULL);
-		gGuiInputRunning = 1;
+	// Start by spinning off an input handler.
+	pthread_t t;
+	pthread_create(&t, NULL, input_thread, NULL);
+	gGuiInputRunning = 1;
+	// time handler
+	pthread_t t_update;
+	pthread_create(&t_update, NULL, time_update_thread, NULL);
+	// battery charge handler
+	pthread_t b_update;
+	pthread_create(&b_update, NULL, battery_thread, NULL);
+	if (offmode_charge) {
+	    LOGI("Offmode-charging...\n");
+	    TWFunc::screen_off();
+	    TWFunc::power_save();	    
+	    for(;;);
 	}
+    }
 
     return runPages();
 }

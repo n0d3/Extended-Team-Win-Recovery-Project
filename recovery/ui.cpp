@@ -193,20 +193,20 @@ int RecoveryUI::WaitKey()
 
 // Return true if USB is connected.
 bool RecoveryUI::usb_connected() {
+    int connected = 0;
     int fd = open("/sys/class/android_usb/android0/state", O_RDONLY);
     if (fd < 0) {
-        printf("failed to open /sys/class/android_usb/android0/state: %s\n",
-               strerror(errno));
-        return 0;
+	fd = open("/sys/devices/platform/msm_hsusb/usb_cable_connect", O_RDONLY);
+        if (fd < 0) {
+		printf("failed to detect usb state: %s\n", strerror(errno));
+        	return connected;
+	}
     }
-
     char buf;
-    /* USB is connected if android_usb state is CONNECTED or CONFIGURED */
-    int connected = (read(fd, &buf, 1) == 1) && (buf == 'C');
-    if (close(fd) < 0) {
-        printf("failed to close /sys/class/android_usb/android0/state: %s\n",
-               strerror(errno));
-    }
+    if (read(fd, &buf, 1) == 1 && (buf == 'C' || buf == '1'))
+	connected = 1;
+    if (close(fd) < 0)
+        printf("failed to close file(%s)\n", strerror(errno));
     return connected;
 }
 

@@ -1,3 +1,5 @@
+import /init.recovery.${ro.hardware}.rc
+
 on early-init
     start ueventd
 
@@ -10,15 +12,64 @@ on init
 
     symlink /system/etc /etc
 
+#    mkdir /boot
+#    mkdir /recovery
+#    mkdir /sdcard
+#    mkdir /internal_sd
+#    mkdir /external_sd
+#    mkdir /sd-ext
+#    mkdir /sdext2
+#    mkdir /datadata
+#    mkdir /emmc
     mkdir /system
     mkdir /data
     mkdir /cache
     mount /tmp /tmp tmpfs
 
+    chown root shell /tmp
+    chmod 0775 /tmp
+
+    write /sys/class/android_usb/android0/enable 0
+    write /sys/class/android_usb/android0/idVendor 18D1
+    write /sys/class/android_usb/android0/idProduct D001
+    write /sys/class/android_usb/android0/functions adb
+    write /sys/class/android_usb/android0/iManufacturer ${ro.product.manufacturer}
+    write /sys/class/android_usb/android0/iProduct ${ro.product.model}
+    write /sys/class/android_usb/android0/iSerial ${ro.serialno}
+
+
 on boot
     ifup lo
     hostname localhost
     domainname localdomain
+
+# leds
+    chown system system /sys/class/leds/amber/brightness
+    chown system system /sys/class/leds/green/brightness
+
+# lcd
+    chown system system /sys/class/leds/lcd-backlight/brightness
+
+# Power Management
+    chown root system /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+    chmod 0666 /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+    chown root system /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
+    chmod 0666 /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
+    chown root system /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
+    chmod 0666 /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
+    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 384000
+    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 1190400
+    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor smartassV2
+
+# SD Card tweak
+    write /sys/devices/virtual/bdi/179:0/read_ahead_kb 2048
+
+# Flash tweaks 
+    write /sys/block/mtdblock1/bdi/read_ahead_kb 128
+    write /sys/block/mtdblock2/bdi/read_ahead_kb 128
+    write /sys/block/mtdblock3/bdi/read_ahead_kb 128
+    write /sys/block/mtdblock4/bdi/read_ahead_kb 128
+    write /sys/block/mtdblock5/bdi/read_ahead_kb 128
 
     class_start default
 
@@ -31,17 +82,9 @@ service adbd /sbin/adbd recovery
     disabled
 
 # Always start adbd on userdebug and eng builds
-# In recovery, always run adbd as root.
 on property:ro.debuggable=1
-    write /sys/class/android_usb/android0/enable 0
-    write /sys/class/android_usb/android0/idVendor 18D1
-    write /sys/class/android_usb/android0/idProduct D001
-    write /sys/class/android_usb/android0/functions adb
-    #write /sys/class/android_usb/android0/enable 1
-    write /sys/class/android_usb/android0/iManufacturer $ro.product.manufacturer
-    write /sys/class/android_usb/android0/iProduct $ro.product.model
-    write /sys/class/android_usb/android0/iSerial $ro.serialno
-    #start adbd
+    write /sys/class/android_usb/android0/enable 1
+    start adbd
     setprop service.adb.root 1
 
 # Restart adbd so it can run as root
@@ -49,3 +92,4 @@ on property:service.adb.root=1
     write /sys/class/android_usb/android0/enable 0
     restart adbd
     write /sys/class/android_usb/android0/enable 1
+

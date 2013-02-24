@@ -2,6 +2,7 @@
 #define _TWRPFUNCTIONS_HPP
 
 #include <string>
+#include <vector>
 
 using namespace std;
 
@@ -82,14 +83,20 @@ class TWFunc {
 		static bool Install_SuperSU(void);
 
 		// Extended functions
-		static bool replace_string(string str, const string search_str, const string replace_str);
+		static void screen_off(void);
+		static void power_save(void);
+		static void power_restore(int charge_mode);
+		static bool replace_string(string& str, const string& search_str, const string& replace_str);
 		static string to_string(int number);
 		static bool Tar_Entry_Exists(string tar_file, string entry, int level);
 		static int Get_Archive_Type(string FilePath);
+		static int mtdchk(string mtd_dev);
+		static unsigned int Get_FS_Via_statfs(string Mount_Point);
 		static unsigned long long Get_Archive_Uncompressed_Size(string FilePath);
 		static string Find_File_On_Storage(string Filename);
 		static void Take_Screenshot(void);
 		static int SubDir_Check(string Dir, string subDir1, string subDir2, string subDir3, string subDir4, string subDir5, int min);
+		static vector<string> split_string(const string &in, char del);
 
 	private:
 		static void check_and_fclose(FILE *fp, const char *name);
