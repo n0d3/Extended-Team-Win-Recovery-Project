@@ -39,12 +39,13 @@ class twrpTar {
 		int createTar();
 		int addFile(string fn, bool include_root);
 		int closeTar(bool gzip);
-		int createTarGZThread();
-		int createTarThread();
-		int extractTarThread();
-		int splitArchiveThread();
+		int createTarGZFork();
+		int createTarFork();
+		int extractTarFork();
+		int splitArchiveFork();
                 void setfn(string fn);
                 void setdir(string dir);
+		void setexcl(string exclude);
 
 	private:
 		int createTGZ();
@@ -64,8 +65,7 @@ class twrpTar {
 		FILE* p;
 		int fd;
 		string tardir;
+		string tarexclude;
 		string tarfn;
 		string basefn;
-		typedef int (twrpTar::*ThreadPtr)(void);
-		typedef void* (*PThreadPtr)(void*);
 }; 

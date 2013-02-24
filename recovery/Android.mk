@@ -38,7 +38,9 @@ LOCAL_SRC_FILES += \
     openrecoveryscript.cpp
 
 ifeq ($(TW_INCLUDE_LIBTAR), true)
-    LOCAL_SRC_FILES += twrpTar.cpp
+    LOCAL_SRC_FILES += \
+        twrpTar.cpp \
+        tarWrite.c
 else
     LOCAL_SRC_FILES += makelist.cpp
 endif
