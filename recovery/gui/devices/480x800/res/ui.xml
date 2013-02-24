@@ -73,6 +73,7 @@
 		<variable name="row16_text_y" value="590" />
 		<variable name="row17_text_y" value="620" />
 		<variable name="row18_text_y" value="650" />
+		<variable name="row19_text_y" value="680" />
 		<variable name="zip_status_y" value="585" />
 		<variable name="tz_selected_y" value="110" />
 		<variable name="tz_set_y" value="580" />
@@ -2937,45 +2938,13 @@
 			<object type="checkbox">
 				<placement x="%col1_x%" y="%row1_text_y%" />
 				<font resource="font" color="%text_color%" />
-				<text>Zip file signature verification.</text>
-				<data variable="tw_signed_zip_verify" />
-				<image checked="checkbox_true" unchecked="checkbox_false" />
-			</object>
-
-			<object type="checkbox">
-				<placement x="%col1_x%" y="%row2_text_y%" />
-				<font resource="font" color="%text_color%" />
-				<text>Force MD5 check on all zips.</text>
-				<data variable="tw_force_md5_check" />
-				<image checked="checkbox_true" unchecked="checkbox_false" />
-			</object>
-
-			<object type="checkbox">
-				<placement x="%col1_x%" y="%row3_text_y%" />
-				<font resource="font" color="%text_color%" />
 				<text>Use rm -rf instead of formatting.</text>
 				<data variable="tw_rm_rf" />
 				<image checked="checkbox_true" unchecked="checkbox_false" />
 			</object>
 
 			<object type="checkbox">
-				<placement x="%col1_x%" y="%row4_text_y%" />
-				<font resource="font" color="%text_color%" />
-				<text>Skip MD5 generation during backup.</text>
-				<data variable="tw_skip_md5_generate" />
-				<image checked="checkbox_true" unchecked="checkbox_false" />
-			</object>
-
-			<object type="checkbox">
-				<placement x="%col1_x%" y="%row5_text_y%" />
-				<font resource="font" color="%text_color%" />
-				<text>Enable MD5 verification of backup files.</text>
-				<data variable="tw_skip_md5_check" />
-				<image checked="checkbox_true" unchecked="checkbox_false" />
-			</object>
-
-			<object type="checkbox">
-				<placement x="%col1_x%" y="%row6_text_y%" />
+				<placement x="%col1_x%" y="%row2_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Handle partition size during restore.</text>
 				<data variable="tw_handle_restore_size" />
@@ -2984,7 +2953,7 @@
 
 			<object type="checkbox">
 				<condition var1="tw_has_sdext_partition" var2="1" />
-				<placement x="%col1_x%" y="%row7_text_y%" />
+				<placement x="%col1_x%" y="%row3_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Setup recovery for DataOnExt.</text>
 				<data variable="tw_data_on_ext" />
@@ -2996,7 +2965,7 @@
 					<condition var1="tw_has_sdext_partition" var2="1" />
 					<condition var1="tw_data_on_ext" var2="1" />
 				</conditions>
-				<placement x="%col1_x%" y="%row8_text_y%" />
+				<placement x="%col1_x%" y="%row4_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Enable path-checking for DataOnExt.</text>
 				<data variable="tw_data_on_ext_check" />
@@ -3004,7 +2973,7 @@
 			</object>
 
 			<object type="checkbox">
-				<placement x="%col1_x%" y="%row9_text_y%" />
+				<placement x="%col1_x%" y="%row5_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Enable screenshot taking(LOGO touch).</text>
 				<data variable="tw_screenshot_var" />
@@ -3012,7 +2981,7 @@
 			</object>
 
 			<object type="checkbox">
-				<placement x="%col1_x%" y="%row10_text_y%" />
+				<placement x="%col1_x%" y="%row6_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Simulate actions for theme testing.</text>
 				<data variable="tw_simulate_actions" />
@@ -3021,7 +2990,7 @@
 
 			<object type="checkbox">
 				<condition var1="tw_simulate_actions" var2="1" />
-				<placement x="%col1_x%" y="%row11_text_y%" />
+				<placement x="%col1_x%" y="%row7_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Simulate failure for actions.</text>
 				<data variable="tw_simulate_fail" />
@@ -3030,11 +2999,21 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<placement x="%col1_x%" y="%row12_text_y%" />
+				<placement x="%col1_x%" y="615" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Time Zone</text>
-				<image resource="main_button" />
+				<image resource="ml_button" />
 				<action function="page">timezone</action>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<placement x="%col1_x%" y="675" />
+				<condition var1="tw_has_external" var2="1" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Restore Defaults</text>
+				<image resource="ml_button" />
+				<action function="restoredefaultsettings"></action>
 			</object>
 
 			<object type="button">
@@ -3043,10 +3022,10 @@
 					<condition var1="tw_has_sdext_partition" var2="1" />
 					<condition var1="tw_data_on_ext" var2="1" />
 				</conditions>
-				<placement x="%col2_x%" y="%row12_text_y%" />
+				<placement x="%col1_x%" y="%row12_text_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>DataOnExt</text>
-				<image resource="main_button" />
+				<image resource="ml_button" />
 				<actions>
 					<action function="set">tw_fileexists=0</action>
 					<action function="mount">/sd-ext</action>
@@ -3065,16 +3044,55 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<placement x="%col1_x%" y="%row4_y%" />
+				<condition var1="tw_handle_restore_size" var2="1" />
+				<placement x="%col2_x%" y="%row15_text_y%" />
 				<font resource="font" color="%button_text_color%" />
-				<text>Restore Defaults</text>
-				<image resource="main_button" />
-				<action function="restoredefaultsettings"></action>
+				<text></text>
+				<image resource="minus_button" />
+				<action function="addsubtract">tw_incr_size-5</action>
 			</object>
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<placement x="%col2_x%" y="%row18_text_y%" />
+				<condition var1="tw_handle_restore_size" var2="1" />
+				<placement x="420" y="%row15_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text></text>
+				<image resource="plus_button" />
+				<action function="addsubtract">tw_incr_size+5</action>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<condition var1="tw_handle_restore_size" var2="1" />
+				<font resource="font" />
+				<placement x="%col2_x%" y="%row12_text_y%" />
+				<text>Part's size increment(%)</text>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<condition var1="tw_handle_restore_size" var2="1" />
+				<font resource="font" />
+				<placement x="%col2_x%" y="%row13_text_y%" />
+				<text>if no dalvik-cache found</text>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<condition var1="tw_handle_restore_size" var2="1" />
+				<font resource="font" />
+				<placement x="%col2_x%" y="%row14_text_y%" />
+				<text>in the backup archive</text>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<condition var1="tw_handle_restore_size" var2="1" />
+				<font resource="font" />
+				<placement x="350" y="row15_text_y" />
+				<text>%tw_incr_size%</text>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<placement x="%col2_x%" y="%row19_text_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text></text>
 				<image resource="minus_button" />
@@ -3083,7 +3101,7 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<placement x="420" y="%row18_text_y%" />
+				<placement x="420" y="%row19_text_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text></text>
 				<image resource="plus_button" />
@@ -3092,13 +3110,13 @@
 
 			<object type="text" color="%text_color%">
 				<font resource="font" />
-				<placement x="%col2_x%" y="%row4_y%" />
+				<placement x="%col2_x%" y="%row18_text_y%" />
 				<text>File System check every</text>
 			</object>
 
 			<object type="text" color="%text_color%">
 				<font resource="font" />
-				<placement x="310" y="row18_text_y" />
+				<placement x="310" y="%row19_text_y%" />
 				<text>%tw_num_of_mounts_for_fs_check% mounts</text>
 			</object>
 

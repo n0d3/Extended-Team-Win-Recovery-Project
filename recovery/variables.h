@@ -44,6 +44,7 @@
 
 // check restore size and adjust ptable if needed
 #define TW_HANDLE_RESTORE_SIZE        	"tw_handle_restore_size"
+#define TW_INCR_SIZE		 	"tw_incr_size"
 
 // DataOnExt
 #define TW_BACKUP_NAND_DATA         	"tw_backup_nand_data"
@@ -74,8 +75,12 @@
 
 // Default definitions
 #define TW_VERSION_STR			"2.4.1.0"
+
 #define TW_USE_COMPRESSION_VAR      	"tw_use_compression"
-//#define TW_IGNORE_IMAGE_SIZE        	"tw_ignore_image_size" //is this used anywhere?
+#define TW_SKIP_MD5_CHECK_VAR       	"tw_skip_md5_check"
+#define TW_SKIP_MD5_GENERATE_VAR    	"tw_skip_md5_generate"
+#define TW_SIGNED_ZIP_VERIFY_VAR    	"tw_signed_zip_verify"
+
 #define TW_FILENAME                 	"tw_filename"
 #define TW_ZIP_INDEX                	"tw_zip_index"
 #define TW_ZIP_QUEUE_COUNT       	"tw_zip_queue_count"
@@ -135,10 +140,6 @@
 #define TW_ZIP_LOCATION_VAR         	"tw_zip_location"
 #define TW_ZIP_INTERNAL_VAR         	"tw_zip_internal"
 #define TW_ZIP_EXTERNAL_VAR         	"tw_zip_external"
-#define TW_FORCE_MD5_CHECK_VAR      	"tw_force_md5_check"
-#define TW_SKIP_MD5_CHECK_VAR       	"tw_skip_md5_check"
-#define TW_SKIP_MD5_GENERATE_VAR    	"tw_skip_md5_generate"
-#define TW_SIGNED_ZIP_VERIFY_VAR    	"tw_signed_zip_verify"
 #define TW_REBOOT_AFTER_FLASH_VAR   	"tw_reboot_after_flash_option"
 #define TW_TIME_ZONE_VAR            	"tw_time_zone"
 #define TW_RM_RF_VAR                	"tw_rm_rf"
