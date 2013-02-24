@@ -565,7 +565,8 @@ bool TWPartitionManager::Backup_Partition(TWPartition* Part,
 					  unsigned long long *img_bytes,
 					  unsigned long long *file_bytes) {
 	time_t start, stop;
-	int img_bps, file_bps;
+	int img_bps;
+	unsigned long long file_bps;
 	unsigned long total_time, remain_time, section_time;
 	int use_compression, backup_time;
 	float pos;
@@ -920,9 +921,9 @@ int TWPartitionManager::Run_Backup(void) {
 	if (file_time == 0)
 		file_time = 1;
 	int img_bps = (int)img_bytes / (int)img_time;
-	int file_bps = (int)file_bytes / (int)file_time;
+	unsigned long long file_bps = file_bytes / (int)file_time;
 
-	ui_print("Average backup rate for file systems: %lu MB/sec\n", (file_bps / (1024 * 1024)));
+	ui_print("Average backup rate for file systems: %llu MB/sec\n", (file_bps / (1024 * 1024)));
 	ui_print("Average backup rate for imaged drives: %lu MB/sec\n", (img_bps / (1024 * 1024)));
 
 	time(&total_stop);
@@ -930,7 +931,8 @@ int TWPartitionManager::Run_Backup(void) {
 	unsigned long long actual_backup_size = TWFunc::Get_Folder_Size(Full_Backup_Path, true);
 	actual_backup_size /= (1024LLU * 1024LLU);
 
-	int prev_img_bps, prev_file_bps, use_compression;
+	int prev_img_bps, use_compression;
+	unsigned long long prev_file_bps;
 	DataManager::GetValue(TW_BACKUP_AVG_IMG_RATE, prev_img_bps);
 	img_bps += (prev_img_bps * 4);
 	img_bps /= 5;
@@ -2813,8 +2815,8 @@ int TWPartitionManager::NativeSD_Backup(string RomPath) {
 
 	char back_name[255], split_index[5];
 	string Full_FileName, Command, Tar_Args = "", Tar_Excl = "";
-	int backup_time, use_compression, index, backup_count, file_bps;
-	unsigned long long total_bsize = 0, file_size;
+	int backup_time, use_compression, index, backup_count;
+	unsigned long long total_bsize = 0, file_size, file_bps;
 	unsigned long total_time, remain_time, section_time, file_time = 1;
 	float pos;
 
@@ -3041,9 +3043,9 @@ int TWPartitionManager::NativeSD_Backup(string RomPath) {
 	// Average BPS
 	if (file_time == 0)
 		file_time = 1;
-	file_bps = (int)total_bytes / (int)file_time;	
+	file_bps = total_bytes / (int)file_time;	
 
-	int prev_file_bps;
+	unsigned long long prev_file_bps;
 	if (use_compression)
 		DataManager::GetValue(TW_BACKUP_AVG_FILE_COMP_RATE, prev_file_bps);
 	else

@@ -31,6 +31,7 @@ class DataManager {
 		// Core get routines
 		static int GetValue(const string varName, string& value);
 		static int GetValue(const string varName, int& value);
+		static unsigned long long GetValue(const string varName, unsigned long long& value);
 		// This is a dangerous function.
 		// It will create the value if it doesn't exist so it has a valid c_str
 		static string& GetValueRef(const string varName);
@@ -41,6 +42,7 @@ class DataManager {
 		static int SetValue(const string varName, string value, int persist = 0);
 		static int SetValue(const string varName, int value, int persist = 0);
 		static int SetValue(const string varName, float value, int persist = 0);
+		static int SetValue(const string varName, unsigned long long value, int persist = 0);
 		static void DumpValues();
 		static void update_tz_environment_variables();
 		static void SetDefaultValues();
@@ -66,8 +68,10 @@ class DataManager {
 
 	protected:
 		typedef pair<string, int> TStrIntPair;
+		typedef pair<string, unsigned long long> TStrULLPair;
 		typedef pair<string, TStrIntPair> TNameValuePair;
 		static map<string, TStrIntPair> mValues;
+		static map<string, TStrULLPair> mULLValues;
 		static string mBackingFile;
 		static int mInitialized;
 		static map<string, string> mConstValues;
