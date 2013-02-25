@@ -736,6 +736,7 @@ void DataManager::SetDefaultValues()
 
 	mValues.insert(make_pair(TW_RESCUE_EXT_CONTENTS, make_pair("0", 1)));
 	mValues.insert(make_pair(TW_HANDLE_RESTORE_SIZE, make_pair("0", 1)));
+	mValues.insert(make_pair(TW_HANDLE_SU, make_pair("0", 1)));
 // Extended-End
 
 #ifdef TW_INCLUDE_MKNTFS

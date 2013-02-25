@@ -967,21 +967,25 @@ int main(int argc, char **argv) {
 			ui_print("Renamed stock recovery file in /system to prevent\nthe stock ROM from replacing TWRP.\n");
 		}
 
-		if (TWFunc::Path_Exists("/res/supersu/su") && !TWFunc::Path_Exists("/system/bin/su") && !TWFunc::Path_Exists("/system/xbin/su") && !TWFunc::Path_Exists("/system/bin/.ext/.su")) {
-			// Device doesn't have su installed
-			DataManager_SetIntValue("tw_busy", 1);
-			if (gui_startPage("installsu") != 0) {
-				LOGE("Failed to start InstallSU GUI page.\n");
+		if (DataManager_GetIntValue(TW_HANDLE_SU) != 0) {
+			LOGI("Root checking started...\n");
+			if (TWFunc::Path_Exists("/res/supersu/su") && !TWFunc::Path_Exists("/system/bin/su") && !TWFunc::Path_Exists("/system/xbin/su") && !TWFunc::Path_Exists("/system/bin/.ext/.su")) {
+				// Device doesn't have su installed
+				DataManager_SetIntValue("tw_busy", 1);
+				if (gui_startPage("installsu") != 0) {
+					LOGE("Failed to start InstallSU GUI page.\n");
+				}
+			} else if (TWFunc::Check_su_Perms() > 0) {
+				// su perms are set incorrectly
+				DataManager_SetIntValue("tw_busy", 1);
+				if (gui_startPage("fixsu") != 0) {
+					LOGE("Failed to start FixSU GUI page.\n");
+				}
 			}
-		} else if (TWFunc::Check_su_Perms() > 0) {
-			// su perms are set incorrectly
-			DataManager_SetIntValue("tw_busy", 1);
-			if (gui_startPage("fixsu") != 0) {
-				LOGE("Failed to start FixSU GUI page.\n");
-			}
-		}
-		sync();
-
+			LOGI("Root checking completed.\n");
+			sync();
+		} else
+			LOGI("Root checking skipped per user setting.\n");
 		PartitionManager.UnMount_By_Path("/system", false);
 	}
 

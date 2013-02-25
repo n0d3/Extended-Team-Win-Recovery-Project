@@ -73,6 +73,9 @@
 #define TW_SHOW_NTFS                	"tw_show_ntfs"
 #define TW_SHOW_EXFAT                	"tw_show_exfat"
 
+// Extra filesystems
+#define TW_HANDLE_SU                	"tw_handle_su"
+
 // Default definitions
 #define TW_VERSION_STR			"2.4.2.0"
 
