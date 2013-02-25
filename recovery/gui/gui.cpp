@@ -205,14 +205,12 @@ static void *input_thread(void *cookie)
                 LOGE("TOUCH_HOLD: %d,%d\n", x, y);
 #endif
 		PageManager::NotifyTouch(TOUCH_HOLD, x, y);
-		//if (!offmode_charge) blankTimer.resetTimerAndUnblank();
 	    } else if (touch_repeat && mtime > 100) {
 #ifdef _EVENT_LOGGING
                 LOGE("TOUCH_REPEAT: %d,%d\n", x, y);
 #endif
 		gettimeofday(&touchStart, NULL);
 		PageManager::NotifyTouch(TOUCH_REPEAT, x, y);
-		//if (!offmode_charge) blankTimer.resetTimerAndUnblank();
 	    } else if (key_repeat == 1 && mtime > 500) {
 #ifdef _EVENT_LOGGING
                 LOGE("KEY_HOLD: %d,%d\n", x, y);
@@ -220,14 +218,12 @@ static void *input_thread(void *cookie)
 		gettimeofday(&touchStart, NULL);
 		key_repeat = 2;
 		kb.KeyRepeat();
-		//if (!offmode_charge) blankTimer.resetTimerAndUnblank();
 	    } else if (key_repeat == 2 && mtime > 100) {
 #ifdef _EVENT_LOGGING
                 LOGE("KEY_REPEAT: %d,%d\n", x, y);
 #endif
 		gettimeofday(&touchStart, NULL);
 		kb.KeyRepeat();
-		//if (!offmode_charge) blankTimer.resetTimerAndUnblank();
 	    }
 	} else if (ev.type == EV_ABS) {
 
@@ -242,7 +238,6 @@ static void *input_thread(void *cookie)
                     LOGE("TOUCH_RELEASE: %d,%d\n", x, y);
 #endif
                     PageManager::NotifyTouch(TOUCH_RELEASE, x, y);
-		    //if (!offmode_charge) blankTimer.resetTimerAndUnblank();
 		    touch_and_hold = 0;
 		    touch_repeat = 0;
 		    if (!key_repeat)
@@ -265,7 +260,6 @@ static void *input_thread(void *cookie)
 		    dontwait = 1;
 		    key_repeat = 0;
 		    gettimeofday(&touchStart, NULL);
-		    //if (!offmode_charge) blankTimer.resetTimerAndUnblank();
                 }
                 else
                 {
@@ -277,7 +271,6 @@ static void *input_thread(void *cookie)
                         if (PageManager::NotifyTouch(TOUCH_DRAG, x, y) > 0)
                             state = 1;
 			key_repeat = 0;
-			//if (!offmode_charge) blankTimer.resetTimerAndUnblank();
                     }
                 }
             }
@@ -294,20 +287,12 @@ static void *input_thread(void *cookie)
 		    touch_repeat = 0;
 		    dontwait = 1;
 		    gettimeofday(&touchStart, NULL);
-		    if (offmode_charge)
-			key_pressed = 1;
-		    else
-			blankTimer.resetTimerAndUnblank();
 		} else {
 		    key_repeat = 0;
 		    touch_and_hold = 0;
 		    touch_repeat = 0;
 		    dontwait = 0;
-		    if (offmode_charge)
-			key_pressed = 1;
-		    else
-			blankTimer.resetTimerAndUnblank();
-		    }
+		}
 	   } else {
 		// This is a key release
 		kb.KeyUp(ev.code);
@@ -315,10 +300,20 @@ static void *input_thread(void *cookie)
 		touch_and_hold = 0;
 		touch_repeat = 0;
 		dontwait = 0;
-		if (offmode_charge)
+		if(offmode_charge &&
+		  (ev.code == 102 || ev.code == 107 || ev.code == 114
+		|| ev.code == 114 || ev.code == 139 || ev.code == 158
+		|| ev.code == 231)) {
+#ifdef _EVENT_LOGGING
+		    LOGE("Hard-Key[%d] wakes up device.\n", ev.code);
+#endif
 		    key_pressed = 1;
-		else
+		} else {
 		    blankTimer.resetTimerAndUnblank();
+#ifdef _EVENT_LOGGING
+		    LOGE("Screen unblank/timer reset.\n");
+#endif
+		}
 	    }
     	}
     }
