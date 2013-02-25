@@ -205,14 +205,14 @@ static void *input_thread(void *cookie)
                 LOGE("TOUCH_HOLD: %d,%d\n", x, y);
 #endif
 		PageManager::NotifyTouch(TOUCH_HOLD, x, y);
-		if (!offmode_charge) blankTimer.resetTimerAndUnblank();
+		//if (!offmode_charge) blankTimer.resetTimerAndUnblank();
 	    } else if (touch_repeat && mtime > 100) {
 #ifdef _EVENT_LOGGING
                 LOGE("TOUCH_REPEAT: %d,%d\n", x, y);
 #endif
 		gettimeofday(&touchStart, NULL);
 		PageManager::NotifyTouch(TOUCH_REPEAT, x, y);
-		if (!offmode_charge) blankTimer.resetTimerAndUnblank();
+		//if (!offmode_charge) blankTimer.resetTimerAndUnblank();
 	    } else if (key_repeat == 1 && mtime > 500) {
 #ifdef _EVENT_LOGGING
                 LOGE("KEY_HOLD: %d,%d\n", x, y);
@@ -220,14 +220,14 @@ static void *input_thread(void *cookie)
 		gettimeofday(&touchStart, NULL);
 		key_repeat = 2;
 		kb.KeyRepeat();
-		if (!offmode_charge) blankTimer.resetTimerAndUnblank();
+		//if (!offmode_charge) blankTimer.resetTimerAndUnblank();
 	    } else if (key_repeat == 2 && mtime > 100) {
 #ifdef _EVENT_LOGGING
                 LOGE("KEY_REPEAT: %d,%d\n", x, y);
 #endif
 		gettimeofday(&touchStart, NULL);
 		kb.KeyRepeat();
-		if (!offmode_charge) blankTimer.resetTimerAndUnblank();
+		//if (!offmode_charge) blankTimer.resetTimerAndUnblank();
 	    }
 	} else if (ev.type == EV_ABS) {
 
@@ -242,7 +242,7 @@ static void *input_thread(void *cookie)
                     LOGE("TOUCH_RELEASE: %d,%d\n", x, y);
 #endif
                     PageManager::NotifyTouch(TOUCH_RELEASE, x, y);
-		    if (!offmode_charge) blankTimer.resetTimerAndUnblank();
+		    //if (!offmode_charge) blankTimer.resetTimerAndUnblank();
 		    touch_and_hold = 0;
 		    touch_repeat = 0;
 		    if (!key_repeat)
@@ -265,7 +265,7 @@ static void *input_thread(void *cookie)
 		    dontwait = 1;
 		    key_repeat = 0;
 		    gettimeofday(&touchStart, NULL);
-		    if (!offmode_charge) blankTimer.resetTimerAndUnblank();
+		    //if (!offmode_charge) blankTimer.resetTimerAndUnblank();
                 }
                 else
                 {
@@ -277,7 +277,7 @@ static void *input_thread(void *cookie)
                         if (PageManager::NotifyTouch(TOUCH_DRAG, x, y) > 0)
                             state = 1;
 			key_repeat = 0;
-			if (!offmode_charge) blankTimer.resetTimerAndUnblank();
+			//if (!offmode_charge) blankTimer.resetTimerAndUnblank();
                     }
                 }
             }
@@ -617,14 +617,26 @@ static void *time_update_thread(void *cookie)
 	time_t now;
 	struct tm *current;
 	string current_time;
+	int tw_military_time;
 
 	for(;;) {
 		now = time(0);
 		current = localtime(&now);
-		sprintf(tmp, "%02d:%02d:%02d", current->tm_hour, current->tm_min, current->tm_sec);
+		DataManager::GetValue(TW_MILITARY_TIME, tw_military_time);
+		if (tw_military_time == 1)
+			sprintf(tmp, "%02d:%02d:%02d", current->tm_hour, current->tm_min, current->tm_sec);
+		else {
+			if (current->tm_hour >= 12)
+				sprintf(tmp, "%d:%02d PM", current->tm_hour == 12 ? 12 : current->tm_hour - 12, current->tm_min);
+			else
+				sprintf(tmp, "%d:%02d AM", current->tm_hour == 0 ? 12 : current->tm_hour, current->tm_min);
+		}
 		current_time = tmp;
 		DataManager::SetValue("tw_time", current_time, 0);
-		usleep(990000);
+		if (tw_military_time == 1)
+			usleep(990000);
+		else
+			usleep(20000000);
 	}
 	
 	return NULL;

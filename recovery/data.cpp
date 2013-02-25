@@ -1080,6 +1080,7 @@ void DataManager::SetDefaultValues()
 		mConstValues.insert(make_pair("tw_has_brightnesss_file", "0"));
 	}
 #endif
+	mValues.insert(make_pair(TW_MILITARY_TIME, make_pair("1", 1)));
 }
 
 void DataManager::Output_Version(void) {

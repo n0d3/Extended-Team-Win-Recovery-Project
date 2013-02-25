@@ -548,6 +548,7 @@ void TWFunc::screen_off(void) {
 		string lcd_brightness;
 		string off = "0\n";
 		string brightness_file = EXPAND(TW_BRIGHTNESS_PATH);
+		gr_fb_blank(1);
 		TWFunc::write_file(brightness_file, off);
 		LOGI("Screen turned off to save power.\n");
 	}
