@@ -60,7 +60,7 @@ int gr_getFontDetails(void* font, unsigned* cheight, unsigned* maxwidth);
 static inline void gr_font_size(int *x, int *y)            { gr_getFontDetails(NULL, (unsigned*) y, (unsigned*) x); }
 
 void* gr_loadFont(const char* fontName);
-void gr_screenshot(FILE *fb_in, FILE *fb_out);
+int gr_screenshot(const char* bmpName);
 
 void gr_blit(gr_surface source, int sx, int sy, int w, int h, int dx, int dy);
 unsigned int gr_get_width(gr_surface surface);

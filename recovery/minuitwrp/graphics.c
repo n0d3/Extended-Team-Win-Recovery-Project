@@ -18,6 +18,13 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include <string.h>
+#include <dirent.h>
+#include <errno.h>
+#include <sys/stat.h>
+#include <time.h>
+#include <pwd.h>
+
 #include <fcntl.h>
 #include <stdio.h>
 
@@ -38,8 +45,6 @@
 #include "font_10x18.h"
 #endif
 
-#include <zlib.h>
-#include <libpng/png.h>
 #include "../common.h"
 
 typedef struct {
@@ -66,14 +71,14 @@ static struct fb_fix_screeninfo fi;
 #ifdef PRINT_SCREENINFO
 static void print_fb_var_screeninfo()
 {
-	LOGI("vi.xres: %d\n", vi.xres);
-	LOGI("vi.yres: %d\n", vi.yres);
-	LOGI("vi.xres_virtual: %d\n", vi.xres_virtual);
-	LOGI("vi.yres_virtual: %d\n", vi.yres_virtual);
-	LOGI("vi.xoffset: %d\n", vi.xoffset);
-	LOGI("vi.yoffset: %d\n", vi.yoffset);
-	LOGI("vi.bits_per_pixel: %d\n", vi.bits_per_pixel);
-	LOGI("vi.grayscale: %d\n", vi.grayscale);
+    LOGI("vi.xres: %d\n", vi.xres);
+    LOGI("vi.yres: %d\n", vi.yres);
+    LOGI("vi.xres_virtual: %d\n", vi.xres_virtual);
+    LOGI("vi.yres_virtual: %d\n", vi.yres_virtual);
+    LOGI("vi.xoffset: %d\n", vi.xoffset);
+    LOGI("vi.yoffset: %d\n", vi.yoffset);
+    LOGI("vi.bits_per_pixel: %d\n", vi.bits_per_pixel);
+    LOGI("vi.grayscale: %d\n", vi.grayscale);
 }
 #endif
 
@@ -213,66 +218,156 @@ static int get_framebuffer(GGLSurface *fb)
     return fd;
 }
 
-// [WIP]Add ability to take screenshot by touching the top header
-void gr_screenshot(FILE *fb_in, FILE *fb_out) {
-    int fb = fileno(fb_in);
-    if (fb < 0) {
-        LOGE("failed to open framebuffer\n");
-        return;
+struct bmpfile_magic {
+    unsigned char magic[2];
+};
+
+struct bmpfile_header {
+    uint32_t filesz;
+    uint16_t creator1;
+    uint16_t creator2;
+    uint32_t bmp_offset;
+};
+
+struct bmpfile_dibheader {
+    uint32_t header_sz;
+    uint32_t width;
+    uint32_t height;
+    uint16_t nplanes;
+    uint16_t bitspp;
+    uint32_t compress_type;
+    uint32_t bmp_bytesz;
+    uint32_t hres;
+    uint32_t vres;
+    uint32_t ncolors;
+    uint32_t nimpcolors;
+};
+
+typedef unsigned char byte;
+
+void* tryfbmap(int framebufferHandle, int size) {
+    void *fbPixels = mmap(0, size, PROT_READ, MAP_SHARED, framebufferHandle, 0);
+    if(fbPixels == MAP_FAILED) {
+	LOGI("failed to map memory\n");
+	return NULL;
+    }
+    return fbPixels;
+}
+
+int gr_screenshot(const char* bmpName) {
+    void *fbPixels = MAP_FAILED;
+    int framebufferHandle = -1, mapSize = 0, ret = 0;
+
+    int screenshotHandle = open(bmpName, O_WRONLY | O_CREAT);
+    if (screenshotHandle < 0) {
+	LOGI("Failed to create %s.\n", bmpName);
+	goto done;
     }
 
-    fb_in = fdopen(fb, "r");
-
-    fcntl(fb, F_SETFD, FD_CLOEXEC);
-
-    png_structp png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-    if (png == NULL) {
-        LOGE("failed png_create_write_struct\n");
-        fclose(fb_in);
-        return;
+    struct fb_var_screeninfo vinfo;
+    framebufferHandle = open("/dev/graphics/fb0", O_RDONLY);
+    if(framebufferHandle < 0) {
+	LOGI("failed to open /dev/graphics/fb0.\n");
+	goto done;
     }
 
-    png_infop info = png_create_info_struct(png);
-    if (info == NULL) {
-        LOGE("failed png_create_info_struct\n");
-        png_destroy_write_struct(&png, NULL);
-        fclose(fb_in);
-        return;
+    if(ioctl(framebufferHandle, FBIOGET_VSCREENINFO, &vinfo) < 0) {
+	LOGI("failed to open ioctl.\n");
+	goto done;
     }
+    int w = vinfo.xres;
+    int h = vinfo.yres;
+    fcntl(framebufferHandle, F_SETFD, FD_CLOEXEC);
 
-    png_init_io(png, fb_out);
-    
-    png_set_IHDR(png, info,
-        gr_fb_width(), gr_fb_height(), 8, 
-        PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE,
-        PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+    int totalPixels = vinfo.xres * vinfo.yres;
+    int totalMem8888 = totalPixels * 4;
+    int *rgbaPixels = (int*)malloc(totalMem8888);
+    int *endOfImage = rgbaPixels + h * w;
 
-    png_write_info(png, info);
-
-    char imgbuf[0x10000];
-    unsigned int bytespp = vi.bits_per_pixel / 8;
-    unsigned int rowlen = (gr_fb_width() * bytespp);
-    if (rowlen > sizeof(imgbuf)) {
-        LOGE("rowlen > sizeof(imgbuf)\n");
-        png_destroy_write_struct(&png, NULL);
-        fclose(fb_in);
-        return;
+    if (vinfo.bits_per_pixel == 16) {
+	mapSize = totalPixels * 2;
+	if ((fbPixels = tryfbmap(framebufferHandle, mapSize)) == NULL)
+	    goto done;
+	short *fbPixelsCursor = (short*)fbPixels;
+	
+	int *rgbaPixelsCursor = rgbaPixels;
+	int *rgbaLast = rgbaPixels + totalPixels;
+	for(; rgbaPixelsCursor < rgbaLast; rgbaPixelsCursor++, fbPixelsCursor++) {
+	    short pixel = *fbPixelsCursor;
+	    int r = (pixel & 0xF800) << 8;
+	    int g = (pixel & 0x7E0) << 5;
+	    int b = (pixel & 0x1F) << 3;
+	    int color = 0xFF000000 | r | g | b;
+	    *rgbaPixelsCursor = color;
+	}
+    } else if (vinfo.bits_per_pixel == 32) {
+	mapSize = totalMem8888;
+	if ((fbPixels = tryfbmap(framebufferHandle, mapSize)) == NULL)
+	    goto done;
+	memcpy(rgbaPixels, fbPixels, totalMem8888);
+		
+	byte *pos = (byte *)rgbaPixels;
+	while (pos < endOfImage) {
+	    byte tmp = pos[0];
+	    pos[0] = pos[2];
+	    pos[2] = tmp;
+	    pos += 4;
+	}
+    } else {
+	LOGI("Unsupported pixel format.\n");
+	    goto done;
     }
-
-    unsigned int r, offset;
-    offset = (vi.xoffset * bytespp) + (vi.xres * vi.yoffset * bytespp);
-    lseek((int)fb_in, offset, SEEK_SET);
-    for(r = 0; r < gr_fb_height(); r++) {
-        int len = fread(imgbuf, 1, rowlen, fb_in);
-        if (len <= 0) break;
-        png_write_row(png, (png_bytep)imgbuf);
+	
+    // flip it upside down!
+    int *rgbaPixelsCopy = (int*)malloc(totalMem8888);
+    int *curline = rgbaPixelsCopy + (h - 1) * w;
+    int lineSize = 4 * w;
+    int *srcline = rgbaPixels;
+    for (; srcline < endOfImage; curline -= w, srcline += w) {
+	memcpy(curline, srcline, lineSize);
     }
+    memcpy(rgbaPixels, rgbaPixelsCopy, totalMem8888);
+    free(rgbaPixelsCopy);
 
-    png_write_end(png, info);
+    struct bmpfile_magic magic;
+    struct bmpfile_header header;
+    struct bmpfile_dibheader dibheader;
+	
+    magic.magic[0] = 0x42;
+    magic.magic[1] = 0x4D;
+	
+    header.bmp_offset = sizeof(magic) + sizeof(header) + sizeof(dibheader);
+    header.creator1 = 0;
+    header.creator2 = 0;
+    header.filesz = sizeof(magic) + sizeof(header) + sizeof(dibheader) + totalMem8888;
+	
+    dibheader.header_sz = sizeof(dibheader);
+    dibheader.width = w;
+    dibheader.height = h;
+    dibheader.nplanes = 1;
+    dibheader.bitspp = 32;
+    dibheader.compress_type = 0;
+    dibheader.bmp_bytesz = totalMem8888;
+    dibheader.hres = 2835;
+    dibheader.vres = 120;
+    dibheader.ncolors = 0;
+    dibheader.nimpcolors = 0;	
+	
+    write(screenshotHandle, &magic, sizeof(magic));
+    write(screenshotHandle, &header, sizeof(header));
+    write(screenshotHandle, &dibheader, sizeof(dibheader));
+    write(screenshotHandle, rgbaPixels, totalMem8888);	
+    ret = 1;
 
-    fclose(fb_in);
-
-    png_destroy_write_struct(&png, NULL);
+done:
+    if (rgbaPixels != NULL)
+	free(rgbaPixels);
+    if (fbPixels != NULL)
+	munmap(fbPixels, mapSize);
+    if(framebufferHandle >= 0) 
+	close(framebufferHandle);
+    close(screenshotHandle);
+    return ret;
 }
 
 static void get_memory_surface(GGLSurface* ms) {

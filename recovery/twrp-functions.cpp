@@ -794,9 +794,9 @@ void TWFunc::Take_Screenshot(void) {
 			}
 		}
 	}
-	// Set proper filename (i.e. TWRPScr-001.png)
-	string png_num = "";
-	int png_inc = 0, count = 0;
+	// Set proper filename (i.e. TWRPScr-001.bmp)
+	string bmp_num = "";
+	int bmp_inc = 0, count = 0;
 	DIR* Dir = opendir(scr_path.c_str());
 	if (Dir == NULL)
 		LOGI("Unable to open %s\n", scr_path.c_str());
@@ -808,23 +808,24 @@ void TWFunc::Take_Screenshot(void) {
 				continue;
 			if (DirEntry->d_type == DT_REG) {
 				count++;
-				// Try to parse png's increasement before taking shot
+				//LOGI("[%i] File: %s\n", count, DirEntry->d_name);
+				// Try to parse bmp's increasement before taking shot
 				size_t first_mark = dname.find("-");
 				if (first_mark == string::npos) {
-					LOGI("Unable to find png's increasement (first mark).\n");
-					break;
+					LOGI("Unable to find filename's increasement (first mark).\n");
+					continue;
 				}
-				png_num = dname.substr(first_mark + 1, dname.size() - first_mark - 1);
-				size_t last_period = png_num.find(".");
+				bmp_num = dname.substr(first_mark + 1, dname.size() - first_mark - 1);
+				size_t last_period = bmp_num.find(".");
 				if (last_period == string::npos) {
-					LOGI("Unable to find png's increasement (last period).\n");
-					break;
+					LOGI("Unable to find filename's increasement (last period).\n");
+					continue;
 				}
-				png_num.resize(last_period);
-				png_inc = atoi(png_num.c_str());
+				bmp_num.resize(last_period);
+				bmp_inc = atoi(bmp_num.c_str());
 				// If a screenshot was deleted use that missing incr.
-				if (png_inc != count) {
-					png_inc = count - 1;
+				if (bmp_inc != count) {
+					bmp_inc = count - 1;
 					break;
 				}
 			}
@@ -834,26 +835,12 @@ void TWFunc::Take_Screenshot(void) {
 
 	char temp[64];
 	memset(temp, 0, sizeof(temp));
-	sprintf(temp, "%03d", ++png_inc);
-	png_num = temp;
-	
-    	FILE *fb_in = NULL;
-    	fb_in = fopen("/dev/graphics/fb0", "r");
-    	if (fb_in == NULL) {
-        	LOGE("error: could not read framebuffer\n");
-        	return;
-    	}
+	sprintf(temp, "%03d", ++bmp_inc);
+	bmp_num = temp;
+	string bmp_full_pth = scr_path + "/TWRPScr-" + bmp_num + ".bmp";	
 
-	string png_full_pth = scr_path + "/TWRPScr-" + png_num + ".png";
-	FILE *png = NULL;
-    	png = fopen(png_full_pth.c_str(), "w");
-    	if (!png) {
-        	LOGE("error: writing *.png file\n");
-        	return;
-    	} else
-		LOGI("Saving screenshot at %s\n", png_full_pth.c_str());
-
-    	gr_screenshot(fb_in, png);
+    	if (gr_screenshot(bmp_full_pth.c_str()))
+		LOGI("Saved screenshot at %s\n", bmp_full_pth.c_str());
 }
 
 /* Checks if a Directory has any of the subDirs we're looking for and
