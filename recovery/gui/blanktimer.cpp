@@ -20,8 +20,10 @@ using namespace std;
 #include "rapidxml.hpp"
 using namespace rapidxml;
 extern "C" {
-#include "../minzip/Zip.h"
-#include "../minuitwrp/minui.h"
+	#include "../minzip/Zip.h"
+	#include "../minuitwrp/minui.h"
+	#include "../common.h"
+	#include "../recovery_ui.h"
 }
 #include <string>
 #include <vector>
@@ -37,21 +39,25 @@ extern "C" {
 #include <sstream>
 #include "pages.hpp"
 #include "blanktimer.hpp"
-extern "C" {
-#include "../common.h"
-#include "../recovery_ui.h"
-}
 #include "../twrp-functions.hpp"
 #include "../variables.h"
+#include "../data.hpp"
 
 blanktimer::blanktimer(void) {
 	blanked = 0;
-	sleepTimer = 60;
+	sleepTimer = getTime();
 	orig_brightness = getBrightness();
 }
 
 void blanktimer::setTime(int newtime) {
-	sleepTimer = newtime;
+	LOGE("Changed screen timeout: %i\n", newtime);
+	sleepTimer = (unsigned long long)newtime;
+}
+
+unsigned long long blanktimer::getTime(void) {
+	unsigned long long timeout;
+	DataManager::GetValue("tw_screen_timeout_secs", timeout);
+	return timeout;
 }
 
 int blanktimer::setTimerThread(void) {
@@ -84,7 +90,7 @@ timespec blanktimer::getTimer(void) {
 
 int blanktimer::setClockTimer(void) {
 	timespec curTime, diff;
-	while(1) {
+	while (1) {
 		usleep(1000);
 		clock_gettime(CLOCK_MONOTONIC, &curTime);
 		diff = TWFunc::timespec_diff(btimer, curTime);

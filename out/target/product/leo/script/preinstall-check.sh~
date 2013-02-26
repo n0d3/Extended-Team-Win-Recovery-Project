@@ -3,7 +3,7 @@
 if grep -Fxq "clk=" /proc/cmdline
 then
 	if [ "`which clkpartmgr`" ]; then
-		ZIP_NAME=HD2_Extended_TWRP_2.4.2.0.r2.zip
+		ZIP_NAME=HD2_Extended_TWRP_2.4.1.0.r2.zip
 		PART1_NAME=recovery
 		PART1_MINSIZE=6
 

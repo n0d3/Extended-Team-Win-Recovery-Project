@@ -443,8 +443,6 @@ int DataManager::GetValue(const string varName, string& value)
 		localStr.erase(localStr.length() - 1, 1);
 	}
 
-	// Handle magic values
-
 	map<string, string>::iterator constPos;
 	constPos = mConstValues.find(localStr);
 	if (constPos != mConstValues.end())
@@ -475,13 +473,13 @@ int DataManager::GetValue(const string varName, int& value)
 
 unsigned long long DataManager::GetValue(const string varName, unsigned long long& value)
 {
-    string data;
+	string data;
 
-    if (GetValue(varName,data) != 0)
-        return -1;
+	if (GetValue(varName,data) != 0)
+        	return -1;
 
-    value = strtoull(data.c_str(), NULL, 10);
-    return 0;
+	value = strtoull(data.c_str(), NULL, 10);
+	return 0;
 }
 
 // This is a dangerous function. It will create the value if it doesn't exist so it has a valid c_str

@@ -178,9 +178,13 @@ static void *input_thread(void *cookie)
     static int touch_and_hold = 0, dontwait = 0, touch_repeat = 0, x = 0, y = 0, lshift = 0, rshift = 0, key_repeat = 0;
     static struct timeval touchStart;
     HardwareKeyboard kb;
-    if (!offmode_charge)
+    if (!offmode_charge) {
+	int timeout;
+	DataManager::GetValue("tw_screen_timeout_secs", timeout);
+	LOGI("Screen timeout: %i sec.\n", timeout);
 	blankTimer.setTimerThread();
-
+	blankTimer.setTime(timeout);
+    }
     for (;;) {
         // wait for the next event
         struct input_event ev;
