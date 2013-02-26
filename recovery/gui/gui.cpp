@@ -313,6 +313,7 @@ static void *input_thread(void *cookie)
 #endif
 		    key_pressed = 1;
 		} else {
+		    TWFunc::Vibrate(25);
 		    blankTimer.resetTimerAndUnblank();
 #ifdef _EVENT_LOGGING
 		    LOGE("Screen unblank/timer reset.\n");

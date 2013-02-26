@@ -44,6 +44,9 @@ int gui_start();
 #include "rapidxml.hpp"
 #include "objects.hpp"
 
+// Vibrator duration (in msec) for notifying operation's completion
+#define DURATION_MS    100
+
 extern RecoveryUI* ui;
 extern blanktimer blankTimer;
 
@@ -679,6 +682,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			DataManager::SetValue(TW_ZIP_QUEUE_COUNT, zip_queue_index);
 			DataManager::SetValue(TW_ZIP_INDEX, 0);
 			operation_end(ret_val, simulate);
+			TWFunc::Vibrate(DURATION_MS);
 			return 0;
 		}
 		if (function == "wipe")	{
@@ -739,9 +743,10 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				}
 			}
 			PartitionManager.Update_System_Details();
-			if (ret_val)
+			if (ret_val) {
 				ret_val = 0; // 0 is success
-			else
+				TWFunc::Vibrate(DURATION_MS);
+			} else
 				ret_val = 1; // 1 is failure
 			operation_end(ret_val, simulate);
 			return 0;
@@ -784,8 +789,10 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			}
 			if (ret == false)
 				ret = 1; // 1 for failure
-			else
+			else {
 				ret = 0; // 0 for success
+				TWFunc::Vibrate(DURATION_MS);
+			}
 			operation_end(ret, simulate);
 			return 0;
 		}
@@ -805,8 +812,10 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			}
 			if (ret != 0)
 				ret = 1; // 1 for failure
-			else
+			else {
 				ret = 0; // 0 for success
+				TWFunc::Vibrate(DURATION_MS);
+			}
 		   	operation_end(ret, simulate);
 
 			return 0;
@@ -827,8 +836,10 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			}
 			if (ret == false)
 				ret = 1; // 1 for failure
-			else
+			else {
 				ret = 0; // 0 for success
+				TWFunc::Vibrate(DURATION_MS);
+			}
 		   	operation_end(ret, simulate);
 
 			return 0;
@@ -861,8 +872,10 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			}
 			if (ret == false)
 				ret = 1; // 1 for failure
-			else
+			else {
 				ret = 0; // 0 for success
+				TWFunc::Vibrate(DURATION_MS);
+			}
 		   	operation_end(ret, simulate);
 
 			return 0;
@@ -893,8 +906,10 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			}
 			if (ret == false)
 				ret = 1; // 1 for failure
-			else
+			else {
 				ret = 0; // 0 for success
+				TWFunc::Vibrate(DURATION_MS);
+			}
 		   	operation_end(ret, simulate);
 
 			return 0;
@@ -928,8 +943,10 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			}
 			if (ret == false)
 				ret = 1; // 1 for failure
-			else
+			else {
 				ret = 0; // 0 for success
+				TWFunc::Vibrate(DURATION_MS);
+			}
 		   	operation_end(ret, simulate);
 
 			return 0;
@@ -963,8 +980,10 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			}
 			if (ret == false)
 				ret = 1; // 1 for failure
-			else
+			else {
 				ret = 0; // 0 for success
+				TWFunc::Vibrate(DURATION_MS);
+			}
 		   	operation_end(ret, simulate);
 
 			return 0;
@@ -998,8 +1017,10 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			}
 			if (ret == false)
 				ret = 1; // 1 for failure
-			else
+			else {
 				ret = 0; // 0 for success
+				TWFunc::Vibrate(DURATION_MS);
+			}
 		   	operation_end(ret, simulate);
 
 			return 0;
@@ -1033,8 +1054,10 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			}
 			if (ret == false)
 				ret = 1; // 1 for failure
-			else
+			else {
 				ret = 0; // 0 for success
+				TWFunc::Vibrate(DURATION_MS);
+			}
 		   	operation_end(ret, simulate);
 
 			return 0;
@@ -1086,6 +1109,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				}
 			}
 			operation_end(ret_val, simulate);
+			TWFunc::Vibrate(DURATION_MS);
 			return 0;
 		}
 		if (function == "convertextfs") {
@@ -1105,7 +1129,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				}
 			}
 			operation_end(ret_val, simulate);
-
+			TWFunc::Vibrate(DURATION_MS);
 			return 0;
 		}
 		if (function == "convertext2fs") {
@@ -1129,7 +1153,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				}
 			}
 			operation_end(ret_val, simulate);
-
+			TWFunc::Vibrate(DURATION_MS);
 			return 0;
 		}	
 		if (function == "screenshot") {
@@ -1164,6 +1188,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 					ret_val = 1; // failed
 			}
 			operation_end(ret_val, simulate);
+			TWFunc::Vibrate(DURATION_MS);
 
 			return 0;
 		}	
@@ -1344,6 +1369,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				}
 			}
 			operation_end(op_status, simulate);
+			TWFunc::Vibrate(DURATION_MS);
 			return 0;
 		}
 		if (function == "adbsideload")

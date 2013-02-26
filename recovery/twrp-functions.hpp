@@ -95,6 +95,7 @@ class TWFunc {
 		static unsigned long long Get_Archive_Uncompressed_Size(string FilePath);
 		static string Find_File_On_Storage(string Filename);
 		static void Take_Screenshot(void);
+		static int Vibrate(int ms);
 		static int SubDir_Check(string Dir, string subDir1, string subDir2, string subDir3, string subDir4, string subDir5, int min);
 		static vector<string> split_string(const string &in, char del);
 

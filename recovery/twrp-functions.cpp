@@ -772,6 +772,10 @@ string TWFunc::Find_File_On_Storage(string Filename) {
 	return Full_Path;
 }
 
+int TWFunc::Vibrate(int ms) {
+	return (DataManager::GetIntValue(TW_USE_HAPTIC_FEEDBACK) ? vibrate(ms) : 0);
+}
+
 void TWFunc::Take_Screenshot(void) {
 	// Where to store the screenshot
 	string current_storage_path = DataManager::GetCurrentStoragePath();

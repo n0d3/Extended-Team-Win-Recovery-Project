@@ -27,8 +27,6 @@
 
 #include "minui.h"
 
-//#define _EVENT_LOGGING
-
 #define MAX_DEVICES         16
 
 #define VIBRATOR_TIMEOUT_FILE	"/sys/class/timed_output/vibrator/enable"

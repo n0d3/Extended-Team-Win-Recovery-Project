@@ -72,6 +72,7 @@ int gr_free_surface(gr_surface surface);
 // see http://www.mjmwired.net/kernel/Documentation/input/ for info.
 struct input_event;
 
+int vibrate(int timeout_ms);
 int ev_init(void);
 void ev_exit(void);
 int ev_get(struct input_event *ev, unsigned dont_wait);

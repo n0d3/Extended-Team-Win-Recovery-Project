@@ -76,6 +76,9 @@
 // Root handling
 #define TW_HANDLE_SU                	"tw_handle_su"
 
+// Haptic feedback
+#define TW_USE_HAPTIC_FEEDBACK         	"tw_use_haptic_feedback"
+
 // Default definitions
 #define TW_VERSION_STR			"2.4.2.0"
 
