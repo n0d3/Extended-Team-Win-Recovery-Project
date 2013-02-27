@@ -212,30 +212,30 @@ int TWFunc::Recursive_Mkdir(string Path) {
 }
 
 unsigned long long TWFunc::Get_Folder_Size(const string& Path, bool Display_Error) {
-	DIR* d;
+	DIR* d = opendir(Path.c_str());
+	if (d == NULL) {
+		if (Display_Error) {
+			LOGE("error opening '%s'\n", Path.c_str());
+			LOGE("error: %s\n", strerror(errno));
+		} else {
+			LOGI("error opening '%s'\n", Path.c_str());
+			LOGI("error: %s\n", strerror(errno));
+		}
+		return 0;
+	}
+
 	struct dirent* de;
 	struct stat st;
 	unsigned long long dusize = 0;
 	unsigned long long dutemp = 0;
-
-	d = opendir(Path.c_str());
-	if (d == NULL)
-	{
-		LOGE("error opening '%s'\n", Path.c_str());
-		LOGE("error: %s\n", strerror(errno));
-		return 0;
-	}
-
-	while ((de = readdir(d)) != NULL)
-	{
-		if (de->d_type == DT_DIR && strcmp(de->d_name, ".") != 0 && strcmp(de->d_name, "..") != 0)
-		{
+	while ((de = readdir(d)) != NULL) {
+		if (de->d_type == DT_DIR) {
+			if (!strcmp(de->d_name, ".") || !strcmp(de->d_name, ".."))
+				continue;
 			dutemp = Get_Folder_Size((Path + "/" + de->d_name), Display_Error);
 			dusize += dutemp;
 			dutemp = 0;
-		}
-		else if (de->d_type == DT_REG)
-		{
+		} else if (de->d_type == DT_REG) {
 			stat((Path + "/" + de->d_name).c_str(), &st);
 			dusize += (unsigned long long)(st.st_size);
 		}
@@ -809,13 +809,13 @@ void TWFunc::Take_Screenshot(void) {
 			if (DirEntry->d_type == DT_REG) {
 				// Try to parse bmp's increasement before taking shot
 				size_t first_mark = dname.find("-");
+				count++;
+				//LOGI("[%i] File: %s\n", count, DirEntry->d_name);
 				if (first_mark == string::npos) {
 					//LOGI("Unable to find filename's increasement (first mark).\n");
 					continue;
-				} else {
-					count++;
-					//LOGI("[%i] File: %s\n", count, DirEntry->d_name);
 				}
+				
 				bmp_num = dname.substr(first_mark + 1, dname.size() - first_mark - 1);
 				size_t last_period = bmp_num.find(".");
 				if (last_period == string::npos) {

@@ -50,12 +50,14 @@ blanktimer::blanktimer(void) {
 }
 
 void blanktimer::setTime(int newtime) {
-	LOGE("Changed screen timeout: %i\n", newtime);
-	sleepTimer = (unsigned long long)newtime;
+	if (sleepTimer != newtime) {
+		LOGI("Screen timeout set to %i sec.\n", newtime);
+		sleepTimer = newtime;
+	}
 }
 
-unsigned long long blanktimer::getTime(void) {
-	unsigned long long timeout;
+int blanktimer::getTime(void) {
+	int timeout;
 	DataManager::GetValue("tw_screen_timeout_secs", timeout);
 	return timeout;
 }

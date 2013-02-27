@@ -30,7 +30,7 @@ class blanktimer {
 		int setTimerThread(void);
 		void resetTimerAndUnblank(void);
 		void setTime(int newtime);
-		unsigned long long getTime(void);
+		int getTime(void);
 
 	private:
 		void setBlank(int blank);
@@ -47,7 +47,7 @@ class blanktimer {
 		pthread_mutex_t timermutex;
 		int conblank;
 		timespec btimer;
-		unsigned long long sleepTimer;
+		int sleepTimer;
 		int orig_brightness;
 		int blanked;
 };

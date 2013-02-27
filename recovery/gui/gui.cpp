@@ -181,7 +181,7 @@ static void *input_thread(void *cookie)
     if (!offmode_charge) {
 	int timeout;
 	DataManager::GetValue("tw_screen_timeout_secs", timeout);
-	LOGI("Screen timeout: %i sec.\n", timeout);
+	LOGI("Saved screen timeout value: %i sec.\n", timeout);
 	blankTimer.setTimerThread();
 	blankTimer.setTime(timeout);
     }
