@@ -807,18 +807,19 @@ void TWFunc::Take_Screenshot(void) {
 			if (!strcmp(DirEntry->d_name, ".") || !strcmp(DirEntry->d_name, ".."))
 				continue;
 			if (DirEntry->d_type == DT_REG) {
-				count++;
-				//LOGI("[%i] File: %s\n", count, DirEntry->d_name);
 				// Try to parse bmp's increasement before taking shot
 				size_t first_mark = dname.find("-");
 				if (first_mark == string::npos) {
-					LOGI("Unable to find filename's increasement (first mark).\n");
+					//LOGI("Unable to find filename's increasement (first mark).\n");
 					continue;
+				} else {
+					count++;
+					//LOGI("[%i] File: %s\n", count, DirEntry->d_name);
 				}
 				bmp_num = dname.substr(first_mark + 1, dname.size() - first_mark - 1);
 				size_t last_period = bmp_num.find(".");
 				if (last_period == string::npos) {
-					LOGI("Unable to find filename's increasement (last period).\n");
+					//LOGI("Unable to find filename's increasement (last period).\n");
 					continue;
 				}
 				bmp_num.resize(last_period);

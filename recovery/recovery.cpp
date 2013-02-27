@@ -631,20 +631,11 @@ static void wipe_data(int confirm, Device* device) {
 		}
 
 		const char* items[] = { " No",
-					" No",
-					" No",
-					" No",
-					" No",
-					" No",
-					" No",
-					" Yes -- delete all user data",   // [7]
-					" No",
-					" No",
-					" No",
+					" Yes -- delete all user data",   // [1]
 					NULL };
 
 		int chosen_item = get_menu_selection(title_headers, items, 1, 0, device);
-		if (chosen_item != 7) {
+		if (chosen_item != 1) {
 			return;
 		}
 	}
