@@ -960,7 +960,7 @@ int main(int argc, char **argv) {
 
 		if (DataManager_GetIntValue(TW_HANDLE_SU) != 0) {
 			LOGI("Root checking started...\n");
-			if (TWFunc::Path_Exists("/res/supersu/su") && !TWFunc::Path_Exists("/system/bin/su") && !TWFunc::Path_Exists("/system/xbin/su") && !TWFunc::Path_Exists("/system/bin/.ext/.su")) {
+			if (TWFunc::Path_Exists("/supersu/su") && !TWFunc::Path_Exists("/system/bin/su") && !TWFunc::Path_Exists("/system/xbin/su") && !TWFunc::Path_Exists("/system/bin/.ext/.su")) {
 				// Device doesn't have su installed
 				DataManager_SetIntValue("tw_busy", 1);
 				if (gui_startPage("installsu") != 0) {
