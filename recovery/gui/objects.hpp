@@ -551,6 +551,12 @@ protected:
     int mLineSpacing;
     int mUpdate;
     int mBackgroundX, mBackgroundY, mBackgroundW, mBackgroundH, mHeaderH;
+    int mFastScrollW;
+    int mFastScrollLineW;
+    int mFastScrollRectW;
+    int mFastScrollRectH;
+    int mFastScrollRectX;
+    int mFastScrollRectY;
     int mIconWidth, mIconHeight, mSelectedIconWidth, mSelectedIconHeight, mUnselectedIconWidth, mUnselectedIconHeight, mHeaderIconHeight, mHeaderIconWidth;
     int scrollingSpeed;
     int scrollingY;
@@ -568,6 +574,8 @@ protected:
     COLOR mHeaderFontColor;
     COLOR mSeparatorColor;
     COLOR mHeaderSeparatorColor;
+    COLOR mFastScrollLineColor;
+    COLOR mFastScrollRectColor;
     bool hasHighlightColor;
     bool hasFontHighlightColor;
     bool isHighlighted;
