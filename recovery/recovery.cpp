@@ -988,6 +988,8 @@ int main(int argc, char **argv) {
 	string backup_arg = backup_arg_char;
 	if (backup_arg == "recovery")
 		TWFunc::tw_reboot(rb_recovery);
+	else if (backup_arg == "hot")
+		TWFunc::tw_reboot(rb_hot);
 	else if (backup_arg == "poweroff")
 		TWFunc::tw_reboot(rb_poweroff);
 	else if (backup_arg == "bootloader")

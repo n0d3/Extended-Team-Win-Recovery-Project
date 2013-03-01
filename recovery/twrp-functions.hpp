@@ -12,6 +12,7 @@ typedef enum
     rb_system,
     rb_recovery,
     rb_poweroff,
+    rb_hot,
     rb_bootloader,     // May also be fastboot
     rb_download,
     rb_sboot,

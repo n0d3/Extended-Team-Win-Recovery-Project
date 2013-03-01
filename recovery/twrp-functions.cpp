@@ -364,9 +364,12 @@ void TWFunc::twfinish_recovery(const char *send_intent) {
 int TWFunc::tw_reboot(RebootCommand command) {
 	// Always force a sync before we reboot
 	sync();
-
+	
     	switch (command) {
     		case rb_current:
+    		case rb_hot:        		
+			Exec_Cmd("busybox killall recovery", tmpbuf);
+        		return 0;
     		case rb_system:
         		twfinish_recovery("s");
 			sync();
