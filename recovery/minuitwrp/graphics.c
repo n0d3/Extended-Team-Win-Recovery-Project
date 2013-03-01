@@ -827,15 +827,16 @@ gr_pixel *gr_fb_data(void)
     return (unsigned short *) gr_mem_surface.data;
 }
 
-void gr_fb_blank(int blank)
+int gr_fb_blank(int blank)
 {
-    int ret;
+    int ret = 0;
 
     if (gr_fb_fd >= 0) {
 	    ret = ioctl(gr_fb_fd, FBIOBLANK, blank ? FB_BLANK_POWERDOWN : FB_BLANK_UNBLANK);
 	    /*if (ret < 0)
 		perror("ioctl(): blank");*/
     }
+    return ret;
 }
 
 int gr_get_surface(gr_surface* surface)
