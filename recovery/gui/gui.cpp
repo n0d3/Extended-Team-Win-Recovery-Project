@@ -585,7 +585,7 @@ extern "C" int gui_loadResources()
 		// TEST: Load a pre-selected theme
 		DataManager::GetValue(TW_SEL_THEME_PATH, theme_path);
 		if (theme_path.empty())
-			theme_path = root_path + "/TWRP/theme/ui.zip";	
+			theme_path = "/res/ui.xml";	
 		if (check || PageManager::LoadPackage("TWRP", theme_path, "main"))
 		{
 			if (PageManager::LoadPackage("TWRP", "/res/ui.xml", "main"))

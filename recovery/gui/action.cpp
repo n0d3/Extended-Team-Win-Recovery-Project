@@ -349,10 +349,10 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			check = 1;
 		}
 
-		// TEST: Load a pre-selected theme
+		// Load a pre-selected theme
 		DataManager::GetValue(TW_SEL_THEME_PATH, theme_path);
 		if (theme_path.empty())
-			theme_path = root_path + "/TWRP/theme/ui.zip";
+			theme_path = "/res/ui.xml";
 		if (check != 0 || PageManager::ReloadPackage("TWRP", theme_path) != 0) {
 			// Loading the custom theme failed - try loading the stock theme
 			LOGI("Attempting to reload stock theme...\n");
@@ -1352,7 +1352,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 							// TEST: Load a pre-selected theme
 							DataManager::GetValue(TW_SEL_THEME_PATH, theme_path);
 							if (theme_path.empty())
-								theme_path = root_path + "/TWRP/theme/ui.zip";
+								theme_path = "/res/ui.xml";
 							if (check == 0 && stat(theme_path.c_str(), &st) == 0) {
 								if (PageManager::ReloadPackage("TWRP", theme_path) != 0)
 								{
