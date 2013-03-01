@@ -1164,24 +1164,15 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			return 0;
 		}	
 		if (function == "screenshot") {
-			operation_start("ScreenShot");
-			int ret_val = 0;
-
-			if (simulate) {
-				simulate_progress_bar();
-			} else {
-				int z;
-				DataManager::GetValue(TW_SCREENSHOT_VAR, z);
-				if (z == 1) {
-					string current_storage_path = DataManager::GetCurrentStoragePath();
-					if (!PartitionManager.Is_Mounted_By_Path(current_storage_path))
-						PartitionManager.Mount_Current_Storage(false);
-					if (PartitionManager.Is_Mounted_By_Path(current_storage_path))
-						TWFunc::Take_Screenshot();
-				}
+			int z;
+			DataManager::GetValue(TW_SCREENSHOT_VAR, z);
+			if (z == 1) {
+				string current_storage_path = DataManager::GetCurrentStoragePath();
+				if (!PartitionManager.Is_Mounted_By_Path(current_storage_path))
+					PartitionManager.Mount_Current_Storage(false);
+				if (PartitionManager.Is_Mounted_By_Path(current_storage_path))
+					TWFunc::Take_Screenshot();
 			}
-			operation_end(ret_val, simulate);
-
 			return 0;
 		}	
 		if (function == "fschk") {
