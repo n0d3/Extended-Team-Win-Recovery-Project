@@ -62,6 +62,7 @@ static int gGuiConsoleRunning = 0;
 static int gGuiConsoleTerminate = 0;
 static int gForceRender = 0;
 pthread_mutex_t gForceRendermutex;
+pthread_mutexattr_t gForceRenderattr;
 static int gNoAnimation = 1;
 static int gGuiInputRunning = 0;
 blanktimer blankTimer;
@@ -175,13 +176,14 @@ void curtainClose()
 static void *input_thread(void *cookie)
 {
     int drag = 0;
-    static int touch_and_hold = 0, dontwait = 0, touch_repeat = 0, x = 0, y = 0, lshift = 0, rshift = 0, key_repeat = 0;
+    static int touch_and_hold = 0, dontwait = 0, touch_repeat = 0, x = 0, y = 0, lshift = 0, rshift = 0, key_repeat = 0, power_key = 0;
     static struct timeval touchStart;
     HardwareKeyboard kb;
+    DataManager::GetValue(TW_POWER_BUTTON, power_key);
     if (!offmode_charge) {
 	int timeout;
 	DataManager::GetValue("tw_screen_timeout_secs", timeout);
-	LOGI("Saved screen timeout value: %i sec.\n", timeout);
+	LOGI("Stored screen timeout value: %i sec.\n", timeout);
 	blankTimer.setTimerThread();
 	blankTimer.setTime(timeout);
     }
@@ -234,10 +236,8 @@ static void *input_thread(void *cookie)
             x = ev.value >> 16;
             y = ev.value & 0xFFFF;
 
-            if (ev.code == 0)
-            {
-                if (state == 0)
-                {
+            if (ev.code == 0) {
+                if (state == 0) {
 #ifdef _EVENT_LOGGING
                     LOGE("TOUCH_RELEASE: %d,%d\n", x, y);
 #endif
@@ -249,11 +249,8 @@ static void *input_thread(void *cookie)
                 }
                 state = 0;
                 drag = 0;
-            }
-            else
-            {
-                if (!drag)
-                {
+            } else {
+                if (!drag) {
 #ifdef _EVENT_LOGGING
                     LOGE("TOUCH_START: %d,%d\n", x, y);
 #endif
@@ -264,11 +261,8 @@ static void *input_thread(void *cookie)
 		    dontwait = 1;
 		    key_repeat = 0;
 		    gettimeofday(&touchStart, NULL);
-                }
-                else
-                {
-                    if (state == 0)
-                    {
+                } else {
+                    if (state == 0) {
 #ifdef _EVENT_LOGGING
                         LOGE("TOUCH_DRAG: %d,%d\n", x, y);
 #endif
@@ -305,7 +299,7 @@ static void *input_thread(void *cookie)
 		touch_repeat = 0;
 		dontwait = 0;
 		if(offmode_charge &&
-		  (ev.code == 102 || ev.code == 107 || ev.code == 114
+		  (ev.code == power_key || ev.code == 102 || ev.code == 114
 		|| ev.code == 114 || ev.code == 139 || ev.code == 158
 		|| ev.code == 231)) {
 #ifdef _EVENT_LOGGING
@@ -316,7 +310,7 @@ static void *input_thread(void *cookie)
 		    TWFunc::Vibrate(25);
 		    blankTimer.resetTimerAndUnblank();
 #ifdef _EVENT_LOGGING
-		    LOGE("Screen unblank/timer reset.\n");
+		    LOGE("Screen unblank & Timer reset.\n");
 #endif
 		}
 	    }
@@ -395,7 +389,7 @@ static int runPages(void)
         }
         else
         {
-	    pthread_mutex_lock(&gForceRendermutex);
+	    pthread_mutex_trylock(&gForceRendermutex);
             gForceRender = 0;
 	    pthread_mutex_unlock(&gForceRendermutex);
             PageManager::Render();
@@ -445,7 +439,7 @@ static int runPage(const char* page_name)
         }
         else
         {
-	    pthread_mutex_lock(&gForceRendermutex);
+	    pthread_mutex_trylock(&gForceRendermutex);
             gForceRender = 0;
 	    pthread_mutex_unlock(&gForceRendermutex);
             PageManager::Render();
@@ -463,7 +457,7 @@ static int runPage(const char* page_name)
 
 int gui_forceRender(void)
 {
-    pthread_mutex_lock(&gForceRendermutex);
+    pthread_mutex_trylock(&gForceRendermutex);
     gForceRender = 1;
     pthread_mutex_unlock(&gForceRendermutex);
     return 0;
@@ -473,7 +467,7 @@ int gui_changePage(std::string newPage)
 {
     LOGI("Set page: '%s'\n", newPage.c_str());
     PageManager::ChangePage(newPage);
-    pthread_mutex_lock(&gForceRendermutex);
+    pthread_mutex_trylock(&gForceRendermutex);
     gForceRender = 1;
     pthread_mutex_unlock(&gForceRendermutex);
     return 0;
@@ -482,7 +476,7 @@ int gui_changePage(std::string newPage)
 int gui_changeOverlay(std::string overlay)
 {
     PageManager::ChangeOverlay(overlay);
-    pthread_mutex_lock(&gForceRendermutex);
+    pthread_mutex_trylock(&gForceRendermutex);
     gForceRender = 1;
     pthread_mutex_unlock(&gForceRendermutex);
     return 0;
@@ -491,7 +485,7 @@ int gui_changeOverlay(std::string overlay)
 int gui_changePackage(std::string newPackage)
 {
     PageManager::SelectPackage(newPackage);
-    pthread_mutex_lock(&gForceRendermutex);
+    pthread_mutex_trylock(&gForceRendermutex);
     gForceRender = 1;
     pthread_mutex_unlock(&gForceRendermutex);
     return 0;
@@ -557,6 +551,9 @@ extern "C" int gui_loadResources()
 //    unlink("/sdcard/video.last");
 //    rename("/sdcard/video.bin", "/sdcard/video.last");
 //    gRecorder = open("/sdcard/video.bin", O_CREAT | O_WRONLY);
+
+	pthread_mutexattr_settype(&gForceRenderattr, PTHREAD_MUTEX_NORMAL/*PTHREAD_MUTEX_RECURSIVE*/);
+	pthread_mutex_init(&gForceRendermutex, &gForceRenderattr);
 
 	int check = 0;
 	DataManager::GetValue(TW_IS_ENCRYPTED, check);
@@ -633,10 +630,7 @@ static void *time_update_thread(void *cookie)
 		}
 		current_time = tmp;
 		DataManager::SetValue("tw_time", current_time, 0);
-		if (tw_military_time == 1)
-			usleep(990000);
-		else
-			usleep(20000000);
+		usleep(990000);
 	}
 	
 	return NULL;
@@ -793,7 +787,7 @@ static void *console_thread(void *cookie)
         }
         else
         {
-	    pthread_mutex_lock(&gForceRendermutex);
+	    pthread_mutex_trylock(&gForceRendermutex);
             gForceRender = 0;
 	    pthread_mutex_unlock(&gForceRendermutex);
             PageManager::Render();
