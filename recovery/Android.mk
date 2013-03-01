@@ -80,6 +80,9 @@ LOCAL_SHARED_LIBRARIES += libz libc libstlport libcutils libstdc++ libmincrypt l
 ifeq ($(TW_INCLUDE_LIBTAR), true)
     LOCAL_SHARED_LIBRARIES += libtar
 endif
+ifeq ($(TW_INCLUDE_LIBBLKID), true)
+    LOCAL_SHARED_LIBRARIES += libblkid
+endif
 ifneq ($(wildcard system/core/libsparse/Android.mk),)
     LOCAL_SHARED_LIBRARIES += libsparse
 endif
@@ -137,6 +140,9 @@ ifneq ($(RECOVERY_SDCARD_ON_DATA),)
 endif
 ifeq ($(TW_INCLUDE_LIBTAR), true)
 	LOCAL_CFLAGS += -DTW_INCLUDE_LIBTAR
+endif
+ifeq ($(TW_INCLUDE_LIBBLKID), true)
+	LOCAL_CFLAGS += -DTW_INCLUDE_LIBBLKID
 endif
 ifeq ($(TW_INCLUDE_NILFS2), true)
 	LOCAL_CFLAGS += -DTW_INCLUDE_NILFS2
@@ -323,6 +329,10 @@ include $(commands_recovery_local_path)/libjpegtwrp/Android.mk \
     $(commands_recovery_local_path)/crypto/cryptfs/Android.mk \
     $(commands_recovery_local_path)/libcrecovery/Android.mk \
     $(commands_recovery_local_path)/twmincrypt/Android.mk
+
+ifeq ($(TW_INCLUDE_LIBBLKID), true)
+    include $(commands_recovery_local_path)/libblkid/Android.mk
+endif
 
 ifeq ($(TW_INCLUDE_CRYPTO_SAMSUNG), true)
     include $(commands_recovery_local_path)/crypto/libcrypt_samsung/Android.mk

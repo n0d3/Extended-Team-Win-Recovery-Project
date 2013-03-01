@@ -35,6 +35,9 @@
 	#include "cutils/properties.h"
 #endif
 
+#ifdef TW_INCLUDE_LIBBLKID
+	#include "libblkid/blkid.h"
+#endif
 #include "variables.h"
 #include "common.h"
 #include "partitions.hpp"
@@ -2132,9 +2135,24 @@ void TWPartition::Check_FS_Type() {
 		LOGI("Unable to Find_Actual_Block_Device() for %s.\n", Mount_Point.c_str());
 		return;
 	}
-
+#ifdef TW_INCLUDE_LIBBLKID
+	blkid_probe pr;
+	pr = blkid_new_probe_from_filename(Actual_Block_Device.c_str());
+	if (blkid_do_fullprobe(pr)) {
+		blkid_free_probe(pr);
+		LOGI("Can't probe device %s\n", Actual_Block_Device.c_str());
+		return;
+	}
+	const char* type;
+	if (blkid_probe_lookup_value(pr, "TYPE", &type, NULL) < 0) {
+		blkid_free_probe(pr);
+		LOGI("can't find filesystem on device %s\n", Actual_Block_Device.c_str());
+		return;
+	}
+	Current_File_System = type;
+#else
 	string Command;
-#ifdef TW_INCLUDE_EXFAT
+	#ifdef TW_INCLUDE_EXFAT
 	// blkid doesn't return the fs-type of an exfat partition.
 	// Using dumpexfat's exit code seems to do the trick.
 	if (Mount_Point == "/sdcard" || Mount_Point == "/external" || Mount_Point == "/external_sd") {
@@ -2145,7 +2163,7 @@ void TWPartition::Check_FS_Type() {
 			return;
 		}
 	}
-#endif
+	#endif
 
 	string result, fstype;
 	Command = "blkid " + Actual_Block_Device + " | rev | cut -d '\"' -f 2 | rev";
@@ -2159,14 +2177,14 @@ void TWPartition::Check_FS_Type() {
 			fstype = "ext4";
 		else if (result.find("vfat") != string::npos)
 			fstype = "vfat";
-#ifdef TW_INCLUDE_NILFS2
+	#ifdef TW_INCLUDE_NILFS2
 		else if (result.find("nilfs2") != string::npos)
 			fstype = "nilfs2";
-#endif
-#ifdef TW_INCLUDE_NTFS_3G
+	#endif
+	#ifdef TW_INCLUDE_NTFS_3G
 		else if (result.find("ntfs") != string::npos)
 			fstype = "ntfs";
-#endif
+	#endif
 		else
 			fstype = "auto";
 	} else
@@ -2176,7 +2194,7 @@ void TWPartition::Check_FS_Type() {
 		LOGI("'%s' was '%s' now set to '%s'\n", Mount_Point.c_str(), Current_File_System.c_str(), fstype.c_str());
 		Current_File_System = fstype;
 	}
-
+#endif
 	return;
 }
 

@@ -165,5 +165,6 @@ TW_INCLUDE_MKNTFS := false
 TW_INCLUDE_EXFAT := false
 TW_INCLUDE_NILFS2 := true
 TW_INCLUDE_LIBTAR := true
+TW_INCLUDE_LIBBLKID := false
 TW_BRIGHTNESS_PATH := "/sys/class/leds/lcd-backlight/brightness"
 TW_MAX_BRIGHTNESS := 255
