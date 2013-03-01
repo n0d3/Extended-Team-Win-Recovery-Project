@@ -80,7 +80,7 @@
 #define TW_USE_HAPTIC_FEEDBACK         	"tw_use_haptic_feedback"
 
 // Default definitions
-#define TW_VERSION_STR			"2.4.2.0"
+#define TW_VERSION_STR			"2.4.3.0"
 
 #define TW_USE_COMPRESSION_VAR      	"tw_use_compression"
 #define TW_SKIP_MD5_CHECK_VAR       	"tw_skip_md5_check"
