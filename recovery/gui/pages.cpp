@@ -785,6 +785,7 @@ int PageManager::ReloadPackage(std::string name, std::string package)
 
     PageSet* set = (*iter).second;
     mPageSets.erase(iter);
+    mBaseSet = NULL;
 
     if (LoadPackage(name, package, "main") != 0)
     {

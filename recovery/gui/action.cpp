@@ -331,18 +331,18 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 		PageManager::NotifyKey(getKeyByName(arg));
 		return 0;
 	}
-
 	if (function == "page") {
 		std::string page_name = gui_parse_text(arg);
 		return gui_changePage(page_name);
 	}
-
 	if (function == "reload") {
 		int check = 0, ret_val = 0;
 		std::string root_path;
 		std::string theme_path;
 
 		operation_start("Reload Theme");
+		blankTimer.setBlank(0);
+		usleep(1100);
 		root_path = DataManager::GetSettingsStoragePath();
 		if (PartitionManager.Mount_By_Path(root_path.c_str(), 1) < 0) {
 			LOGE("Unable to mount %s during reload function startup.\n", root_path.c_str());
@@ -360,6 +360,13 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				LOGE("Failed to load base packages.\n");
 				ret_val = 1;
 			}
+		}
+		if (ret_val == 0) {
+			int timeout;
+			DataManager::GetValue("tw_screen_timeout_secs", timeout);
+			blankTimer.setBlank(1);
+			blankTimer.setTimerThread();
+			blankTimer.setTime(timeout);
 		}
 		operation_end(ret_val, simulate);
 	}
