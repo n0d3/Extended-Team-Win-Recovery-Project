@@ -92,7 +92,7 @@ void DataManager::sanitize_device_id(char* device_id) {
 #define CPUINFO_SERIALNO_LEN	(strlen(CPUINFO_SERIALNO))
 #define CPUINFO_HARDWARE	"Hardware"
 #define CPUINFO_HARDWARE_LEN	(strlen(CPUINFO_HARDWARE))
-#define TW_FORCE_CPUINFO_FOR_DEVICE_ID
+
 void DataManager::get_device_id(void) {
 	FILE *fp;
 	char line[2048];
