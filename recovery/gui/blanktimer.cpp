@@ -45,7 +45,7 @@ extern "C" {
 
 blanktimer::blanktimer(void) {
 	blanked = 0;
-	sleepTimer = getTime();
+	conblank = 1;
 	orig_brightness = getBrightness();
 }
 
@@ -56,13 +56,12 @@ void blanktimer::setTime(int newtime) {
 	}
 }
 
-int blanktimer::getTime(void) {
-	int timeout;
-	DataManager::GetValue("tw_screen_timeout_secs", timeout);
-	return timeout;
-}
-
 int blanktimer::setTimerThread(void) {
+	pthread_mutexattr_settype(&timerattr, PTHREAD_MUTEX_NORMAL);
+	pthread_mutex_init(&timermutex, &timerattr);
+	pthread_mutexattr_settype(&blankattr, PTHREAD_MUTEX_NORMAL);
+	pthread_mutex_init(&blankmutex, &blankattr);
+
 	pthread_t thread;
 	ThreadPtr blankptr = &blanktimer::setClockTimer;
 	PThreadPtr p = *(PThreadPtr*)&blankptr;
@@ -71,7 +70,7 @@ int blanktimer::setTimerThread(void) {
 }
 
 void blanktimer::setBlank(int blank) {
-	pthread_mutex_lock(&blankmutex);
+	pthread_mutex_trylock(&blankmutex);
 	conblank = blank;
 	pthread_mutex_unlock(&blankmutex);
 }
@@ -81,7 +80,7 @@ int blanktimer::getBlank(void) {
 }
 
 void blanktimer::setTimer(void) {
-	pthread_mutex_lock(&timermutex);
+	pthread_mutex_trylock(&timermutex);
 	clock_gettime(CLOCK_MONOTONIC, &btimer);
 	pthread_mutex_unlock(&timermutex);
 }
@@ -91,23 +90,26 @@ timespec blanktimer::getTimer(void) {
 }
 
 int blanktimer::setClockTimer(void) {
+	//LOGI("Screen-off timer enabled.\n");
 	timespec curTime, diff;
-	while (1) {
+	while (conblank) {
 		usleep(1000);
 		clock_gettime(CLOCK_MONOTONIC, &curTime);
 		diff = TWFunc::timespec_diff(btimer, curTime);
-		if (sleepTimer && diff.tv_sec > sleepTimer && conblank != 1) {
+		if (sleepTimer && diff.tv_sec > sleepTimer && !blanked) {
 			orig_brightness = getBrightness();
-			setBlank(1);
+			blanked = 1;
+			gr_fb_blank(1);
+			setBrightness(0);
 			PageManager::ChangeOverlay("lock");
-			if (conblank == 1 && blanked != 1) {
-				blanked = 1;
-				gr_fb_blank(1);
-				setBrightness(0);
-			}
 		}
-	}
-	return -1;
+	}	
+	//LOGI("Screen-off timer disabled.\n");
+	blanked = 0;
+	pthread_mutex_destroy(&timermutex);
+	pthread_mutex_destroy(&blankmutex);
+	pthread_exit(NULL);
+	return 0;
 }
 
 int blanktimer::getBrightness(void) {
@@ -133,10 +135,9 @@ int blanktimer::setBrightness(int brightness) {
 void blanktimer::resetTimerAndUnblank(void) {
 	setTimer();
 	if (blanked) {
-		setBrightness(orig_brightness);
 		blanked = 0;
-		setBlank(0);
 		gr_fb_blank(0);
+		setBrightness(orig_brightness);
 		gui_forceRender();
 	}
 }

@@ -30,11 +30,11 @@ class blanktimer {
 		int setTimerThread(void);
 		void resetTimerAndUnblank(void);
 		void setTime(int newtime);
-		int getTime(void);
-
-	private:
+		int blanked;
 		void setBlank(int blank);
 		int getBlank(void);
+
+	private:
 		void setTimer(void);
 		timespec getTimer(void);
 		int getBrightness(void);
@@ -44,12 +44,13 @@ class blanktimer {
 		typedef int (blanktimer::*ThreadPtr)(void);
 		typedef void* (*PThreadPtr)(void*);
 		pthread_mutex_t blankmutex;
+		pthread_mutexattr_t blankattr;
 		pthread_mutex_t timermutex;
+		pthread_mutexattr_t timerattr;
 		int conblank;
 		timespec btimer;
 		int sleepTimer;
 		int orig_brightness;
-		int blanked;
 };
 
 extern blanktimer blankTimer;
