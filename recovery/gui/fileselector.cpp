@@ -831,6 +831,11 @@ int GUIFileSelector::NotifyTouch(TOUCH_STATE state, int x, int y)
 
 int GUIFileSelector::NotifyVarChange(std::string varName, std::string value)
 {
+	if (varName.empty())
+	{
+		// Always clear the data variable so we know to use it
+		DataManager::SetValue(mVariable, "");
+	}
 	if (!mHeaderIsStatic) {
 		std::string newValue = gui_parse_text(mHeaderText);
 		if (mLastValue != newValue) {

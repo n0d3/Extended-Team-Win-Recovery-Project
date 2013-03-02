@@ -364,7 +364,8 @@ void TWFunc::twfinish_recovery(const char *send_intent) {
 int TWFunc::tw_reboot(RebootCommand command) {
 	// Always force a sync before we reboot
 	sync();
-	
+	string tmpbuf;
+
     	switch (command) {
     		case rb_current:
     		case rb_hot:        		
