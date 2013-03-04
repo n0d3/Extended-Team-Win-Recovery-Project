@@ -1,17 +1,5 @@
 #!/sbin/sh
 
-if grep -Fxq "clk=" /proc/cmdline
-then
-	if [ "`which clkpartmgr`" ]; then
-		ZIP_NAME=HD2_Extended_TWRP_2.4.3.0.r2.zip
-		PART1_NAME=recovery
-		PART1_MINSIZE=6
-
-		clkpartmgr --update_package=$ZIP_NAME $PART1_NAME:$PART1_MINSIZE
-		exit 0;
-	fi
-fi
-
 # Set the minimum required size of the recovery's partition
 min_size=0x005FFFFF;
 # Get the real size of the existing recovery partition
