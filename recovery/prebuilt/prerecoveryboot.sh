@@ -2,6 +2,25 @@
 
 sleep 2
 
+if grep -Fxq "clk=" /proc/cmdline
+then
+sed -i '
+/\/boot/ {
+c\
+/boot		mtd		boot
+}
+' /etc/recovery.fstab
+else
+sed -i '
+/\/boot/ {
+c\
+/boot		yaffs2		boot
+}
+' /etc/recovery.fstab
+fi
+
+sleep 2
+
 # /sdcard check
 if [ -b "/dev/block/mmcblk0p1" ]
 then

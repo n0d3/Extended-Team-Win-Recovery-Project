@@ -20,20 +20,6 @@ PRODUCT_COPY_FILES += \
 	device/htc/leo/prebuilt/ueventd.htcleo.rc:root/ueventd.htcleo.rc \
 	device/htc/leo/prebuilt/logo.rle:root/logo.rle
 
-# Add the prerecoveryboot.sh so that the recovery.fstab can be changed
-PRODUCT_COPY_FILES += \
-    device/htc/leo/prerecoveryboot.sh:recovery/root/sbin/prerecoveryboot.sh
-
-# Add scripts that can change the recovery.fstab when needed(fs-type change)
-PRODUCT_COPY_FILES += \
-    device/htc/leo/exthandler.sh:recovery/root/sbin/exthandler.sh \
-    device/htc/leo/exthandler2.sh:recovery/root/sbin/exthandler2.sh \
-    device/htc/leo/sdhandler.sh:recovery/root/sbin/sdhandler.sh
-
-# Add script that can split the nandroid.md5 from a CWM backup to many md5-s
-PRODUCT_COPY_FILES += \
-    device/htc/leo/cwmbackuphandler.sh:recovery/root/sbin/cwmbackuphandler.sh
-
 # we have enough storage space to hold precise GC data
 PRODUCT_TAGS += dalvik.gc.type-precise
 
