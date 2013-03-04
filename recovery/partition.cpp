@@ -2012,23 +2012,23 @@ bool TWPartition::Restore_Tar(string restore_folder, string Restore_File_System)
 	} else {
 #ifdef TW_INCLUDE_LIBTAR
 		twrpTar tar;
+		tar.setfn(Full_FileName);
 		// For restoring a CWM backup of sd-ext
-		if (TWFunc::Tar_Entry_Exists(Full_FileName, "sd-ext", 1))
+		if (Backup_Path == "/sd-ext" && tar.entryExists("sd-ext/"))
 			tar.setdir("/");
 		// For restoring a CWM backup of android_secure
-		else if (TWFunc::Tar_Entry_Exists(Full_FileName, ".android_secure", 1))
+		else if (Backup_Path == "/and-sec" && tar.entryExists(".android_secure/"))
 			tar.setdir(Storage_Path);
 		else
 			tar.setdir(Backup_Path);
-		tar.setfn(Full_FileName);
 		if (tar.extractTarFork() != 0)
 			return false;
 #else
 		// For restoring a CWM backup of sd-ext
-		if (TWFunc::Tar_Entry_Exists(Full_FileName, "sd-ext", 1))
+		if (Backup_Path == "/sd-ext" && TWFunc::Tar_Entry_Exists(Full_FileName, "sd-ext", 1))
 			Command = "cd / && tar -xf '" + Full_FileName + "'";			
 		// For restoring a CWM backup of android_secure
-		else if (TWFunc::Tar_Entry_Exists(Full_FileName, ".android_secure", 1))
+		else if (Backup_Path == "/and-sec" && TWFunc::Tar_Entry_Exists(Full_FileName, ".android_secure", 1))
 			Command = "cd " + Storage_Path + " && tar -xf '" + Full_FileName + "'";			
 		else
 			Command = "cd " + Backup_Path + " && tar -xf '" + Full_FileName + "'";

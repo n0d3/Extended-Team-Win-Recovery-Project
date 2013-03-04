@@ -38,6 +38,7 @@ class twrpTar {
                 int addFilesToExistingTar(vector <string> files, string tarFile);
 		int createTar();
 		int addFile(string fn, bool include_root);
+		int entryExists(string entry);
 		int closeTar(bool gzip);
 		int createTarGZFork();
 		int createTarFork();
@@ -61,6 +62,8 @@ class twrpTar {
 		int has_data_media;
 		int Archive_File_Count;
 		unsigned long long Archive_Current_Size;
+		int Archive_Current_Type;	// the type of the archive currently chosen to be extracted
+		int getArchiveType();		// 1 for compressed - 0 for uncompressed
 		TAR *t;
 		FILE* p;
 		int fd;

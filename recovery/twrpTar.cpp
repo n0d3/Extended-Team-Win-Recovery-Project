@@ -161,7 +161,7 @@ int twrpTar::splitArchiveFork() {
 	int status;
 	pid_t pid;
 	if ((pid = fork()) == -1) {
-		LOGI("create tar failed to fork.\n");
+		LOGI("create split-tar failed to fork.\n");
 		return -1;
 	}
 	if (pid == 0) {
@@ -255,19 +255,6 @@ int twrpTar::Generate_Multiple_Archives(string Path) {
 		}
 		else if (de->d_type == DT_REG || de->d_type == DT_LNK)
 		{
-			// Skip excluded stuff
-			if (split.size() > 0) {
-				skip = false;
-				for (i = 0; i < split.size(); i++) {
-					if (strcmp(de->d_name, split[i].c_str()) == 0) {
-						LOGI("excluding %s\n", de->d_name);
-						skip = true;
-						break;
-					}
-				}
-				if (skip)
-					continue;
-			}
 			stat(FileName.c_str(), &st);
 
 			if (Archive_Current_Size != 0 && Archive_Current_Size + st.st_size > MAX_ARCHIVE_SIZE) {
@@ -332,8 +319,8 @@ int twrpTar::Split_Archive()
 
 int twrpTar::extractTar() {
 	char* charRootDir = (char*) tardir.c_str();
-	bool gzip = false;
-	if (openTar(gzip) == -1)
+
+	if (openTar(false) == -1)
 		return -1;
 	if (tar_extract_all(t, charRootDir) != 0) {
 		LOGE("Unable to extract tar archive '%s'\n", tarfn.c_str());
@@ -346,23 +333,33 @@ int twrpTar::extractTar() {
 	return 0;
 }
 
+int twrpTar::getArchiveType() {
+        int type = 0;
+        string::size_type i = 0;
+        int firstbyte = 0, secondbyte = 0;
+	char header[3];
+        
+        ifstream f;
+        f.open(tarfn.c_str(), ios::in | ios::binary);
+        f.get(header, 3);
+        f.close();
+        firstbyte = header[i] & 0xff;
+        secondbyte = header[++i] & 0xff;
+
+        if (firstbyte == 0x1f && secondbyte == 0x8b)
+		type = 1; // Compressed
+	else
+		type = 0; // Uncompressed
+
+	return type;
+}
+
 int twrpTar::extract() {
-	int len = 3;
-	char header[len];
-	string::size_type i = 0;
-	int firstbyte = 0;
-	int secondbyte = 0;
-	int ret;
-	ifstream f;
-	f.open(tarfn.c_str(), ios::in | ios::binary);
-	f.get(header, len);
-	firstbyte = header[i] & 0xff;
-	secondbyte = header[++i] & 0xff;
-	f.close();
-	if (firstbyte == 0x1f && secondbyte == 0x8b) {
+	Archive_Current_Type = getArchiveType();
+	if (Archive_Current_Type == 1) {
 		//if you return the extractTGZ function directly, stack crashes happen
 		LOGI("Extracting gzipped tar\n");
-		ret = extractTGZ();
+		int ret = extractTGZ();
 		return ret;
 	}
 	else {
@@ -390,13 +387,15 @@ int twrpTar::tarDirs(bool include_root) {
 		}
 		struct dirent* de;
 		while ((de = readdir(d)) != NULL) {
+			if (strcmp(de->d_name, ".") == 0 || strcmp(de->d_name, "..") == 0)
+				continue;			
 #ifdef RECOVERY_SDCARD_ON_DATA
 			if ((tardir == "/data" || tardir == "/data/") && strcmp(de->d_name, "media") == 0)
 				continue;
 #endif
 			if (de->d_type == DT_BLK || de->d_type == DT_CHR)
 				continue;
-			if (strcmp(de->d_name, ".") == 0 || strcmp(de->d_name, "..") == 0)   continue;
+
 			// Skip excluded stuff
 			if (split.size() > 0) {
 				skip = false;
@@ -410,6 +409,7 @@ int twrpTar::tarDirs(bool include_root) {
 				if (skip)
 					continue;
 			}
+
 			LOGI("adding %s\n", de->d_name);
 			subfolder = mainfolder;
 			subfolder += de->d_name;
@@ -429,19 +429,6 @@ int twrpTar::tarDirs(bool include_root) {
 					}
 				}
 			} else if (tardir != "/" && (de->d_type == DT_REG || de->d_type == DT_LNK)) {
-				// Skip excluded stuff
-				if (split.size() > 0) {
-					skip = false;
-					for (i = 0; i < split.size(); i++) {
-						if (strcmp(de->d_name, split[i].c_str()) == 0) {
-							LOGI("excluding %s\n", de->d_name);
-							skip = true;
-							break;
-						}
-					}
-					if (skip)
-						continue;
-				}
 				if (addFile(buf, include_root) != 0)
 					return -1;
 			}
@@ -453,28 +440,24 @@ int twrpTar::tarDirs(bool include_root) {
 }
 
 int twrpTar::createTGZ() {
-	bool gzip = true;
-
 	init_libtar_buffer(0);
 	if (createTar() == -1)
 		return -1;
 	if (tarDirs(false) == -1)
 		return -1;
-	if (closeTar(gzip) == -1)
+	if (closeTar(true) == -1)
 		return -1;
 	free_libtar_buffer();
 	return 0;
 }
 
 int twrpTar::create() {
-	bool gzip = false;
-
 	init_libtar_buffer(0);
 	if (createTar() == -1)
 		return -1;
 	if (tarDirs(false) == -1)
 		return -1;
-	if (closeTar(gzip) == -1)
+	if (closeTar(false) == -1)
 		return -1;
 	free_libtar_buffer();
 	return 0;
@@ -506,7 +489,6 @@ int twrpTar::addFilesToExistingTar(vector <string> files, string fn) {
 
 int twrpTar::createTar() {
 	char* charTarFile = (char*) tarfn.c_str();
-	char* charRootDir = (char*) tardir.c_str();
 	int use_compression = 0;
 	static tartype_t type = { open, close, read, write_tar };
 
@@ -516,7 +498,7 @@ int twrpTar::createTar() {
 		p = popen(cmd.c_str(), "w");
 		fd = fileno(p);
 		if (!p) return -1;
-		if(tar_fdopen(&t, fd, charRootDir, &type, O_RDONLY | O_LARGEFILE, 0644, TAR_GNU) != 0) {
+		if(tar_fdopen(&t, fd, charTarFile, &type, O_RDONLY | O_LARGEFILE, 0644, TAR_GNU) != 0) {
 			pclose(p);
 			return -1;
 		}
@@ -529,7 +511,6 @@ int twrpTar::createTar() {
 }
 
 int twrpTar::openTar(bool gzip) {
-	char* charRootDir = (char*) tardir.c_str();
 	char* charTarFile = (char*) tarfn.c_str();
 
 	if (gzip) {
@@ -538,7 +519,7 @@ int twrpTar::openTar(bool gzip) {
 		FILE* pipe = popen(cmd.c_str(), "r");
 		int fd = fileno(pipe);
 		if (!pipe) return -1;
-		if(tar_fdopen(&t, fd, charRootDir, NULL, O_RDONLY | O_LARGEFILE, 0644, TAR_GNU) != 0) {
+		if(tar_fdopen(&t, fd, charTarFile, NULL, O_RDONLY | O_LARGEFILE, 0644, TAR_GNU) != 0) {
 			LOGI("tar_fdopen returned error\n");
 			pclose(pipe);
 			return -1;
@@ -650,6 +631,23 @@ int twrpTar::extractTGZ() {
 		return -1;
 	}
 	return 0;
+}
+
+int twrpTar::entryExists(string entry) {
+	char* searchstr = (char*)entry.c_str();
+	int ret;
+
+	Archive_Current_Type = getArchiveType();
+
+	if (openTar(Archive_Current_Type) == -1)
+		ret = 0;
+	else
+		ret = tar_find(t, searchstr);
+
+	if (tar_close(t) != 0)
+		LOGI("Unable to close tar file after searching for entry '%s'.\n", entry.c_str());
+
+	return ret;
 }
 
 extern "C" ssize_t write_tar(int fd, const void *buffer, size_t size) {

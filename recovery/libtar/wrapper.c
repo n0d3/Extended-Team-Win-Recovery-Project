@@ -123,7 +123,7 @@ tar_append_tree(TAR *t, char *realdir, char *savedir, char *exclude)
 		for (i = 0; i < (n_spaces+1); i++) {
 			if (realdir == excluded[i]) {
 #ifdef DEBUG
-				printf("                       excluding '%s'\n", excluded[i]);
+				printf("                     excluding '%s'\n", excluded[i]);
 #endif
 				skip = 1;
 				break;
@@ -131,13 +131,8 @@ tar_append_tree(TAR *t, char *realdir, char *savedir, char *exclude)
 		}
 	}
 	if (skip == 0) {
-		if (tar_append_file(t, realdir, savedir) == 0) {
-#ifdef DEBUG
-			printf("                       including '%s'\n", realdir);
-#endif
-		} else {
+		if (tar_append_file(t, realdir, savedir) != 0)
 			return -1;
-		}
 	}
 
 	char realpath[MAXPATHLEN];
@@ -162,7 +157,7 @@ tar_append_tree(TAR *t, char *realdir, char *savedir, char *exclude)
 			for (i = 0; i < (n_spaces+1); i++) {
 				if (dent->d_name == excluded[i]) {
 #ifdef DEBUG
-					printf("                       excluding '%s'\n", excluded[i]);
+					printf("                     excluding '%s'\n", excluded[i]);
 #endif
 					omit = 1;
 					break;
@@ -184,9 +179,7 @@ tar_append_tree(TAR *t, char *realdir, char *savedir, char *exclude)
 				return -1;
 			continue;
 		} else {
-			if (tar_append_file(t, realpath, (savedir ? savepath : NULL)) == 0)
-				printf("                       including '%s'\n", realpath);
-			else
+			if (tar_append_file(t, realpath, (savedir ? savepath : NULL)) != 0)
 				return -1;
 			continue;
 		}
@@ -195,4 +188,34 @@ tar_append_tree(TAR *t, char *realdir, char *savedir, char *exclude)
 	free(excluded);
 
 	return 0;
+}
+
+
+int
+tar_find(TAR *t, char *searchstr)
+{
+	if (!searchstr)
+		return 0;
+
+	char *filename;
+	int i, entryfound = 0;
+#ifdef DEBUG
+	printf("==> tar_find(0x%lx, %s)\n", (long unsigned int)t, searchstr);
+#endif
+	while ((i = th_read(t)) == 0) {
+		filename = th_get_pathname(t);
+		if (fnmatch(searchstr, filename, FNM_FILE_NAME | FNM_PERIOD) == 0) {
+			entryfound++;
+#ifdef DEBUG
+			printf("Found matching entry: %s\n", filename);
+#endif
+			break;
+		}
+	}
+#ifdef DEBUG
+	if (!entryfound)
+		printf("No matching entry found.\n");
+#endif
+
+	return entryfound;
 }

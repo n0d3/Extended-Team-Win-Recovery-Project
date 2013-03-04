@@ -677,8 +677,12 @@ int TWFunc::mtdchk(string mtd_dev) {
 bool TWFunc::Tar_Entry_Exists(string tar_file, string entry, int level) {
 	bool ret = false;
 	string cmd, result, line;
+	int type = Get_Archive_Type(tar_file);
+	if (type == 0)
+		cmd = "tar -tf " + tar_file;
+	else
+		cmd = "tar -ztf " + tar_file;
 
-	cmd = "tar -tf " + tar_file;
 	if (level)
 		cmd += " | sed " + to_string(level) + "q";
 	TWFunc::Exec_Cmd(cmd, result);
