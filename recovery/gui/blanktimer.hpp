@@ -31,6 +31,7 @@ class blanktimer {
 		void resetTimerAndUnblank(void);
 		void setTime(int newtime);
 		int blanked;
+		int dimmed;
 		void setBlank(int blank);
 		int getBlank(void);
 

@@ -44,6 +44,7 @@ extern "C" {
 #include "../data.hpp"
 
 blanktimer::blanktimer(void) {
+	dimmed = 0;
 	blanked = 0;
 	conblank = 1;
 	orig_brightness = getBrightness();
@@ -51,7 +52,7 @@ blanktimer::blanktimer(void) {
 
 void blanktimer::setTime(int newtime) {
 	if (sleepTimer != newtime) {
-		LOGI("Screen timeout set to %i sec.\n", newtime);
+		LOGI("Screen timeout changed to %i sec.\n", newtime);
 		sleepTimer = newtime;
 	}
 }
@@ -93,11 +94,17 @@ int blanktimer::setClockTimer(void) {
 	//LOGI("Screen-off timer enabled.\n");
 	timespec curTime, diff;
 	while (conblank) {
-		usleep(1000);
+		usleep(980000);
 		clock_gettime(CLOCK_MONOTONIC, &curTime);
 		diff = TWFunc::timespec_diff(btimer, curTime);
-		if (sleepTimer && diff.tv_sec > sleepTimer && !blanked) {
+		if (sleepTimer > 2 && diff.tv_sec > (sleepTimer - 2) && !dimmed) {
+			dimmed = 1;
+			blanked = 0;
 			orig_brightness = getBrightness();
+			setBrightness(5);
+		}
+		if (sleepTimer && diff.tv_sec > sleepTimer && dimmed) {
+			dimmed = 0;
 			blanked = 1;
 			gr_fb_blank(1);
 			setBrightness(0);
@@ -105,6 +112,7 @@ int blanktimer::setClockTimer(void) {
 		}
 	}	
 	//LOGI("Screen-off timer disabled.\n");
+	dimmed = 0;
 	blanked = 0;
 	pthread_mutex_destroy(&timermutex);
 	pthread_mutex_destroy(&blankmutex);
@@ -113,20 +121,12 @@ int blanktimer::setClockTimer(void) {
 }
 
 int blanktimer::getBrightness(void) {
-	string results;
-	string brightness_path = EXPAND(TW_BRIGHTNESS_PATH);
-	if ((TWFunc::read_file(brightness_path, results)) != 0)
-		return -1;
-	return atoi(results.c_str());
-
+	return DataManager::GetIntValue("tw_brightness");
 }
 
 int blanktimer::setBrightness(int brightness) {
 	string brightness_path = EXPAND(TW_BRIGHTNESS_PATH);
-	string bstring;
-	char buff[100];
-	sprintf(buff, "%d", brightness);
-	bstring = buff;
+	string bstring = TWFunc::to_string(brightness);
 	if ((TWFunc::write_file(brightness_path, bstring)) != 0)
 		return -1;
 	return 0;
@@ -137,7 +137,10 @@ void blanktimer::resetTimerAndUnblank(void) {
 	if (blanked) {
 		blanked = 0;
 		gr_fb_blank(0);
-		setBrightness(orig_brightness);
 		gui_forceRender();
+		setBrightness(orig_brightness);
+	} else if (dimmed) {
+		dimmed = 0;
+		setBrightness(orig_brightness);
 	}
 }
