@@ -344,12 +344,13 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 				DataManager::SetValue(TW_SDEXT2_SIZE, 0);
 			}
 		} else if (Mount_Point == "/boot") {
-			if (DataManager::Detect_BLDR() == 1/*cLK*/) {
+		/*
+			if (DataManager::Detect_BLDR() == 1) {
 				Fstab_File_System = "mtd";
 				Current_File_System = "mtd";
 				Setup_Image(Display_Error);
 				DataManager::SetValue("tw_boot_is_mountable", 0);
-			} else if (DataManager::Detect_BLDR() == 2/*MAGLDR*/) {
+			} else if (DataManager::Detect_BLDR() == 2) {
 				unsigned int fs = TWFunc::Get_FS_Via_statfs(Mount_Point);
 				int hdr = TWFunc::mtdchk(MTD_Dev);
 				LOGI("%s fs: 0x%x.\n", Mount_Point.c_str(), fs);
@@ -363,6 +364,8 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 				}
 			} else		
 				DataManager::SetValue("tw_boot_is_mountable", 1);
+		*/
+			DataManager::SetValue("tw_boot_is_mountable", 1);
 		}	
 #ifdef TW_EXTERNAL_STORAGE_PATH
 		if (Mount_Point == EXPAND(TW_EXTERNAL_STORAGE_PATH)) {
@@ -412,9 +415,10 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 		Find_Actual_Block_Device();
 		Setup_Image(Display_Error);
 		if (Mount_Point == "/boot") {
-			if (DataManager::Detect_BLDR() == 1/*cLK*/)
+		/*
+			if (DataManager::Detect_BLDR() == 1)
 				DataManager::SetValue("tw_boot_is_mountable", 0);
-			else if (DataManager::Detect_BLDR() == 2/*MAGLDR*/) {
+			else if (DataManager::Detect_BLDR() == 2) {
 				unsigned int fs = TWFunc::Get_FS_Via_statfs(Mount_Point);
 				int hdr = TWFunc::mtdchk(MTD_Dev);
 				LOGI("%s fs: 0x%x.\n", Mount_Point.c_str(), fs);
@@ -427,6 +431,8 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 					DataManager::SetValue("tw_boot_is_mountable", 0);	
 			} else		
 				DataManager::SetValue("tw_boot_is_mountable", 1);
+		*/
+			DataManager::SetValue("tw_boot_is_mountable", 0);
 		}
 	} else if (Is_Swap(Fstab_File_System)) {
 		LOGI("Swap detected.\n");
@@ -2203,10 +2209,9 @@ bool TWPartition::Check_MD5(string restore_folder) {
 	char split_filename[512];
 	int index = 0;
 
-	// Using the nandroid.md5 file to know if this is a CWM backup.
-	// Split that file to match TWRP's style.
+	// if this is a CWM backup split the nandroid.md5 file to match TWRP's style.
 	if (TWFunc::Path_Exists(restore_folder + "/nandroid.md5")) {
-		string Command = "cwmbackuphandler.sh " + restore_folder;
+		string Command = "split_nandroid_md5.sh " + restore_folder;
 		system(Command.c_str());
 	}
 
