@@ -235,20 +235,17 @@ int DataManager::Pause_For_Battery_Charge() {
 
 int DataManager::Detect_BLDR() {
 	if (BLDR == -1) {
+		string result;
 		string cmd = "grep -Fxq \"clk=\" /proc/cmdline";
 
-		if (system(cmd.c_str()) == 0) {
-			LOGI("=> Detected bootloader: cLK\n");
+		if (TWFunc::Exec_Cmd(cmd, result) == 0)
 			BLDR = 1;
-		} else {
-			string cmd = "grep -Fxq \"rel_path=\" /proc/cmdline";
-			if (system(cmd.c_str()) == 0) {
-				LOGI("=> Detected bootloader: HARET\n");
+		else {
+			cmd = "grep -Fxq \"rel_path=\" /proc/cmdline";
+			if (TWFunc::Exec_Cmd(cmd, result) == 0)				
 				BLDR = 0;
-			} else {
-				LOGI("=> Detected bootloader: MAGLDR\n");
+			else				
 				BLDR = 2;
-			}
 		}
 	}
 		
@@ -300,26 +297,6 @@ void DataManager::get_boot_partitions(void) {
 		}
 	}
 	return;
-}
-
-// TODO: Move this to partition.cpp
-int DataManager::Wipe_MTD_By_Name(string ptnName) {
-	ui_print("MTD Formatting \"%s\"\n", ptnName.c_str());
-
-    	mtd_scan_partitions();
-    	const MtdPartition* mtd = mtd_find_partition_by_name(ptnName.c_str());
-    	if (mtd == NULL) {
-        	LOGE("No mtd partition named '%s'", ptnName.c_str());
-        	return false;
-    	}
-
-	string eraseimg = "erase_image " + ptnName;
-	if (system(eraseimg.c_str()) != 0) {
-		LOGE("Failed to format '%s'", ptnName.c_str());
-		return false;
-	}
-	ui_print("Done.\n");
-    	return true;
 }
 
 int DataManager::ResetDefaults() {
@@ -402,7 +379,8 @@ int DataManager::SaveValues()
 		return -1;
 
 	string mount_path = GetSettingsStoragePath();
-	PartitionManager.Mount_By_Path(mount_path.c_str(), 1);
+	if (!PartitionManager.Is_Mounted_By_Path(mount_path.c_str()))
+		PartitionManager.Mount_By_Path(mount_path.c_str(), 1);
 
 	FILE* out = fopen(mBackingFile.c_str(), "wb");
 	if (!out)
@@ -637,11 +615,14 @@ void DataManager::SetAdditionalFolders(string storage_path) {
 	SetValue(TW_APP_FOLDER_VAR, app_path, 0);
 }
 
-void DataManager::SetupTwrpFolder() {	
-	if (!PartitionManager.Mount_Settings_Storage(false)) {
-		usleep(500000);
-		if (!PartitionManager.Mount_Settings_Storage(false))
-			LOGI("Unable to mount %s when trying to setup TWRP folder.\n", DataManager_GetSettingsStorageMount());
+void DataManager::SetupTwrpFolder() {
+	string current_storage_path = GetCurrentStoragePath();
+	if (!PartitionManager.Is_Mounted_By_Path(current_storage_path)) {
+		if (!PartitionManager.Mount_Current_Storage(false)) {
+			usleep(500000);
+			if (!PartitionManager.Mount_Current_Storage(false))
+				LOGI("Unable to mount %s when trying to setup TWRP folder.\n", DataManager_GetSettingsStorageMount());
+		}
 	}
 
 	if(GetStrValue(TW_BACKUPS_FOLDER_VAR).size() < 2
@@ -700,6 +681,8 @@ void DataManager::SetDefaultValues()
 
 	mConstValues.insert(make_pair(TW_VERSION_VAR, TW_VERSION_STR));
 // Extended-start
+	mValues.insert(make_pair(TW_RUN_PREBOOT_CHK, make_pair("1", 1)));
+
 	mValues.insert(make_pair(TW_SKIP_DALVIK, make_pair("0", 1)));
 	mValues.insert(make_pair(TW_SKIP_NATIVESD, make_pair("0", 1)));
 
@@ -709,7 +692,8 @@ void DataManager::SetDefaultValues()
     	mValues.insert(make_pair(TW_RESTORE_SDEXT2_VAR, make_pair("0", 1)));
 	mValues.insert(make_pair(TW_HAS_SDEXT2_PARTITION, make_pair("0", 1)));
     	mValues.insert(make_pair(TW_USE_SDEXT2_PARTITION, make_pair("0", 1)));
-    	mValues.insert(make_pair(TW_SDPART2_FILE_SYSTEM, make_pair("ext4", 1)));
+	mValues.insert(make_pair("tw_sdcard_file_system", make_pair("vfat", 1)));
+    	mValues.insert(make_pair("tw_sdpart2_file_system", make_pair("ext4", 1)));
 
     	mValues.insert(make_pair(TW_SCREENSHOT_VAR, make_pair("0", 1)));
 
@@ -729,13 +713,40 @@ void DataManager::SetDefaultValues()
 	mValues.insert(make_pair(TW_DATA_ON_EXT_CHECK, make_pair("0", 1)));
 	mValues.insert(make_pair(TW_RESTORE_IS_DATAONEXT, make_pair("0", 1)));
 
-	mValues.insert(make_pair(TW_NUM_OF_MOUNTS_FOR_FS_CHK, make_pair("10", 1)));
+	mValues.insert(make_pair(TW_NUM_OF_MOUNTS_FOR_FS_CHK, make_pair("16", 1)));
 	mValues.insert(make_pair(TW_INCR_SIZE, make_pair("40", 1)));
+	mValues.insert(make_pair(TW_SKIP_SD_FREE_SZ_CHECK, make_pair("0", 1)));
 
 	mValues.insert(make_pair(TW_RESCUE_EXT_CONTENTS, make_pair("0", 1)));
 	mValues.insert(make_pair(TW_HANDLE_RESTORE_SIZE, make_pair("0", 1)));
 	mValues.insert(make_pair(TW_HANDLE_SU, make_pair("0", 1)));
-	mValues.insert(make_pair(TW_USE_HAPTIC_FEEDBACK, make_pair("1", 1)));
+
+	mValues.insert(make_pair(TW_VIBRATE_AFTER_BUTTON_PRESS, make_pair("1", 1)));
+	mValues.insert(make_pair(TW_BUTTON_FEEDBACK_DURATION_MS, make_pair("25", 1)));
+	mValues.insert(make_pair(TW_VIBRATE_AFTER_BACKUP, make_pair("1", 1)));
+	mValues.insert(make_pair(TW_BACKUP_FEEDBACK_DURATION_MS, make_pair("100", 1)));
+	mValues.insert(make_pair(TW_VIBRATE_AFTER_RESTORE, make_pair("1", 1)));
+	mValues.insert(make_pair(TW_RESTORE_FEEDBACK_DURATION_MS, make_pair("100", 1)));
+	mValues.insert(make_pair(TW_VIBRATE_AFTER_INSTALL, make_pair("1", 1)));
+	mValues.insert(make_pair(TW_INSTALL_FEEDBACK_DURATION_MS, make_pair("100", 1)));
+	mValues.insert(make_pair(TW_VIBRATE_AFTER_PARTED, make_pair("1", 1)));
+	mValues.insert(make_pair(TW_PARTED_FEEDBACK_DURATION_MS, make_pair("100", 1)));
+	mValues.insert(make_pair(TW_VIBRATE_AFTER_SDBACKUP, make_pair("1", 1)));
+	mValues.insert(make_pair(TW_SDBACKUP_FEEDBACK_DURATION_MS, make_pair("100", 1)));
+	mValues.insert(make_pair(TW_VIBRATE_AFTER_SDRESTORE, make_pair("1", 1)));
+	mValues.insert(make_pair(TW_SDRESTORE_FEEDBACK_DURATION_MS, make_pair("100", 1)));
+
+	mValues.insert(make_pair(TW_SET_DROP_CACHES_AT_BOOT, make_pair("0", 1)));
+	mValues.insert(make_pair(TW_DROP_CACHES, make_pair("0", 1)));
+	mValues.insert(make_pair(TW_SET_IO_SCHED_AT_BOOT, make_pair("0", 1)));
+	mValues.insert(make_pair(TW_IO_SCHED, make_pair("deadline", 1)));
+	mValues.insert(make_pair(TW_SET_CPU_F_AT_BOOT, make_pair("0", 1)));
+	mValues.insert(make_pair(TW_MAX_CPU_F, make_pair("998400", 1)));
+	mValues.insert(make_pair(TW_MIN_CPU_F, make_pair("245000", 1)));
+	mValues.insert(make_pair(TW_SET_CPU_GOV_AT_BOOT, make_pair("0", 1)));
+	mValues.insert(make_pair(TW_CPU_GOV, make_pair("performance", 1)));
+
+	mValues.insert(make_pair(TW_MKNTFS_QUICK_FORMAT, make_pair("0", 1)));
 // Extended-End
 
 #ifdef TW_INCLUDE_MKNTFS
@@ -1024,8 +1035,8 @@ void DataManager::SetDefaultValues()
 	mValues.insert(make_pair(TW_SKIP_MD5_CHECK_VAR, make_pair("0", 1)));
 	mValues.insert(make_pair(TW_SKIP_MD5_GENERATE_VAR, make_pair("0", 1)));
 	mValues.insert(make_pair(TW_SDEXT_SIZE, make_pair("512", 1)));
-	mValues.insert(make_pair(TW_SWAP_SIZE, make_pair("32", 1)));
-	mValues.insert(make_pair(TW_SDPART_FILE_SYSTEM, make_pair("ext3", 1)));
+	mValues.insert(make_pair(TW_SWAP_SIZE, make_pair("0", 1)));
+	mValues.insert(make_pair("tw_sdpart_file_system", make_pair("ext4", 1)));
 	mValues.insert(make_pair(TW_TIME_ZONE_GUISEL, make_pair("CST6;CDT", 1)));
 	mValues.insert(make_pair(TW_TIME_ZONE_GUIOFFSET, make_pair("0", 1)));
 	mValues.insert(make_pair(TW_TIME_ZONE_GUIDST, make_pair("1", 1)));
@@ -1074,7 +1085,7 @@ void DataManager::SetDefaultValues()
 		value = TW_MAX_BRIGHTNESS * 0.75;
 		val75 << value;
 		mConstValues.insert(make_pair("tw_brightness_75", val75.str()));
-		mValues.insert(make_pair("tw_brightness", make_pair(val100.str(), 1)));
+		mValues.insert(make_pair("tw_brightness", make_pair("100", 1)));
 		mValues.insert(make_pair("tw_brightness_display", make_pair("100", 1)));
 	} else {
 		mConstValues.insert(make_pair("tw_has_brightnesss_file", "0"));
@@ -1173,14 +1184,6 @@ void DataManager::ReadSettingsFile(void)
 		PartitionManager.Mount_By_Path(ext_path, 0);
 	}
 	update_tz_environment_variables();
-#ifdef TW_MAX_BRIGHTNESS
-	if (pause == 0 && strcmp(EXPAND(TW_BRIGHTNESS_PATH), "/nobrightness") != 0) {
-		string brightness_path = EXPAND(TW_BRIGHTNESS_PATH);
-		string brightness_value = GetStrValue("tw_brightness");
-		LOGI("writing %s to brightness\n", brightness_value.c_str());
-		TWFunc::write_file(brightness_path, brightness_value);
-	}
-#endif
 	SettingsFileRead = 1;
 }
 

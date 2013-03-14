@@ -1,0 +1,12 @@
+noauth
+defaultroute
+usepeerdns
+ipcp-accept-remote
+ipcp-accept-local
+holdoff 3
+noaccomp
+noccp
+nobsdcomp
+nodeflate
+nopcomp
+novjccomp

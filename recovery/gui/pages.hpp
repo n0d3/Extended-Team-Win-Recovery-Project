@@ -37,8 +37,8 @@ public:
     virtual int Update(void);
     virtual int NotifyTouch(TOUCH_STATE state, int x, int y);
     virtual int NotifyKey(int key);
-	virtual int NotifyKeyboard(int key);
-	virtual int SetKeyBoardFocus(int inFocus);
+    virtual int NotifyKeyboard(int key);
+    virtual int SetKeyBoardFocus(int inFocus);
     virtual int NotifyVarChange(std::string varName, std::string value);
     virtual void SetPageFocus(int inFocus);
 
@@ -46,7 +46,7 @@ protected:
     std::string mName;
     std::vector<RenderObject*> mRenders;
     std::vector<ActionObject*> mActions;
-	std::vector<InputObject*> mInputs;
+    std::vector<InputObject*> mInputs;
 
     ActionObject* mTouchStart;
     COLOR mBackground;
@@ -66,7 +66,7 @@ public:
 
     Page* FindPage(std::string name);
     int SetPage(std::string page);
-	int SetOverlay(Page* page);
+    int SetOverlay(Page* page);
     Resource* FindResource(std::string name);
 
     // Helper routine for identifing if we're the current page
@@ -77,8 +77,8 @@ public:
     int Update(void);
     int NotifyTouch(TOUCH_STATE state, int x, int y);
     int NotifyKey(int key);
-	int NotifyKeyboard(int key);
-	int SetKeyBoardFocus(int inFocus);
+    int NotifyKeyboard(int key);
+    int SetKeyBoardFocus(int inFocus);
     int NotifyVarChange(std::string varName, std::string value);
 
 protected:
@@ -91,7 +91,8 @@ protected:
     ResourceManager* mResources;
     std::vector<Page*> mPages;
     Page* mCurrentPage;
-	Page* mOverlayPage;     // This is a special case, used for "locking" the screen
+    // Used for "locking" the screen
+    Page* mOverlayPage;
 };
 
 class PageManager
@@ -105,7 +106,7 @@ public:
 
     // Used for actions and pages
     static int ChangePage(std::string name);
-	static int ChangeOverlay(std::string name);
+    static int ChangeOverlay(std::string name);
     static Resource* FindResource(std::string name);
     static Resource* FindResource(std::string package, std::string name);
 
@@ -120,8 +121,8 @@ public:
     static int Update(void);
     static int NotifyTouch(TOUCH_STATE state, int x, int y);
     static int NotifyKey(int key);
-	static int NotifyKeyboard(int key);
-	static int SetKeyBoardFocus(int inFocus);
+    static int NotifyKeyboard(int key);
+    static int SetKeyBoardFocus(int inFocus);
     static int NotifyVarChange(std::string varName, std::string value);
 
 protected:
@@ -130,7 +131,7 @@ protected:
 protected:
     static std::map<std::string, PageSet*> mPageSets;
     static PageSet* mCurrentSet;
-	static PageSet* mBaseSet;
+    static PageSet* mBaseSet;
 };
 
 #endif  // _PAGES_HEADER_HPP

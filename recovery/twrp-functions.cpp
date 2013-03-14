@@ -54,48 +54,6 @@ int TWFunc::Exec_Cmd(string cmd, string &result) {
 	return ret;
 }
 
-/*  Checks md5 for a path
-    Return values:
-        -1 : MD5 does not exist
-        0 : Failed
-        1 : Success */
-int TWFunc::Check_MD5(string File) {
-	int ret;
-	string Command, DirPath, MD5_File, Sline, Filename, MD5_File_Filename, OK;
-	char line[255];
-	size_t pos;
-	string result;
-
-	MD5_File = File + ".md5";
-	if (Path_Exists(MD5_File)) {
-		DirPath = Get_Path(File);
-		MD5_File = Get_Filename(MD5_File);
-		Command = "cd '" + DirPath + "' && /sbin/busybox md5sum -c " + MD5_File;
-		Exec_Cmd(Command, result);
-		pos = result.find(":");
-		if (pos != string::npos) {
-			Filename = Get_Filename(File);
-			MD5_File_Filename = result.substr(0, pos);
-			OK = result.substr(pos + 2, result.size() - pos - 2);
-			if (Filename == MD5_File_Filename && (OK == "OK" || OK == "OK\n")) {
-				//MD5 is good, return 1
-				ret = 1;
-			} else {
-				// MD5 is bad, return 0
-				ret = 0;
-			}
-		} else {
-			// MD5 is bad, return 0
-			ret = 0;
-		}
-	} else {
-		//No md5 file, return -1
-		ret = -1;
-	}
-
-    return ret;
-}
-
 // Returns "file.name" from a full /path/to/file.name
 string TWFunc::Get_Filename(string Path) {
 	size_t pos = Path.find_last_of("/");
@@ -215,10 +173,10 @@ unsigned long long TWFunc::Get_Folder_Size(const string& Path, bool Display_Erro
 	DIR* d = opendir(Path.c_str());
 	if (d == NULL) {
 		if (Display_Error) {
-			LOGE("error opening '%s'\n", Path.c_str());
+			LOGE("[Get_Folder_Size()] error opening '%s'\n", Path.c_str());
 			LOGE("error: %s\n", strerror(errno));
 		} else {
-			LOGI("error opening '%s'\n", Path.c_str());
+			LOGI("[Get_Folder_Size()] error opening '%s'\n", Path.c_str());
 			LOGI("error: %s\n", strerror(errno));
 		}
 		return 0;
@@ -281,6 +239,16 @@ unsigned long TWFunc::Get_File_Size(string Path) {
 	if (stat(Path.c_str(), &st) != 0)
 		return 0;
 	return st.st_size;
+}
+
+unsigned long TWFunc::RoundUpSize(unsigned long sz, unsigned long multiple) {
+	if (multiple == 0)
+		return sz;
+
+	unsigned long remainder = sz % multiple;
+	if (remainder == 0)
+		return sz;
+	return (sz + multiple - remainder);
 }
 
 static const char *COMMAND_FILE = "/cache/recovery/command";
@@ -418,7 +386,7 @@ void TWFunc::check_and_run_script(const char* script_file, const char* display_n
 	if (stat(script_file, &st) == 0) {
 		ui_print("Running %s script...\n", display_name);
 		chmod(script_file, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
-		TWFunc::Exec_Cmd(script_file, result);
+		Exec_Cmd(script_file, result);
 		ui_print("Finished running %s script.\n", display_name);
 	}
 }
@@ -429,7 +397,7 @@ int TWFunc::removeDir(const string path, bool skipParent) {
 	string new_path;
 
 	if (d == NULL) {
-		LOGE("Error opening '%s'\n", path.c_str());
+		LOGE("[removeDir()] Error opening '%s'\n", path.c_str());
 		return -1;
 	}
 
@@ -513,6 +481,26 @@ int TWFunc::read_file(string fn, string& results) {
 	return -1;
 }
 
+int TWFunc::read_file_line_by_line(string fn, vector<string>& lines, bool skip_empty) {
+	if (fn.empty())
+		return 0;
+
+	ifstream file;
+	file.open(fn.c_str(), ios::in);
+	if (file.is_open()) {
+		string line;
+		while (getline(file, line)) {
+			if (line.empty() && skip_empty)
+				continue;
+			lines.push_back(line);
+		}
+		file.close();
+		return 1;
+	}
+	LOGI("Cannot find file %s\n", fn.c_str());
+	return 0;
+}
+
 int TWFunc::write_file(string fn, string& line) {
 	FILE *file;
 	file = fopen(fn.c_str(), "w");
@@ -537,11 +525,22 @@ timespec TWFunc::timespec_diff(timespec& start, timespec& end) {
 	return temp;
 }
 
+// Dropping the cache will make the available RAM go up, but the CPU load will go up too.
+// It may have a positive effect after heavy jobs (backup/restore, install, partitioning)[?]
 int TWFunc::drop_caches(void) {
-	string file = "/proc/sys/vm/drop_caches";
-	string value = "3";
-	if (write_file(file, value) != 0)
-		return -1;
+	int do_drop = DataManager::GetIntValue(TW_DROP_CACHES);
+	if (do_drop) {
+		sync();
+		string caches = "/proc/sys/vm/drop_caches";
+		/*
+		    free pagecache:			string drop = "1\n";
+		    free dentries & inodes:		string drop = "2\n";
+		    free pagecache, dentries & inodes:	string drop = "3\n";
+		*/
+		string drop = "3\n";
+		if (write_file(caches, drop) != 0)
+			return -1;
+	}
 	return 0;
 }
 
@@ -552,8 +551,10 @@ void TWFunc::screen_off(void) {
 		string lcd_brightness;
 		string off = "0\n";
 		string brightness_file = EXPAND(TW_BRIGHTNESS_PATH);
+#ifndef TW_NO_SCREEN_BLANK
 		gr_fb_blank(1);
-		TWFunc::write_file(brightness_file, off);
+#endif
+		write_file(brightness_file, off);
 		LOGI("Screen turned off to save power.\n");
 	}
 }
@@ -564,12 +565,12 @@ void TWFunc::power_save(void) {
 		cpu_settings = TW_POWER_SAVE_MODE;
 		string powersave = "powersave\n";
 		string cpu_governor = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor";
-		TWFunc::write_file(cpu_governor, powersave);
+		write_file(cpu_governor, powersave);
 		string low_power_freq = "245000\n";
 		string cpu_max_freq = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq";
-		TWFunc::write_file(cpu_max_freq, low_power_freq);
+		write_file(cpu_max_freq, low_power_freq);
 		string cpu_min_freq = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq";
-		TWFunc::write_file(cpu_min_freq, low_power_freq);
+		write_file(cpu_min_freq, low_power_freq);
 		LOGI("Powersave cpu settings loaded.\n");
 		sync();
 	}
@@ -579,16 +580,75 @@ void TWFunc::power_save(void) {
 void TWFunc::power_restore(int charge_mode) {
 	if (cpu_settings != TW_DEFAULT_POWER_MODE && charge_mode == 0) {
 		cpu_settings = TW_DEFAULT_POWER_MODE;
-		string powersave = "smartassV2\n";
+		int set_cpu_gov = 0, set_cpu_f = 0;
+		string default_gov, max_power_freq, low_power_freq;
 		string cpu_governor = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor";
-		TWFunc::write_file(cpu_governor, powersave);
-		string max_power_freq = "1190400\n";
 		string cpu_max_freq = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq";
-		TWFunc::write_file(cpu_max_freq, max_power_freq);
-		string low_power_freq = "384000\n";
 		string cpu_min_freq = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq";
-		TWFunc::write_file(cpu_min_freq, low_power_freq);
+
+		set_cpu_gov = DataManager::GetIntValue(TW_SET_CPU_GOV_AT_BOOT);
+		if (set_cpu_gov)
+			default_gov = DataManager::GetStrValue(TW_CPU_GOV) + "\n";
+		else
+			default_gov = "performance\n";
+
+		set_cpu_f = DataManager::GetIntValue(TW_SET_CPU_F_AT_BOOT);
+		if (set_cpu_f) {
+			max_power_freq = DataManager::GetStrValue(TW_MAX_CPU_F) + "\n";
+			low_power_freq = DataManager::GetStrValue(TW_MIN_CPU_F) + "\n";
+		} else {
+			max_power_freq = "998400\n";
+			low_power_freq = "245000\n";
+		}
+
+		write_file(cpu_governor, default_gov);
+		write_file(cpu_max_freq, max_power_freq);
+		write_file(cpu_min_freq, low_power_freq);
 		LOGI("Default cpu settings loaded.\n");
+		sync();
+	}
+}
+
+void TWFunc::apply_system_tweaks(int charge_mode) {
+	if (charge_mode == 0) {
+		int set_drop_caches = 0, set_io_sched = 0, set_cpu_gov = 0, set_cpu_f = 0;
+		string default_io_sched, default_gov, max_power_freq, low_power_freq, cmd, res;
+		
+		set_io_sched = DataManager::GetIntValue(TW_SET_IO_SCHED_AT_BOOT);
+		set_cpu_gov = DataManager::GetIntValue(TW_SET_CPU_GOV_AT_BOOT);
+		set_cpu_f = DataManager::GetIntValue(TW_SET_CPU_F_AT_BOOT);
+		set_drop_caches = DataManager::GetIntValue(TW_SET_DROP_CACHES_AT_BOOT);
+		if (set_io_sched || set_cpu_gov || set_cpu_f || set_drop_caches)
+			LOGI("Applying system tweaks...\n");
+		if (set_io_sched) {
+			string io_scheduler = "/sys/block/mmcblk0/queue/scheduler";
+			default_io_sched = DataManager::GetStrValue(TW_IO_SCHED);
+			cmd = "echo \"" + default_io_sched + "\" > " + io_scheduler;
+			Exec_Cmd(cmd, res);
+			LOGI("I/O Scheduler: %s\n", default_io_sched.c_str());
+		}
+		if (set_cpu_gov) {
+			string cpu_governor = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor";
+			default_gov = DataManager::GetStrValue(TW_CPU_GOV) + "\n";
+			write_file(cpu_governor, default_gov);
+			LOGI("CPU Governor: %s", default_gov.c_str());
+		}
+		if (set_cpu_f) {
+			string cpu_max_freq = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq";
+			string cpu_min_freq = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq";
+			max_power_freq = DataManager::GetStrValue(TW_MAX_CPU_F) + "\n";
+			low_power_freq = DataManager::GetStrValue(TW_MIN_CPU_F) + "\n";
+			write_file(cpu_max_freq, max_power_freq);
+			write_file(cpu_min_freq, low_power_freq);
+			LOGI("Max cpu freq: %s", max_power_freq.c_str());
+			LOGI("Min cpu freq: %s", low_power_freq.c_str());
+		}
+		if (set_drop_caches) {
+			DataManager::SetValue(TW_DROP_CACHES, 1);
+			LOGI("Drop caches after backup/restore completion: true\n");
+		} else {
+			DataManager::SetValue(TW_DROP_CACHES, 0);
+		}
 		sync();
 	}
 }
@@ -604,21 +664,13 @@ bool TWFunc::replace_string(string& str, const string& search_str, const string&
 }
 
 string TWFunc::to_string(int number) {
-/*
-	char temp[255];
-	string snumber;
-	memset(temp, 0, sizeof(temp));
-	sprintf(temp, "%i", number);
-	snumber = temp;
-	return snumber;
-*/
 	stringstream ss;
 	ss << number;
 
 	return ss.str();
 }
 
-vector<string> TWFunc::split_string(const string &in, char del) {		
+vector<string> TWFunc::split_string(const string &in, char del, bool skip_empty) {		
 	vector<string> res;
 
 	if (in.empty() || del == '\0')
@@ -626,51 +678,45 @@ vector<string> TWFunc::split_string(const string &in, char del) {
 
 	string field;
 	istringstream f(in);
-	while(getline(f, field, del)) {
-		if (field.empty())
-			continue;
-		res.push_back(field);
+	if (del == '\n') {
+		while(getline(f, field)) {
+			if (field.empty() && skip_empty)
+				continue;
+			res.push_back(field);
+		}
+	} else {
+		while(getline(f, field, del)) {
+			if (field.empty() && skip_empty)
+				continue;
+			res.push_back(field);
+		}
 	}
 	return res;
 }
 
-unsigned int TWFunc::Get_FS_Via_statfs(string Mount_Point) {
-	struct statfs st;
+int TWFunc::Split_NandroidMD5(string File) {
+	int i, lines_read, ret = -1;
+	vector<string> lines;
+	lines_read = read_file_line_by_line(File, lines, true);
+	if (lines_read && lines.size() > 0) {
+		vector<string> line_parts;
+		string backup_folder, MD5fileName, MD5fileContent, MD5fileFullPath, bak;
 
-	string Local_Path = Mount_Point + "/.";
-	if (statfs(Local_Path.c_str(), &st) != 0)
-		return 0;
-
-	return st.f_type;
-}
-
-// TODO: Basic check for boot partition
-// If 'ANDROID!' is detected then a boot.img is flashed => FS is mtd (returns 1)
-// Else							=> FS can be either mtd or yaffs2 (returns 0 or 2)
-int TWFunc::mtdchk(string mtd_dev) {
-	if (mtd_dev.empty())
-		return -1;
-
-        int st = 0;
-        string::size_type i = 0;
-	char header[9];
-        
-        ifstream f;
-        f.open(mtd_dev.c_str(), ios::in | ios::binary);
-        f.get(header, 9);
-        f.close();
-	for (i=0; i<9; i++) {
-		header[i] &= 0xff;
+		backup_folder = Get_Path(File);
+		for (i = 0; i < (int)lines.size(); i++) {
+			line_parts = split_string(lines[i], ' ', true);
+			if (line_parts.size() > 0) {
+				MD5fileContent = lines[i];
+				MD5fileName = line_parts[line_parts.size() - 1] + ".md5";
+				MD5fileFullPath = backup_folder + MD5fileName;
+				ret = write_file(MD5fileFullPath, MD5fileContent);
+			}
+		}
+		// Rename nandroid.md5 to nandroid.md5.bak
+		bak = File + ".bak";
+		rename(File.c_str(), bak.c_str());
 	}
-
-	if (header[0] == 0x41 && header[1] == 0x4e && header[2] == 0x44 && header[3] == 0x52 && header[4] == 0x4f && header[5] == 0x49 && header[6] == 0x44 && header[7] == 0x21)		
-		st = 1;
-	else if (header[0] == 0xff && header[1] == 0xff && header[2] == 0xff && header[3] == 0xff && header[4] == 0xff && header[5] == 0xff && header[6] == 0xff && header[7] == 0xff)		
-		st = 2;
-	else
-		st = 0;
-
-	return st;
+	return ret;
 }
 
 // Check a tar file for a given entry
@@ -732,11 +778,9 @@ unsigned long long TWFunc::Get_Archive_Uncompressed_Size(string FilePath) {
 	type = Get_Archive_Type(FilePath);
 	if (type == 0) {
 		LOGI("uncompressed archive.\n");
-		//Command = "tar tvf " + FilePath + " | sed 's! \\+! !g' | cut -f3 -d' '";
 		total_size = Get_File_Size(FilePath);
 	} else {
 		LOGI("compressed archive.\n");
-		//Command = "tar tzvf " + FilePath + " | sed 's! \\+! !g' | cut -f3 -d' '";
 		Command = "gzip -l " + FilePath + " | sed -e '1d' -e 's! \\+! !g' | cut -f3 -d' '";
 	}
 	if (!Command.empty()) {
@@ -750,7 +794,7 @@ unsigned long long TWFunc::Get_Archive_Uncompressed_Size(string FilePath) {
 	}
 	LOGI("[Uncompressed size: %llu bytes]\n", total_size);
 	// adding some extra space just to be safe sounds like a good idea
-	total_size *= 1.07; // Test increasing by 7%
+	//total_size *= 1.07; // Test increasing by 7%
 
 	return total_size;
 }
@@ -780,8 +824,42 @@ string TWFunc::Find_File_On_Storage(string Filename) {
 	return Full_Path;
 }
 
-int TWFunc::Vibrate(int ms) {
-	return (DataManager::GetIntValue(TW_USE_HAPTIC_FEEDBACK) ? vibrate(ms) : 0);
+int TWFunc::Vibrate(FeedbackReason reason) {
+	switch (reason) {
+		case button_pressed:
+			return (DataManager::GetIntValue(TW_VIBRATE_AFTER_BUTTON_PRESS)
+			? vibrate(DataManager::GetIntValue(TW_BUTTON_FEEDBACK_DURATION_MS)) : 0);
+			break;
+		case backup_completed:
+			return (DataManager::GetIntValue(TW_VIBRATE_AFTER_BACKUP)
+			? vibrate(DataManager::GetIntValue(TW_BACKUP_FEEDBACK_DURATION_MS)) : 0);
+			break;
+		case restore_completed:
+			return (DataManager::GetIntValue(TW_VIBRATE_AFTER_RESTORE)
+			? vibrate(DataManager::GetIntValue(TW_RESTORE_FEEDBACK_DURATION_MS)) : 0);
+			break;
+		case install_completed:
+			return (DataManager::GetIntValue(TW_VIBRATE_AFTER_INSTALL)
+			? vibrate(DataManager::GetIntValue(TW_INSTALL_FEEDBACK_DURATION_MS)) : 0);
+			break;
+		case parted_completed:
+			return (DataManager::GetIntValue(TW_VIBRATE_AFTER_PARTED)
+			? vibrate(DataManager::GetIntValue(TW_PARTED_FEEDBACK_DURATION_MS)) : 0);
+			break;
+		case sdbackup_completed:
+			return (DataManager::GetIntValue(TW_VIBRATE_AFTER_SDBACKUP)
+			? vibrate(DataManager::GetIntValue(TW_SDBACKUP_FEEDBACK_DURATION_MS)) : 0);
+			break;
+		case sdrestore_completed:
+			return (DataManager::GetIntValue(TW_VIBRATE_AFTER_SDRESTORE)
+			? vibrate(DataManager::GetIntValue(TW_SDRESTORE_FEEDBACK_DURATION_MS)) : 0);
+			break;
+		default: // Just vibrate using the reason for the timeout
+			return (1000 > (int)reason /* Dont't allow a duration more than 1s */
+			? vibrate((int)reason) : 0);
+			break;
+	}
+	return 0;
 }
 
 void TWFunc::Take_Screenshot(void) {

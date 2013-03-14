@@ -139,13 +139,10 @@ BOARD_VENDOR_QCOM_GPS_LOC_API_AMSS_VERSION := 3200
 BOARD_USES_GPSSHIM := true
 BOARD_GPS_LIBRARIES := libgps librpc
 
-TARGET_PREBUILT_RECOVERY_KERNEL := device/htc/leo/prebuilt/recovery_kernel
-
 # Misc
 BOARD_USE_OPENSSL_ENGINE := true
 
 # Hacks
-TARGET_USE_CUSTOM_LUN_FILE_PATH := /sys/devices/platform/usb_mass_storage/lun0/file
 BOARD_USE_LEGACY_TRACKPAD := true
 BOARD_USE_LEGACY_TOUCHSCREEN := true
 TARGET_FORCE_CPU_UPLOAD := true
@@ -153,18 +150,21 @@ TARGET_FORCE_CPU_UPLOAD := true
 # Enable WEBGL in WebKit
 ENABLE_WEBGL := true
 
-#TWRP
+#TWRP start
 DEVICE_RESOLUTION := 480x800
 RECOVERY_GRAPHICS_USE_LINELENGTH := true
-# "RGB_565" , "BGRA_8888" , "RGBX_8888"
 TARGET_RECOVERY_PIXEL_FORMAT := "RGB_565"
 TW_CUSTOM_POWER_BUTTON := 107
 TW_FORCE_CPUINFO_FOR_DEVICE_ID := true
-TW_INCLUDE_NTFS_3G := false
-TW_INCLUDE_MKNTFS := false
-TW_INCLUDE_EXFAT := false
+TW_INCLUDE_NTFS_3G := true
+TW_INCLUDE_MKNTFS := true
+TW_INCLUDE_EXFAT := true
 TW_INCLUDE_NILFS2 := true
 TW_INCLUDE_LIBTAR := true
-TW_INCLUDE_LIBBLKID := false
-TW_BRIGHTNESS_PATH := "/sys/class/leds/lcd-backlight/brightness"
+TW_NO_SCREEN_BLANK := true
 TW_MAX_BRIGHTNESS := 255
+TW_BRIGHTNESS_PATH := "/sys/class/leds/lcd-backlight/brightness"
+TARGET_RECOVERY_INITRC := device/htc/leo/prebuilt/init.rc
+#TARGET_PREBUILT_RECOVERY_KERNEL := device/htc/leo/prebuilt/recovery_kernel
+TARGET_USE_CUSTOM_LUN_FILE_PATH := /sys/devices/platform/usb_mass_storage/lun0/file
+#TWRP end

@@ -180,13 +180,7 @@ static void *input_thread(void *cookie)
     static struct timeval touchStart;
     HardwareKeyboard kb;
     DataManager::GetValue(TW_POWER_BUTTON, power_key);
-    if (!offmode_charge) {
-	int timeout;
-	DataManager::GetValue("tw_screen_timeout_secs", timeout);
-	LOGI("Stored screen timeout value: %i sec.\n", timeout);
-	blankTimer.setTimerThread();
-	blankTimer.setTime(timeout);
-    }
+
     for (;;) {
         // wait for the next event
         struct input_event ev;
@@ -307,7 +301,7 @@ static void *input_thread(void *cookie)
 #endif
 		    key_pressed = 1;
 		} else {
-		    TWFunc::Vibrate(25);
+		    TWFunc::Vibrate(button_pressed);
 		    blankTimer.resetTimerAndUnblank();
 #ifdef _EVENT_LOGGING
 		    LOGE("Screen unblank & Timer reset.\n");
@@ -629,7 +623,7 @@ static void *time_update_thread(void *cookie)
 				sprintf(tmp, "%d:%02d AM", current->tm_hour == 0 ? 12 : current->tm_hour, current->tm_min);
 		}
 		current_time = tmp;
-		DataManager::SetValue("tw_time", current_time, 0);
+		DataManager::SetValue("tw_time", current_time);
 		usleep(990000);
 	}
 	
@@ -661,7 +655,7 @@ static void *battery_thread(void *cookie)
 		}
 		sprintf(tmp, "%i%%", bat_capacity);
 		battery = tmp;
-		DataManager::SetValue("tw_battery", battery, 0);
+		DataManager::SetValue("tw_battery", battery);
 		usleep(800000);
 
 		if (TWFunc::read_file(usb_cable_connect, usb_cable_connected) == 0) {
@@ -718,15 +712,17 @@ extern "C" int gui_start()
     // Set the default package
     PageManager::SelectPackage("TWRP");
 
-    if (!gGuiInputRunning) {
-	// Start by spinning off an input handler.
+    if (!gGuiInputRunning) {	
+	// If set, apply tweaks
+	TWFunc::apply_system_tweaks(offmode_charge);
+	// Input handler
 	pthread_t t;
 	pthread_create(&t, NULL, input_thread, NULL);
 	gGuiInputRunning = 1;
-	// time handler
+	// Time handler
 	pthread_t t_update;
 	pthread_create(&t_update, NULL, time_update_thread, NULL);
-	// battery charge handler
+	// Battery charge handler
 	pthread_t b_update;
 	pthread_create(&b_update, NULL, battery_thread, NULL);
 	if (offmode_charge) {
@@ -734,6 +730,15 @@ extern "C" int gui_start()
 	    TWFunc::screen_off();
 	    TWFunc::power_save();	    
 	    for(;;);
+	} else {
+	    // Screen brightness level set to the desired level
+	    string brightness_value = DataManager::GetStrValue("tw_brightness");
+	    string brightness_path = EXPAND(TW_BRIGHTNESS_PATH);
+	    TWFunc::write_file(brightness_path, brightness_value);
+	    // Start the screen-off-timeout handler
+	    blankTimer.setTimerThread();
+	    // Set the desired timeout
+	    blankTimer.setTime(DataManager::GetIntValue("tw_screen_timeout_secs"));
 	}
     }
 

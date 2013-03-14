@@ -20,6 +20,10 @@ PRODUCT_COPY_FILES += \
 	device/htc/leo/prebuilt/ueventd.htcleo.rc:root/ueventd.htcleo.rc \
 	device/htc/leo/prebuilt/logo.rle:root/logo.rle
 
+# Add the prerecoveryboot.sh so that the recovery.fstab can be changed
+PRODUCT_COPY_FILES += \
+	device/htc/leo/prerecoveryboot.sh:recovery/root/sbin/prerecoveryboot.sh
+
 # we have enough storage space to hold precise GC data
 PRODUCT_TAGS += dalvik.gc.type-precise
 

@@ -39,6 +39,7 @@ class twrpTar {
 		int createTar();
 		int addFile(string fn, bool include_root);
 		int entryExists(string entry);
+		unsigned long long uncompressedSize();
 		int closeTar(bool gzip);
 		int createTarGZFork();
 		int createTarFork();

@@ -54,6 +54,7 @@ extern "C" {
 #include "variables.h"
 #include "openrecoveryscript.hpp"
 #include "twrp-functions.hpp"
+#include "nativeSDmanager.hpp"
 
 TWPartitionManager PartitionManager;
 
@@ -81,9 +82,6 @@ static const char *SDCARD_ROOT = "/sdcard";
 static const char *TEMPORARY_LOG_FILE = "/tmp/recovery.log";
 static const char *TEMPORARY_INSTALL_FILE = "/tmp/last_install";
 static const char *SIDELOAD_TEMP_DIR = "/tmp/sideload";
-#ifdef TW_INCLUDE_NTFS_3G
-	static const char *NTFS_3G = "/sbin/ntfs-3g";
-#endif
 static int pause_for_battery_charge = 0;
 RecoveryUI* ui = NULL;
 
@@ -776,10 +774,14 @@ int main(int argc, char **argv) {
 	printf("Starting Extended TWRP %s on %s", TW_VERSION_STR, ctime(&start));
 	// Detect bootloader
 	if (DataManager_Detect_BLDR() == 1) {
+		printf("I:=> Detected bootloader: cLK\n");
 		// If cLK detected, check cmdline for offmode-charging
 		pause_for_battery_charge = DataManager_Pause_For_Battery_Charge();			
+	} else if (DataManager_Detect_BLDR() == 2) {
+		printf("I:=> Detected bootloader: MAGLDR\n");
+	} else if (DataManager_Detect_BLDR() == 0) {
+		printf("I:=> Detected bootloader: HARET\n");
 	}
-	
 	Device* device = make_device();
 	ui = device->GetUI();
 
@@ -789,13 +791,13 @@ int main(int argc, char **argv) {
 	gui_init();
 	printf("I:=> Linking mtab\n");
 	symlink("/proc/mounts", "/etc/mtab");
+	if (DataManager_GetIntValue(TW_RUN_PREBOOT_CHK)) {
+		// Check for and run 1st script if script exists
+		TWFunc::check_and_run_script("/sbin/prerecoveryboot.sh", "preboot");
+	} else {
+		printf("I:=> Skipping preboot script.\n");
+	}
 	printf("I:=> Processing recovery.fstab\n");
-	// Check for and run 1st startup script if script exists
-	TWFunc::check_and_run_script("/sbin/prerecoveryboot.sh", "pre-boot");
-#ifdef TW_INCLUDE_NTFS_3G
-	chown(NTFS_3G, 1000, 1000);
-	chmod(NTFS_3G, 0644);
-#endif
 	if (!PartitionManager.Process_Fstab("/etc/recovery.fstab", 1)) {
 		LOGE("Failing out of recovery due to problem with recovery.fstab.\n");
 		//return -1;
@@ -845,16 +847,11 @@ int main(int argc, char **argv) {
 	}
 #endif
 
-	//device->StartRecovery();
-
 	printf("Command:");
 	for (arg = 0; arg < argc; arg++) {
 		printf(" \"%s\"", argv[arg]);
 	}
 	printf("\n");
-
-	// Check for and run 2nd startup script if script exists
-	TWFunc::check_and_run_script("/sbin/runatboot.sh", "boot");
 
 	if (update_package) {
 		// For backwards compatibility on the cache partition only, if
@@ -876,9 +873,6 @@ int main(int argc, char **argv) {
 	// Output partitions' details
 	PartitionManager.Output_Partition_Logging();
 
-	// Check for and run 3rd startup script if script exists
-	TWFunc::check_and_run_script("/sbin/postrecoveryboot.sh", "post-boot");	
-
 #ifdef TW_INCLUDE_INJECTTWRP
 	// Back up TWRP Ramdisk if needed:
 	TWPartition* Boot = PartitionManager.Find_Partition_By_Path("/boot");
@@ -892,6 +886,9 @@ int main(int argc, char **argv) {
 	}
 	LOGI("Backup of TWRP ramdisk done.\n");
 #endif
+
+	// Check for and run 2nd script if script exists
+	TWFunc::check_and_run_script("/sbin/runatboot.sh", "boot");
 
 	int status = INSTALL_SUCCESS;
 	string ORSCommand;
@@ -949,6 +946,10 @@ int main(int argc, char **argv) {
 	if (DataManager_GetIntValue(TW_IS_ENCRYPTED) == 0 && (TWFunc::Path_Exists(SCRIPT_FILE_TMP) || TWFunc::Path_Exists(SCRIPT_FILE_CACHE))) {
 		OpenRecoveryScript::Run_OpenRecoveryScript();
 	}
+
+	// Check for and run 3rd script if script exists
+	TWFunc::check_and_run_script("/sbin/postrecoveryboot.sh", "postboot");
+
 	// Launch the main GUI
 	gui_start();
 

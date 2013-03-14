@@ -219,7 +219,7 @@ mtd_mount_partition(const MtdPartition *partition, const char *mount_point,
         }
         mode_t new_mode = st.st_mode | S_IXUSR | S_IXGRP | S_IXOTH;
         if (new_mode != st.st_mode) {
-printf("Fixing execute permissions for %s\n", mount_point);
+	    printf("Fixing execute permissions for %s\n", mount_point);
             rv = chmod(mount_point, new_mode);
             if (rv < 0) {
                 printf("Couldn't fix permissions for %s: %s\n",

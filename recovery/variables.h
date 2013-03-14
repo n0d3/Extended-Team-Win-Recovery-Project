@@ -17,6 +17,9 @@
 #ifndef _VARIABLES_HEADER_
 #define _VARIABLES_HEADER_
 
+// Set to run the preboot.sh which edits the recovery.fstab according to bootloader
+#define TW_RUN_PREBOOT_CHK		"tw_run_preboot_chk"
+
 // Exclude dalvik-cache and nativesd roms from backup
 #define TW_SKIP_DALVIK			"tw_skip_dalvik"
 #define TW_SKIP_NATIVESD	    	"tw_skip_nativesd"
@@ -45,6 +48,7 @@
 // check restore size and adjust ptable if needed
 #define TW_HANDLE_RESTORE_SIZE        	"tw_handle_restore_size"
 #define TW_INCR_SIZE		 	"tw_incr_size"
+#define TW_SKIP_SD_FREE_SZ_CHECK	"tw_skip_sd_free_sz_check"
 
 // DataOnExt
 #define TW_BACKUP_NAND_DATA         	"tw_backup_nand_data"
@@ -66,6 +70,9 @@
 // tune2fs -c
 #define TW_NUM_OF_MOUNTS_FOR_FS_CHK 	"tw_num_of_mounts_for_fs_check"
 
+// mkntfs -f or -q option
+#define TW_MKNTFS_QUICK_FORMAT      	"tw_mkntfs_quick_format"
+
 // Save contents before wiping
 #define TW_RESCUE_EXT_CONTENTS      	"tw_rescue_ext_contents"
 
@@ -77,10 +84,34 @@
 #define TW_HANDLE_SU                	"tw_handle_su"
 
 // Haptic feedback
-#define TW_USE_HAPTIC_FEEDBACK         	"tw_use_haptic_feedback"
+#define TW_VIBRATE_AFTER_BUTTON_PRESS  	"tw_vibrate_after_button_press"
+#define TW_BUTTON_FEEDBACK_DURATION_MS	"tw_button_feedback_duration_ms"
+#define TW_VIBRATE_AFTER_BACKUP        	"tw_vibrate_after_backup"
+#define TW_BACKUP_FEEDBACK_DURATION_MS	"tw_backup_feedback_duration_ms"
+#define TW_VIBRATE_AFTER_RESTORE       	"tw_vibrate_after_restore"
+#define TW_RESTORE_FEEDBACK_DURATION_MS	"tw_restore_feedback_duration_ms"
+#define TW_VIBRATE_AFTER_INSTALL       	"tw_vibrate_after_install"
+#define TW_INSTALL_FEEDBACK_DURATION_MS	"tw_install_feedback_duration_ms"
+#define TW_VIBRATE_AFTER_PARTED        	"tw_vibrate_after_parted"
+#define TW_PARTED_FEEDBACK_DURATION_MS	"tw_parted_feedback_duration_ms"
+#define TW_VIBRATE_AFTER_SDBACKUP       "tw_vibrate_after_sdbackup"
+#define TW_SDBACKUP_FEEDBACK_DURATION_MS "tw_sdbackup_feedback_duration_ms"
+#define TW_VIBRATE_AFTER_SDRESTORE      "tw_vibrate_after_sdrestore"
+#define TW_SDRESTORE_FEEDBACK_DURATION_MS "tw_sdrestore_feedback_duration_ms"
+
+// Tweaks
+#define TW_SET_DROP_CACHES_AT_BOOT	"tw_set_drop_caches_at_boot"
+#define TW_DROP_CACHES			"tw_drop_caches"
+#define TW_SET_IO_SCHED_AT_BOOT		"tw_set_io_sched_at_boot"
+#define TW_IO_SCHED			"tw_io_sched"
+#define TW_SET_CPU_F_AT_BOOT		"tw_set_cpu_f_at_boot"
+#define TW_MAX_CPU_F			"tw_max_cpu_f"
+#define TW_MIN_CPU_F			"tw_min_cpu_f"
+#define TW_SET_CPU_GOV_AT_BOOT		"tw_set_io_sched_at_boot"
+#define TW_CPU_GOV			"tw_cpu_gov"
 
 // Default definitions
-#define TW_VERSION_STR			"2.4.3.0"
+#define TW_VERSION_STR			"2.4.4.0"
 
 #define TW_USE_COMPRESSION_VAR      	"tw_use_compression"
 #define TW_SKIP_MD5_CHECK_VAR       	"tw_skip_md5_check"

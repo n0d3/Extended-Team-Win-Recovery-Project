@@ -192,7 +192,7 @@
 			<object type="text" color="%text_color%">
 				<font resource="font" />
 				<placement x="90" y="10" />
-				<text>ExtendedTWRP v%tw_version%.r3</text>
+				<text>ExtendedTWRP v%tw_version%.r1</text>
 			</object>
 
 			<object type="text" color="%text_success_color%">
@@ -2756,7 +2756,7 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_download_mode" var2="1" />
-				<placement x="%col1_x%" y="%row3_y%" />
+				<placement x="%col_center_x%" y="%row3_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Download</text>
 				<image resource="main_button" />
@@ -2777,7 +2777,7 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_has_sboot_ptn" var2="1" />
-				<placement x="%col1_medium_x%" y="%row3_y%" />
+				<placement x="%col1_medium_x%" y="%row5_medium_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>sBoot</text>
 				<image resource="medium_button" />
@@ -2798,7 +2798,7 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_has_tboot_ptn" var2="1" />
-				<placement x="%col2_medium_x%" y="%row3_y%" />
+				<placement x="%col2_medium_x%" y="%row5_medium_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>tBoot</text>
 				<image resource="medium_button" />
@@ -2819,7 +2819,7 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_has_vboot_ptn" var2="1" />
-				<placement x="%col3_medium_x%" y="%row3_y%" />
+				<placement x="%col3_medium_x%" y="%row5_medium_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>vBoot</text>
 				<image resource="medium_button" />
@@ -2840,7 +2840,7 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_has_wboot_ptn" var2="1" />
-				<placement x="%col4_medium_x%" y="%row3_y%" />
+				<placement x="%col4_medium_x%" y="%row6_medium_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>wBoot</text>
 				<image resource="medium_button" />
@@ -2861,7 +2861,7 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_has_xboot_ptn" var2="1" />
-				<placement x="%col1_medium_x%" y="%row4_y%" />
+				<placement x="%col1_medium_x%" y="%row6_medium_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>xBoot</text>
 				<image resource="medium_button" />
@@ -2882,7 +2882,7 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_has_yboot_ptn" var2="1" />
-				<placement x="%col2_medium_x%" y="%row4_y%" />
+				<placement x="%col2_medium_x%" y="%row6_medium_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>yBoot</text>
 				<image resource="medium_button" />
@@ -2903,7 +2903,7 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_has_zboot_ptn" var2="1" />
-				<placement x="%col2_medium_x%" y="%row4_y%" />
+				<placement x="%col3_medium_x%" y="%row6_medium_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>zBoot</text>
 				<image resource="medium_button" />
@@ -2919,6 +2919,15 @@
 					<action function="set">tw_slider_text=Swipe to Reboot</action>
 					<action function="page">rebootcheck</action>
 				</actions>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<placement x="%col_center_x%" y="%row4_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Hot Reboot</text>
+				<image resource="main_button" />
+				<action function="reboot">hot</action>
 			</object>
 
 			<object type="action">
@@ -2960,8 +2969,16 @@
 			</object>
 
 			<object type="checkbox">
-				<condition var1="tw_has_sdext_partition" var2="1" />
 				<placement x="%col1_x%" y="%row3_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>Skip free space check during backup.</text>
+				<data variable="tw_skip_sd_free_sz_check" />
+				<image checked="checkbox_true" unchecked="checkbox_false" />
+			</object>
+
+			<object type="checkbox">
+				<condition var1="tw_has_sdext_partition" var2="1" />
+				<placement x="%col1_x%" y="%row4_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Setup recovery for DataOnExt.</text>
 				<data variable="tw_data_on_ext" />
@@ -2973,7 +2990,7 @@
 					<condition var1="tw_has_sdext_partition" var2="1" />
 					<condition var1="tw_data_on_ext" var2="1" />
 				</conditions>
-				<placement x="%col1_x%" y="%row4_text_y%" />
+				<placement x="%col1_x%" y="%row5_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Enable path-checking for DataOnExt.</text>
 				<data variable="tw_data_on_ext_check" />
@@ -2981,7 +2998,7 @@
 			</object>
 
 			<object type="checkbox">
-				<placement x="%col1_x%" y="%row5_text_y%" />
+				<placement x="%col1_x%" y="%row6_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Enable screenshot taking(LOGO touch).</text>
 				<data variable="tw_screenshot_var" />
@@ -2989,26 +3006,26 @@
 			</object>
 
 			<object type="checkbox">
-				<placement x="%col1_x%" y="%row6_text_y%" />
+				<placement x="%col1_x%" y="%row7_text_y%" />
 				<font resource="font" color="%text_color%" />
-				<text>Show 24H Clock.</text>
+				<text>Show 24h clock.</text>
 				<data variable="tw_military_time" />
 				<image checked="checkbox_true" unchecked="checkbox_false" />
 			</object>
 
 			<object type="checkbox">
-				<placement x="%col1_x%" y="%row7_text_y%" />
+				<placement x="%col2_x%" y="%row7_text_y%" />
 				<font resource="font" color="%text_color%" />
-				<text>Handle root(missing su/wrong perms).</text>
-				<data variable="tw_handle_su" />
+				<text>Run preboot script.</text>
+				<data variable="tw_run_preboot_chk" />
 				<image checked="checkbox_true" unchecked="checkbox_false" />
 			</object>
 
 			<object type="checkbox">
 				<placement x="%col1_x%" y="%row8_text_y%" />
 				<font resource="font" color="%text_color%" />
-				<text>Enable haptic feedback.</text>
-				<data variable="tw_use_haptic_feedback" />
+				<text>Handle root(missing su/wrong perms).</text>
+				<data variable="tw_handle_su" />
 				<image checked="checkbox_true" unchecked="checkbox_false" />
 			</object>
 
@@ -3027,6 +3044,36 @@
 				<text>Simulate failure for actions.</text>
 				<data variable="tw_simulate_fail" />
 				<image checked="checkbox_true" unchecked="checkbox_false" />
+			</object>
+
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%col1_x%" y="%row11_text_y%" />
+				<text>Filesystem check every</text>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<placement x="%col2_x%" y="%row11_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text></text>
+				<image resource="minus_button" />
+				<action function="addsubtract">tw_num_of_mounts_for_fs_check-1</action>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="310" y="%row11_text_y%" />
+				<text>%tw_num_of_mounts_for_fs_check% mounts</text>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<placement x="420" y="%row11_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text></text>
+				<image resource="plus_button" />
+				<action function="addsubtract">tw_num_of_mounts_for_fs_check+1</action>
 			</object>
 
 			<object type="button">
@@ -3050,11 +3097,29 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
+				<placement x="%col1_x%" y="%row12_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Screen</text>
+				<image resource="ml_button" />
+				<action function="page">screen</action>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<placement x="%col1_x%" y="%row14_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Haptic Feedback</text>
+				<image resource="ml_button" />
+				<action function="page">haptic</action>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
 				<conditions>
 					<condition var1="tw_has_sdext_partition" var2="1" />
 					<condition var1="tw_data_on_ext" var2="1" />
 				</conditions>
-				<placement x="%col1_x%" y="%row12_text_y%" />
+				<placement x="%col2_x%" y="615" />
 				<font resource="font" color="%button_text_color%" />
 				<text>DataOnExt</text>
 				<image resource="ml_button" />
@@ -3067,11 +3132,11 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<placement x="%col1_x%" y="%row14_text_y%" />
+				<placement x="%col2_x%" y="675" />
 				<font resource="font" color="%button_text_color%" />
-				<text>Screen</text>
+				<text>System Tweaks</text>
 				<image resource="ml_button" />
-				<action function="page">screen</action>
+				<action function="page">tweaks</action>
 			</object>
 
 			<object type="button">
@@ -3120,36 +3185,6 @@
 				<font resource="font" />
 				<placement x="350" y="row15_text_y" />
 				<text>%tw_incr_size%</text>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<placement x="%col2_x%" y="%row19_text_y%" />
-				<font resource="font" color="%button_text_color%" />
-				<text></text>
-				<image resource="minus_button" />
-				<action function="addsubtract">tw_num_of_mounts_for_fs_check-1</action>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<placement x="420" y="%row19_text_y%" />
-				<font resource="font" color="%button_text_color%" />
-				<text></text>
-				<image resource="plus_button" />
-				<action function="addsubtract">tw_num_of_mounts_for_fs_check+1</action>
-			</object>
-
-			<object type="text" color="%text_color%">
-				<font resource="font" />
-				<placement x="%col2_x%" y="%row18_text_y%" />
-				<text>File System check every</text>
-			</object>
-
-			<object type="text" color="%text_color%">
-				<font resource="font" />
-				<placement x="310" y="%row19_text_y%" />
-				<text>%tw_num_of_mounts_for_fs_check% mounts</text>
 			</object>
 
 			<object type="action">
@@ -3283,6 +3318,249 @@
 			<object type="template" name="footer" />
 		</page>
 
+		<page name="tweaks">
+			<object type="template" name="header" />
+
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%row1_header_y%" placement="5" />
+				<text>Tweak System Settings</text>
+			</object>
+
+			<object type="checkbox">
+				<placement x="%col1_x%" y="%row1_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>CPU governor(%tw_cpu_gov%)</text>
+				<data variable="tw_set_cpu_gov_at_boot" />
+				<image checked="checkbox_true" unchecked="checkbox_false" />
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<placement x="%col1_medium_x%" y="%row2_text_y%" />
+				<condition var1="tw_set_cpu_gov_at_boot" var2="1" />
+				<font resource="font" color="%button_text_color%" />
+				<text>sm/assV2</text>
+				<image resource="medium_button" />
+				<action function="set">tw_cpu_gov=smartassV2</action>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<placement x="%col2_medium_x%" y="%row2_text_y%" />
+				<condition var1="tw_set_cpu_gov_at_boot" var2="1" />
+				<font resource="font" color="%button_text_color%" />
+				<text>per/mance</text>
+				<image resource="medium_button" />
+				<action function="set">tw_cpu_gov=performance</action>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<placement x="%col3_medium_x%" y="%row2_text_y%" />
+				<condition var1="tw_set_cpu_gov_at_boot" var2="1" />
+				<font resource="font" color="%button_text_color%" />
+				<text>ondemand</text>
+				<image resource="medium_button" />
+				<action function="set">tw_cpu_gov=ondemand</action>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_set_cpu_gov_at_boot" var2="1" />
+				<placement x="%col4_medium_x%" y="%row2_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>interactive</text>
+				<image resource="medium_button" />
+				<action function="set">tw_cpu_gov=interactive</action>
+			</object>
+
+			<object type="checkbox">
+				<placement x="%col1_x%" y="%row5_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>CPU frequency(%tw_min_cpu_f%Hz - %tw_max_cpu_f%Hz)</text>
+				<data variable="tw_set_cpu_f_at_boot" />
+				<image checked="checkbox_true" unchecked="checkbox_false" />
+			</object>
+
+			<object type="text" color="%text_color%">
+				<condition var1="tw_set_cpu_f_at_boot" var2="1" />
+				<font resource="font" />
+				<placement x="%center_x%" y="%row6_text_y%" placement="5" />
+				<text>Maximum Frequency:</text>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_set_cpu_f_at_boot" var2="1" />
+				<placement x="%col1_medium_x%" y="%row7_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>998400</text>
+				<image resource="medium_button" />
+				<action function="set">tw_max_cpu_f=998400</action>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_set_cpu_f_at_boot" var2="1" />
+				<placement x="%col2_medium_x%" y="%row7_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>1075200</text>
+				<image resource="medium_button" />
+				<action function="set">tw_max_cpu_f=1075200</action>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<placement x="%col3_medium_x%" y="%row7_text_y%" />
+				<condition var1="tw_set_cpu_f_at_boot" var2="1" />
+				<font resource="font" color="%button_text_color%" />
+				<text>1152000</text>
+				<image resource="medium_button" />
+				<action function="set">tw_max_cpu_f=1152000</action>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_set_cpu_f_at_boot" var2="1" />
+				<placement x="%col4_medium_x%" y="%row7_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>1190400</text>
+				<image resource="medium_button" />
+				<action function="set">tw_max_cpu_f=1190400</action>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<condition var1="tw_set_cpu_f_at_boot" var2="1" />
+				<font resource="font" />
+				<placement x="%center_x%" y="%row9_text_y%" placement="5" />
+				<text>Minimum Frequency:</text>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_set_cpu_f_at_boot" var2="1" />
+				<placement x="%col1_medium_x%" y="%row10_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>245000</text>
+				<image resource="medium_button" />
+				<action function="set">tw_min_cpu_f=245000</action>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_set_cpu_f_at_boot" var2="1" />
+				<placement x="%col2_medium_x%" y="%row10_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>384000</text>
+				<image resource="medium_button" />
+				<action function="set">tw_min_cpu_f=384000</action>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<placement x="%col3_medium_x%" y="%row10_text_y%" />
+				<condition var1="tw_set_cpu_f_at_boot" var2="1" />
+				<font resource="font" color="%button_text_color%" />
+				<text>576000</text>
+				<image resource="medium_button" />
+				<action function="set">tw_min_cpu_f=576000</action>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_set_cpu_f_at_boot" var2="1" />
+				<placement x="%col4_medium_x%" y="%row10_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>768000</text>
+				<image resource="medium_button" />
+				<action function="set">tw_min_cpu_f=768000</action>
+			</object>
+
+			<object type="checkbox">
+				<placement x="%col1_x%" y="%row13_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>I/O Scheduler(%tw_io_sched%)</text>
+				<data variable="tw_set_io_sched_at_boot" />
+				<image checked="checkbox_true" unchecked="checkbox_false" />
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_set_io_sched_at_boot" var2="1" />
+				<placement x="%col1_medium_x%" y="%row14_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>noop</text>
+				<image resource="medium_button" />
+				<action function="set">tw_io_sched=noop</action>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_set_io_sched_at_boot" var2="1" />
+				<placement x="%col2_medium_x%" y="%row14_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>cfq</text>
+				<image resource="medium_button" />
+				<action function="set">tw_io_sched=cfq</action>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<placement x="%col3_medium_x%" y="%row14_text_y%" />
+				<condition var1="tw_set_io_sched_at_boot" var2="1" />
+				<font resource="font" color="%button_text_color%" />
+				<text>deadline</text>
+				<image resource="medium_button" />
+				<action function="set">tw_io_sched=deadline</action>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_set_io_sched_at_boot" var2="1" />
+				<placement x="%col4_medium_x%" y="%row14_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>anticip.</text>
+				<image resource="medium_button" />
+				<action function="set">tw_io_sched=anticipatory</action>
+			</object>
+
+			<object type="checkbox">
+				<placement x="%col1_x%" y="%row17_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>Free up memory after backup/restore.</text>
+				<data variable="tw_set_drop_caches_at_boot" />
+				<image checked="checkbox_true" unchecked="checkbox_false" />
+			</object>
+
+			<object type="text" color="%text_fail_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%row18_text_y%" placement="5" />
+				<text>Settings will be applied after rebooting.</text>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<placement x="%col_center_x%" y="%row19_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Reboot TWRP</text>
+				<image resource="ml_button" />
+				<action function="reboot">recovery</action>
+			</object>
+
+			<object type="action">
+				<touch key="home" />
+				<action function="page">main</action>
+			</object>
+
+			<object type="action">
+				<touch key="back" />
+				<action function="page">settings</action>
+			</object>
+
+			<object type="template" name="footer" />
+		</page>
+
 		<page name="screen">
 			<object type="template" name="header" />
 
@@ -3395,6 +3673,288 @@
 					<action function="set">tw_brightness_display=100%</action>
 					<action function="set">tw_brightness=%tw_brightness_100%</action>
 				</actions>
+			</object>
+
+			<object type="action">
+				<touch key="home" />
+				<action function="page">main</action>
+			</object>
+
+			<object type="action">
+				<touch key="back" />
+				<action function="page">settings</action>
+			</object>
+
+			<object type="template" name="footer" />
+		</page>
+
+		<page name="haptic">
+			<object type="template" name="header" />
+
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%row1_header_y%" placement="5" />
+				<text>Haptic Feedback Settings</text>
+			</object>
+
+			<object type="checkbox">
+				<placement x="%col1_x%" y="%row1_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>Vibrate at each button/screen press.</text>
+				<data variable="tw_vibrate_after_button_press" />
+				<image checked="checkbox_true" unchecked="checkbox_false" />
+			</object>
+
+			<object type="text" color="%text_color%">
+				<condition var1="tw_vibrate_after_button_press" var2="1" />
+				<font resource="font" />
+				<placement x="%col1_x%" y="%row2_text_y%" />
+				<text>Duration:</text>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<condition var1="tw_vibrate_after_button_press" var2="1" />
+				<font resource="font" />
+				<placement x="%col1_x%" y="%row3_text_y%" />
+				<text>%tw_button_feedback_duration_ms% ms</text>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_vibrate_after_button_press" var2="1" />
+				<placement x="%col2_medium_x%" y="%row2_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>25</text>
+				<image resource="medium_button" />
+				<action function="set">tw_button_feedback_duration_ms=25</action>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<placement x="%col3_medium_x%" y="%row2_text_y%" />
+				<condition var1="tw_vibrate_after_button_press" var2="1" />
+				<font resource="font" color="%button_text_color%" />
+				<text>75</text>
+				<image resource="medium_button" />
+				<action function="set">tw_button_feedback_duration_ms=75</action>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_vibrate_after_button_press" var2="1" />
+				<placement x="%col4_medium_x%" y="%row2_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>125</text>
+				<image resource="medium_button" />
+				<action function="set">tw_button_feedback_duration_ms=125</action>
+			</object>
+
+			<object type="checkbox">
+				<placement x="%col1_x%" y="%row5_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>Vibrate at backup completion.</text>
+				<data variable="tw_vibrate_after_backup" />
+				<image checked="checkbox_true" unchecked="checkbox_false" />
+			</object>
+
+			<object type="text" color="%text_color%">
+				<condition var1="tw_vibrate_after_backup" var2="1" />
+				<font resource="font" />
+				<placement x="%col1_x%" y="%row6_text_y%" />
+				<text>Duration:</text>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<condition var1="tw_vibrate_after_backup" var2="1" />
+				<font resource="font" />
+				<placement x="%col1_x%" y="%row7_text_y%" />
+				<text>%tw_backup_feedback_duration_ms% ms</text>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_vibrate_after_backup" var2="1" />
+				<placement x="%col2_medium_x%" y="%row6_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>100</text>
+				<image resource="medium_button" />
+				<action function="set">tw_backup_feedback_duration_ms=100</action>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<placement x="%col3_medium_x%" y="%row6_text_y%" />
+				<condition var1="tw_vibrate_after_backup" var2="1" />
+				<font resource="font" color="%button_text_color%" />
+				<text>150</text>
+				<image resource="medium_button" />
+				<action function="set">tw_backup_feedback_duration_ms=150</action>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_vibrate_after_backup" var2="1" />
+				<placement x="%col4_medium_x%" y="%row6_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>200</text>
+				<image resource="medium_button" />
+				<action function="set">tw_backup_feedback_duration_ms=200</action>
+			</object>
+
+			<object type="checkbox">
+				<placement x="%col1_x%" y="%row9_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>Vibrate at restore completion.</text>
+				<data variable="tw_vibrate_after_restore" />
+				<image checked="checkbox_true" unchecked="checkbox_false" />
+			</object>
+
+			<object type="text" color="%text_color%">
+				<condition var1="tw_vibrate_after_restore" var2="1" />
+				<font resource="font" />
+				<placement x="%col1_x%" y="%row10_text_y%" />
+				<text>Duration:</text>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<condition var1="tw_vibrate_after_restore" var2="1" />
+				<font resource="font" />
+				<placement x="%col1_x%" y="%row11_text_y%" />
+				<text>%tw_restore_feedback_duration_ms% ms</text>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_vibrate_after_restore" var2="1" />
+				<placement x="%col2_medium_x%" y="%row10_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>100</text>
+				<image resource="medium_button" />
+				<action function="set">tw_restore_feedback_duration_ms=100</action>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<placement x="%col3_medium_x%" y="%row10_text_y%" />
+				<condition var1="tw_vibrate_after_restore" var2="1" />
+				<font resource="font" color="%button_text_color%" />
+				<text>150</text>
+				<image resource="medium_button" />
+				<action function="set">tw_restore_feedback_duration_ms=150</action>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_vibrate_after_restore" var2="1" />
+				<placement x="%col4_medium_x%" y="%row10_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>200</text>
+				<image resource="medium_button" />
+				<action function="set">tw_restore_feedback_duration_ms=200</action>
+			</object>
+
+			<object type="checkbox">
+				<placement x="%col1_x%" y="%row13_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>Vibrate when an installation is completed.</text>
+				<data variable="tw_vibrate_after_install" />
+				<image checked="checkbox_true" unchecked="checkbox_false" />
+			</object>
+
+			<object type="text" color="%text_color%">
+				<condition var1="tw_vibrate_after_install" var2="1" />
+				<font resource="font" />
+				<placement x="%col1_x%" y="%row14_text_y%" />
+				<text>Duration:</text>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<condition var1="tw_vibrate_after_install" var2="1" />
+				<font resource="font" />
+				<placement x="%col1_x%" y="%row15_text_y%" />
+				<text>%tw_install_feedback_duration_ms% ms</text>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_vibrate_after_install" var2="1" />
+				<placement x="%col2_medium_x%" y="%row14_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>100</text>
+				<image resource="medium_button" />
+				<action function="set">tw_install_feedback_duration_ms=100</action>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<placement x="%col3_medium_x%" y="%row14_text_y%" />
+				<condition var1="tw_vibrate_after_install" var2="1" />
+				<font resource="font" color="%button_text_color%" />
+				<text>150</text>
+				<image resource="medium_button" />
+				<action function="set">tw_install_feedback_duration_ms=150</action>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_vibrate_after_install" var2="1" />
+				<placement x="%col4_medium_x%" y="%row14_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>200</text>
+				<image resource="medium_button" />
+				<action function="set">tw_install_feedback_duration_ms=200</action>
+			</object>
+
+			<object type="checkbox">
+				<placement x="%col1_x%" y="%row17_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>Vibrate at format/wipe completion.</text>
+				<data variable="tw_vibrate_after_parted" />
+				<image checked="checkbox_true" unchecked="checkbox_false" />
+			</object>
+
+			<object type="text" color="%text_color%">
+				<condition var1="tw_vibrate_after_parted" var2="1" />
+				<font resource="font" />
+				<placement x="%col1_x%" y="%row18_text_y%" />
+				<text>Duration:</text>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<condition var1="tw_vibrate_after_parted" var2="1" />
+				<font resource="font" />
+				<placement x="%col1_x%" y="%row19_text_y%" />
+				<text>%tw_parted_feedback_duration_ms% ms</text>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_vibrate_after_parted" var2="1" />
+				<placement x="%col2_medium_x%" y="%row18_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>100</text>
+				<image resource="medium_button" />
+				<action function="set">tw_parted_feedback_duration_ms=100</action>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<placement x="%col3_medium_x%" y="%row18_text_y%" />
+				<condition var1="tw_vibrate_after_parted" var2="1" />
+				<font resource="font" color="%button_text_color%" />
+				<text>150</text>
+				<image resource="medium_button" />
+				<action function="set">tw_parted_feedback_duration_ms=150</action>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_vibrate_after_parted" var2="1" />
+				<placement x="%col4_medium_x%" y="%row18_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>200</text>
+				<image resource="medium_button" />
+				<action function="set">tw_parted_feedback_duration_ms=200</action>
 			</object>
 
 			<object type="action">
@@ -3769,6 +4329,110 @@
 				<text>Backup-restore /boot.</text>
 				<data variable="tw_sd_backup_restore_boot" />
 				<image checked="checkbox_true" unchecked="checkbox_false" />
+			</object>
+
+			<object type="checkbox">
+				<placement x="%col1_x%" y="%row5_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>Vibrate at backup completion.</text>
+				<data variable="tw_vibrate_after_sdbackup" />
+				<image checked="checkbox_true" unchecked="checkbox_false" />
+			</object>
+
+			<object type="text" color="%text_color%">
+				<condition var1="tw_vibrate_after_sdbackup" var2="1" />
+				<font resource="font" />
+				<placement x="%col1_x%" y="%row6_text_y%" />
+				<text>Duration:</text>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<condition var1="tw_vibrate_after_sdbackup" var2="1" />
+				<font resource="font" />
+				<placement x="%col1_x%" y="%row7_text_y%" />
+				<text>%tw_sdbackup_feedback_duration_ms% ms</text>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_vibrate_after_sdbackup" var2="1" />
+				<placement x="%col2_medium_x%" y="%row6_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>100</text>
+				<image resource="medium_button" />
+				<action function="set">tw_sdbackup_feedback_duration_ms=100</action>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<placement x="%col3_medium_x%" y="%row6_text_y%" />
+				<condition var1="tw_vibrate_after_sdbackup" var2="1" />
+				<font resource="font" color="%button_text_color%" />
+				<text>150</text>
+				<image resource="medium_button" />
+				<action function="set">tw_sdbackup_feedback_duration_ms=150</action>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_vibrate_after_sdbackup" var2="1" />
+				<placement x="%col4_medium_x%" y="%row6_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>200</text>
+				<image resource="medium_button" />
+				<action function="set">tw_sdbackup_feedback_duration_ms=200</action>
+			</object>
+
+			<object type="checkbox">
+				<placement x="%col1_x%" y="%row9_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>Vibrate at restore completion.</text>
+				<data variable="tw_vibrate_after_sdrestore" />
+				<image checked="checkbox_true" unchecked="checkbox_false" />
+			</object>
+
+			<object type="text" color="%text_color%">
+				<condition var1="tw_vibrate_after_sdrestore" var2="1" />
+				<font resource="font" />
+				<placement x="%col1_x%" y="%row10_text_y%" />
+				<text>Duration:</text>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<condition var1="tw_vibrate_after_sdrestore" var2="1" />
+				<font resource="font" />
+				<placement x="%col1_x%" y="%row11_text_y%" />
+				<text>%tw_sdrestore_feedback_duration_ms% ms</text>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_vibrate_after_sdrestore" var2="1" />
+				<placement x="%col2_medium_x%" y="%row10_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>100</text>
+				<image resource="medium_button" />
+				<action function="set">tw_sdrestore_feedback_duration_ms=100</action>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<placement x="%col3_medium_x%" y="%row10_text_y%" />
+				<condition var1="tw_vibrate_after_sdrestore" var2="1" />
+				<font resource="font" color="%button_text_color%" />
+				<text>150</text>
+				<image resource="medium_button" />
+				<action function="set">tw_sdrestore_feedback_duration_ms=150</action>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_vibrate_after_sdrestore" var2="1" />
+				<placement x="%col4_medium_x%" y="%row10_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>200</text>
+				<image resource="medium_button" />
+				<action function="set">tw_sdrestore_feedback_duration_ms=200</action>
 			</object>
 
 			<object type="action">
@@ -4780,22 +5444,23 @@
 				<text>----------------------------------------------</text>
 			</object>
 
-			<object type="text" color="%text_fail_color%">
-				<font resource="font" />
-				<placement x="%center_x%" y="%row18_text_y%" placement="5" />
-				<text>ALL contents of SD-Card will be lost!</text>
+			<object type="checkbox">
+				<condition var1="%tw_sdcard_file_system%" op="==" var2="ntfs" />
+				<placement x="%col1_x%" y="%row18_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>Perform quick (fast) format.</text>
+				<data variable="tw_mkntfs_quick_format" />
+				<image checked="checkbox_true" unchecked="checkbox_false" />
 			</object>
 
 			<object type="slider">
+				<condition var1="notemptystr" var2="%tw_sdcard_file_system%" />
 				<placement x="%slider_x%" y="%slider_y%" />
 				<resource base="slider" used="slider-used" touch="slider-touch" />
 				<action function="page">partsdcardaction</action>
 				<actions>
 					<action function="set">tw_back=partsdcard</action>
 					<action function="set">tw_action=partitionsd</action>
-					<action function="set">tw_has_action2=1</action>
-					<action function="set">tw_action2=set</action>
-					<action function="set">tw_action2_param=tw_zip_location=/sdcard</action>
 					<action function="set">tw_action_text1=Partitioning SD Card...</action>
 					<action function="set">tw_action_text2=This will take a few minutes.</action>
 					<action function="set">tw_complete_text1=Partitioning Complete</action>
@@ -4804,6 +5469,7 @@
 			</object>
 
 			<object type="text" color="%text_color%">
+				<condition var1="notemptystr" var2="%tw_sdcard_file_system%" />
 				<font resource="font" />
 				<placement x="%center_x%" y="%slider_text_y%" placement="4" />
 				<text>Swipe to Partition</text>
@@ -4819,6 +5485,49 @@
 				<action function="page">advanced</action>
 			</object>
 
+			<object type="template" name="footer" />
+		</page>
+
+		<page name="partsdcardconfirm">
+			<object type="template" name="header" />
+
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%row1_text_y%" placement="5"/>
+				<text>Load %tw_theme_file%</text>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%row10_text_y%" placement="5"/>
+				<text>Press back button to cancel.</text>
+			</object>
+
+			<object type="slider">
+				<placement x="%slider_x%" y="%slider_y%" />
+				<resource base="slider" used="slider-used" touch="slider-touch" />
+				<actions>
+					<action function="set">tw_sel_theme_path=%tw_theme_file%/ui.zip</action>
+					<action function="reload"></action>
+				</actions>
+			</object>
+			
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%slider_text_y%" placement="4" />
+				<text>Swipe to Confirm</text>
+			</object>
+
+			<object type="action">
+				<touch key="back" />
+				<action function="page">themeselect</action>
+			</object>
+
+			<object type="action">
+				<touch key="home" />
+				<action function="page">main</action>
+			</object>
+				
 			<object type="template" name="footer" />
 		</page>
 

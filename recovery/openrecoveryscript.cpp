@@ -163,7 +163,6 @@ int OpenRecoveryScript::run_script_file(void) {
 				// Restore
 				DataManager::SetValue("tw_action_text2", "Restoring");
 				PartitionManager.Mount_All_Storage();
-				DataManager::SetValue(TW_SKIP_MD5_CHECK_VAR, 0);
 				char folder_path[512], partitions[512];
 
 				string val = value, restore_folder, restore_partitions;
@@ -222,18 +221,20 @@ int OpenRecoveryScript::run_script_file(void) {
 				DataManager::SetValue("tw_restore", folder_path);
 
 				PartitionManager.Set_Restore_Files(folder_path);
+				DataManager::SetValue(TW_SKIP_MD5_CHECK_VAR, -1);
 				if (strlen(partitions) != 0) {
-					int tw_restore_system = 0;
-					int tw_restore_data = 0;
-					int tw_restore_cache = 0;
-					int tw_restore_recovery = 0;
-					int tw_restore_boot = 0;
-					int tw_restore_andsec = 0;
-					int tw_restore_sdext = 0;
-					int tw_restore_sdext2 = 0;
-					int tw_restore_sp1 = 0;
-					int tw_restore_sp2 = 0;
-					int tw_restore_sp3 = 0;
+					int tw_restore_system = -1;
+					int tw_restore_data = -1;
+					int tw_restore_cache = -1;
+					int tw_restore_recovery = -1;
+					int tw_restore_boot = -1;
+					int tw_restore_andsec = -1;
+					int tw_restore_sdext = -1;
+					int tw_restore_sdext2 = -1;
+					int tw_restore_sp1 = -1;
+					int tw_restore_sp2 = -1;
+					int tw_restore_sp3 = -1;
+					int tw_skip_md5_chk = -1;
 
 					memset(value2, 0, sizeof(value2));
 					strcpy(value2, partitions);
@@ -274,33 +275,23 @@ int OpenRecoveryScript::run_script_file(void) {
 							tw_restore_sdext2 = 1;
 							ui_print("SDExt2\n");
 						} else if (value2[i] == 'M' || value2[i] == 'm') {
-							DataManager::SetValue(TW_SKIP_MD5_CHECK_VAR, 1);
+							tw_skip_md5_chk = 1;
 							ui_print("MD5 check skip is on\n");
 						}
 					}
 
-					if (DataManager::GetIntValue(TW_RESTORE_SYSTEM_VAR) && !tw_restore_system)
-						DataManager::SetValue(TW_RESTORE_SYSTEM_VAR, 0);
-					if (DataManager::GetIntValue(TW_RESTORE_DATA_VAR) && !tw_restore_data)
-						DataManager::SetValue(TW_RESTORE_DATA_VAR, 0);
-					if (DataManager::GetIntValue(TW_RESTORE_CACHE_VAR) && !tw_restore_cache)
-						DataManager::SetValue(TW_RESTORE_CACHE_VAR, 0);
-					if (DataManager::GetIntValue(TW_RESTORE_RECOVERY_VAR) && !tw_restore_recovery)
-						DataManager::SetValue(TW_RESTORE_RECOVERY_VAR, 0);
-					if (DataManager::GetIntValue(TW_RESTORE_BOOT_VAR) && !tw_restore_boot)
-						DataManager::SetValue(TW_RESTORE_BOOT_VAR, 0);
-					if (DataManager::GetIntValue(TW_RESTORE_ANDSEC_VAR) && !tw_restore_andsec)
-						DataManager::SetValue(TW_RESTORE_ANDSEC_VAR, 0);
-					if (DataManager::GetIntValue(TW_RESTORE_SDEXT_VAR) && !tw_restore_sdext)
-						DataManager::SetValue(TW_RESTORE_SDEXT_VAR, 0);
-					if (DataManager::GetIntValue(TW_RESTORE_SDEXT2_VAR) && !tw_restore_sdext2)
-						DataManager::SetValue(TW_RESTORE_SDEXT2_VAR, 0);
-					if (DataManager::GetIntValue(TW_RESTORE_SP1_VAR) && !tw_restore_sp1)
-						DataManager::SetValue(TW_RESTORE_SP1_VAR, 0);
-					if (DataManager::GetIntValue(TW_RESTORE_SP2_VAR) && !tw_restore_sp2)
-						DataManager::SetValue(TW_RESTORE_SP2_VAR, 0);
-					if (DataManager::GetIntValue(TW_RESTORE_SP3_VAR) && !tw_restore_sp3)
-						DataManager::SetValue(TW_RESTORE_SP3_VAR, 0);
+					DataManager::SetValue(TW_SKIP_MD5_CHECK_VAR, tw_skip_md5_chk);
+					DataManager::SetValue(TW_RESTORE_SYSTEM_VAR, tw_restore_system);
+					DataManager::SetValue(TW_RESTORE_DATA_VAR, tw_restore_data);
+					DataManager::SetValue(TW_RESTORE_CACHE_VAR, tw_restore_cache);
+					DataManager::SetValue(TW_RESTORE_RECOVERY_VAR, tw_restore_recovery);
+					DataManager::SetValue(TW_RESTORE_BOOT_VAR, tw_restore_boot);
+					DataManager::SetValue(TW_RESTORE_ANDSEC_VAR, tw_restore_andsec);
+					DataManager::SetValue(TW_RESTORE_SDEXT_VAR, tw_restore_sdext);
+					DataManager::SetValue(TW_RESTORE_SDEXT2_VAR, tw_restore_sdext2);
+					DataManager::SetValue(TW_RESTORE_SP1_VAR, tw_restore_sp1);
+					DataManager::SetValue(TW_RESTORE_SP2_VAR, tw_restore_sp2);
+					DataManager::SetValue(TW_RESTORE_SP3_VAR, tw_restore_sp3);
 				}
 				PartitionManager.Wipe_By_Path("/cache");
 				PartitionManager.Run_Restore(folder_path);

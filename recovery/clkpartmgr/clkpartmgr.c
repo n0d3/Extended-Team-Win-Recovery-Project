@@ -18,7 +18,7 @@ static unsigned partition_size(char* mtd_name) {
 	if (part == NULL || mtd_partition_info(part, &total_size, NULL, NULL))
         	total_size = 0;
 	else
-		total_size /= 1048576;
+		total_size /= 131072; // blocks
 
 	return total_size;
 }
@@ -90,13 +90,13 @@ int main(int argc, char** argv) {
 				tmp_buff = strtok(buff, ":");
 				strcpy(mtd_name, tmp_buff);
 				tmp_buff = strtok(NULL, ":");
-				min_ptn_size = atoi(tmp_buff);
+				min_ptn_size = strtoul(tmp_buff, NULL, 10);
 				printf("  Checking %s's size...\n", mtd_name);
 				ptn_size = partition_size(mtd_name);
 				if (ptn_size > 0 && ptn_size < min_ptn_size) {
 					write_msg++;
-					printf("  %s's size will be increased\n    from %iMB to %iMB\n",
-						mtd_name, (int)ptn_size, (int)min_ptn_size);
+					printf("  %s's size will be increased\n    from %u blocks to %u blocks\n",
+						mtd_name, ptn_size, min_ptn_size);
 					strcat(tmp, argv[i]);
 					strcat(tmp, "\n");
 				} else {
@@ -111,6 +111,7 @@ int main(int argc, char** argv) {
 						restore = 1;
 						printf("  Passing msg: '%s'\n", argv[i]);
 						strcpy(boot_recovery, argv[i]);
+						boot_recovery[strlen(boot_recovery)] = 0;
 					} else
 						continue;
 				} else if (strcmp(cmd_arg, "--update_package") == 0) {
@@ -118,11 +119,12 @@ int main(int argc, char** argv) {
 						update = 1;
 						printf("  Passing msg: '%s'\n", argv[i]);
 						strcpy(boot_recovery, argv[i]);
+						boot_recovery[strlen(boot_recovery)] = 0;
 					} else
 						continue;
 				} else if (strcmp(cmd_arg, "--partitions") == 0) {
 					if (update == 0) {
-						strcat(parts, "|");
+						parts[0] = '|';
 						tmp_buff = strtok(NULL, "=");
 						printf("  Passing partitions: '%s'\n", tmp_buff);
 						strcat(parts, tmp_buff);
@@ -130,13 +132,14 @@ int main(int argc, char** argv) {
 						arg_error = 1;
 				} else
 					printf("  Skipping unknown msg: '%s'\n", argv[i]);
-			}
+			} else
+				continue;
 		}		
 	}
 	if (arg_error) {
 		printf("Usage: clkpartmgr [OPTION...] [ptn-name:min-size]\n");
 		printf("\n Required arguments:\n");
-		printf("  ptn-name:min-size     \tSet partition's minimum size to check.\n");
+		printf("  ptn-name:min-size     \tSet partition's min size(blocks) to check.\n");
 		printf("                        \tIf the real size is less than minimum,\n");
 		printf("                        \tit will be increased later by cLK.\n\n");
 		printf(" Optional arguments:\n");

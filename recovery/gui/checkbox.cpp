@@ -65,7 +65,7 @@ GUICheckbox::GUICheckbox(xml_node<>* node)
             mVarName = attr->value();
         attr = child->first_attribute("default");
         if (attr)
-            DataManager::SetValue(mVarName, attr->value());
+            DataManager::SetValue(mVarName, attr->value(), 1);
     }
 
     mCheckW = 0;    mCheckH = 0;
@@ -162,7 +162,7 @@ int GUICheckbox::NotifyTouch(TOUCH_STATE state, int x, int y)
         int lastState;
         DataManager::GetValue(mVarName, lastState);
         lastState = (lastState == 0) ? 1 : 0;
-        DataManager::SetValue(mVarName, lastState);
+        DataManager::SetValue(mVarName, lastState, 0);
     }
     return 0;
 }

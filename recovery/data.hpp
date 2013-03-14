@@ -59,8 +59,6 @@ class DataManager {
 		static string& CGetSettingsStorageMount();
 
 	// Extended functions
-		// Formats mtd ptn by given name
-		static int Wipe_MTD_By_Name(string ptnName);
 		static int Detect_BLDR();
 		static int Pause_For_Battery_Charge();
 		static void SetBackupFolder(string storage_path);

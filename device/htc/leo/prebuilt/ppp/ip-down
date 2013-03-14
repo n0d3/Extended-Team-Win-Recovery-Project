@@ -1,0 +1,10 @@
+#!/system/bin/sh
+
+/bin/rm /etc/ppp/ppp0.pid
+
+# Delete the symbolic link created by ip-up
+/bin/rm /etc/resolv.conf
+
+# Tweak kernel low memory handling (revert to the original values)
+echo 32 32 > /proc/sys/vm/lowmem_reserve_ratio
+echo 2039 > /proc/sys/vm/min_free_kbytes

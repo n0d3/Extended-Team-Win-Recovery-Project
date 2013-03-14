@@ -78,7 +78,7 @@ int twrpTar::createTarGZFork() {
 				LOGI("Child process ended with signal: %d\n", WTERMSIG(status));
 				return -1;
 			}
-			else if (WIFEXITED(status) != 0)
+			else if (WEXITSTATUS(status) == 0)
 				LOGI("Tar creation successful\n");
 			else {
 				LOGI("Tar creation failed\n");
@@ -112,7 +112,7 @@ int twrpTar::createTarFork() {
 				LOGI("Child process ended with signal: %d\n", WTERMSIG(status));
 				return -1;
 			}
-			else if (WIFEXITED(status) != 0)
+			else if (WEXITSTATUS(status) == 0)
 				LOGI("Tar creation successful\n");
 			else {
 				LOGI("Tar creation failed\n");
@@ -146,7 +146,7 @@ int twrpTar::extractTarFork() {
 				LOGI("Child process ended with signal: %d\n", WTERMSIG(status));
 				return -1;
 			}
-			else if (WIFEXITED(status) != 0)
+			else if (WEXITSTATUS(status) == 0)
 				LOGI("Tar extraction successful\n");
 			else {
 				LOGI("Tar extraction failed\n");
@@ -202,7 +202,7 @@ int twrpTar::Generate_Multiple_Archives(string Path) {
 	string::size_type i;
 	bool skip;
 	if (!tarexclude.empty())
-		split = TWFunc::split_string(tarexclude, ' ');
+		split = TWFunc::split_string(tarexclude, ' ', true);
 
 	if (has_data_media == 1 && Path.size() >= 11 && strncmp(Path.c_str(), "/data/media", 11) == 0)
 		return 0; // Skip /data/media
@@ -383,7 +383,7 @@ int twrpTar::tarDirs(bool include_root) {
 	if (d != NULL) {		
 		if (!tarexclude.empty()) {
 			strcpy(excl, tarexclude.c_str());
-			split = TWFunc::split_string(tarexclude, ' ');
+			split = TWFunc::split_string(tarexclude, ' ', true);
 		}
 		struct dirent* de;
 		while ((de = readdir(d)) != NULL) {
@@ -488,6 +488,7 @@ int twrpTar::addFilesToExistingTar(vector <string> files, string fn) {
 }
 
 int twrpTar::createTar() {
+	char* charRootDir = (char*) tardir.c_str();
 	char* charTarFile = (char*) tarfn.c_str();
 	int use_compression = 0;
 	static tartype_t type = { open, close, read, write_tar };
@@ -511,6 +512,7 @@ int twrpTar::createTar() {
 }
 
 int twrpTar::openTar(bool gzip) {
+	char* charRootDir = (char*) tardir.c_str();
 	char* charTarFile = (char*) tarfn.c_str();
 
 	if (gzip) {
@@ -648,6 +650,39 @@ int twrpTar::entryExists(string entry) {
 		LOGI("Unable to close tar file after searching for entry '%s'.\n", entry.c_str());
 
 	return ret;
+}
+
+unsigned long long twrpTar::uncompressedSize() {
+	int type = 0;
+        unsigned long long total_size = 0;
+	string Tar, Command, result;
+	vector<string> split;
+
+	Tar = TWFunc::Get_Filename(tarfn);
+	LOGI("%s's ", Tar.c_str());
+	type = getArchiveType();
+	if (type == 0)
+		total_size = TWFunc::Get_File_Size(tarfn);
+	else {
+		Command = "pigz -l " + tarfn;
+		/* if we set Command = "pigz -l " + tarfn + " | sed '1d' | cut -f5 -d' '";
+		   we get the uncompressed size at once. */
+		TWFunc::Exec_Cmd(Command, result);
+		if (!result.empty()) {
+			/* Expected output:
+				compressed   original reduced  name
+				  95855838  179403776   -1.3%  data.yaffs2.win
+						^
+					     split[5]
+			*/
+			split = TWFunc::split_string(result, ' ', true);
+			if (split.size() > 4)
+				total_size = atoi(split[5].c_str());
+		}
+	}
+	LOGI("%s's uncompressed size: %llu bytes\n", Tar.c_str(), total_size);
+
+	return total_size;
 }
 
 extern "C" ssize_t write_tar(int fd, const void *buffer, size_t size) {

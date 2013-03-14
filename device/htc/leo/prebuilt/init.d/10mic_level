@@ -1,0 +1,17 @@
+#!/system/bin/sh
+#Usage: echo 'device_id level' > /proc/mic_level
+#Level range: 0-1000; -1 use level from acdb
+#Current levels (device_id):
+
+echo '0 400' > /proc/mic_level
+echo '1 600' > /proc/mic_level
+echo '2 800' > /proc/mic_level
+echo '3 800' > /proc/mic_level
+echo '4 800' > /proc/mic_level
+
+#Current levels (device_id):
+#HANDSET (0): 400
+#SPKR_PHONE (1): 600
+#HEADSET (2): 800
+#TTY_HEADSET (3): 800
+#BT_SCO (4): 800

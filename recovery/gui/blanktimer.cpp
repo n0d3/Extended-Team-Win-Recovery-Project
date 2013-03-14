@@ -52,7 +52,7 @@ blanktimer::blanktimer(void) {
 
 void blanktimer::setTime(int newtime) {
 	if (sleepTimer != newtime) {
-		LOGI("Screen timeout changed to %i sec.\n", newtime);
+		LOGI("Screen timeout set to %i sec.\n", newtime);
 		sleepTimer = newtime;
 	}
 }
@@ -97,7 +97,7 @@ int blanktimer::setClockTimer(void) {
 		usleep(980000);
 		clock_gettime(CLOCK_MONOTONIC, &curTime);
 		diff = TWFunc::timespec_diff(btimer, curTime);
-		if (sleepTimer > 2 && diff.tv_sec > (sleepTimer - 2) && !dimmed) {
+		if (sleepTimer > 2 && diff.tv_sec > (sleepTimer - 2) && !blanked && !dimmed) {
 			dimmed = 1;
 			blanked = 0;
 			orig_brightness = getBrightness();
@@ -106,7 +106,9 @@ int blanktimer::setClockTimer(void) {
 		if (sleepTimer && diff.tv_sec > sleepTimer && dimmed) {
 			dimmed = 0;
 			blanked = 1;
+#ifndef TW_NO_SCREEN_BLANK
 			gr_fb_blank(1);
+#endif
 			setBrightness(0);
 			PageManager::ChangeOverlay("lock");
 		}
@@ -136,7 +138,9 @@ void blanktimer::resetTimerAndUnblank(void) {
 	setTimer();
 	if (blanked) {
 		blanked = 0;
+#ifndef TW_NO_SCREEN_BLANK
 		gr_fb_blank(0);
+#endif
 		gui_forceRender();
 		setBrightness(orig_brightness);
 	} else if (dimmed) {

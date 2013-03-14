@@ -25,6 +25,7 @@
 #include "../ui.h"
 #include "../adb_install.h"
 #include "blanktimer.hpp"
+#include "../nativeSDmanager.hpp"
 
 extern "C" {
 #include "../common.h"
@@ -32,7 +33,6 @@ extern "C" {
 #include "../recovery_ui.h"
 #include "../variables.h"
 #include "../twinstall.h"
-
 #include "../minadbd/adb.h"
 
 int TWinstall_zip(const char* path, int* wipe_cache);
@@ -44,12 +44,9 @@ int gui_start();
 #include "rapidxml.hpp"
 #include "objects.hpp"
 
-// Vibrator duration (in msec) for notifying operation's completion
-#define DURATION_MS    100
-
 extern RecoveryUI* ui;
 extern blanktimer blankTimer;
-
+TWNativeSDManager NativeSDManager;
 void curtainClose(void);
 
 GUIAction::GUIAction(xml_node<>* node)
@@ -387,6 +384,17 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			DataManager::SetValue(arg, "1");
 		return 0;
 	}
+	if (function == "save") {
+		if (arg.find('=') != string::npos) {
+			string varName = arg.substr(0, arg.find('='));
+			string value = arg.substr(arg.find('=') + 1, string::npos);
+
+			DataManager::GetValue(value, value);
+			DataManager::SetValue(varName, value, 1);
+		} else
+			DataManager::SetValue(arg, "1", 1);
+		return 0;
+	}
 	if (function == "clear") {
 		DataManager::SetValue(arg, "0");
 		return 0;
@@ -689,7 +697,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			DataManager::SetValue(TW_ZIP_QUEUE_COUNT, zip_queue_index);
 			DataManager::SetValue(TW_ZIP_INDEX, 0);
 			operation_end(ret_val, simulate);
-			TWFunc::Vibrate(DURATION_MS);
+			TWFunc::Vibrate(install_completed);
 			return 0;
 		}
 		if (function == "wipe")	{
@@ -730,7 +738,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				} else if (arg == "ANDROIDSECURE") {
 					ret_val = PartitionManager.Wipe_Android_Secure();
 				} else if (arg == "boot" || arg == "sboot") {
-					ret_val = DataManager::Wipe_MTD_By_Name(arg);
+					ret_val = PartitionManager.Wipe_MTD_By_Name(arg);
 				} else
 					ret_val = PartitionManager.Wipe_By_Path(arg);
 
@@ -752,7 +760,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			PartitionManager.Update_System_Details();
 			if (ret_val) {
 				ret_val = 0; // 0 is success
-				TWFunc::Vibrate(DURATION_MS);
+				TWFunc::Vibrate((FeedbackReason)150);
 			} else
 				ret_val = 1; // 1 is failure
 			operation_end(ret_val, simulate);
@@ -785,10 +793,12 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 						return -1;
 					}
 					DataManager::SetValue(TW_BACKUP_NAME, "(Current Date)");
+					TWFunc::Vibrate(backup_completed);
 				} else if (arg == "restore") {
 					string Restore_Name;
 					DataManager::GetValue("tw_restore", Restore_Name);
 					ret = PartitionManager.Run_Restore(Restore_Name);
+					TWFunc::Vibrate(restore_completed);
 				} else {
 					operation_end(1, simulate);
 					return -1;
@@ -798,7 +808,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				ret = 1; // 1 for failure
 			else {
 				ret = 0; // 0 for success
-				TWFunc::Vibrate(DURATION_MS);
+				TWFunc::drop_caches();
 			}
 			operation_end(ret, simulate);
 			return 0;
@@ -821,7 +831,6 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				ret = 1; // 1 for failure
 			else {
 				ret = 0; // 0 for success
-				TWFunc::Vibrate(DURATION_MS);
 			}
 		   	operation_end(ret, simulate);
 
@@ -839,13 +848,12 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				simulate_progress_bar();
 				operation_end(ret, simulate);
 			} else {
-				ret = PartitionManager.NativeSD_Kernel(ptn, sdkernelpath);
+				ret = NativeSDManager.Kernel_Update(ptn, sdkernelpath);
 			}
 			if (ret == false)
 				ret = 1; // 1 for failure
 			else {
 				ret = 0; // 0 for success
-				TWFunc::Vibrate(DURATION_MS);
 			}
 		   	operation_end(ret, simulate);
 
@@ -869,7 +877,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				simulate_progress_bar();
 				operation_end(ret, simulate);
 			} else {
-				ret = PartitionManager.NativeSD_Backup(sdrompath);
+				ret = NativeSDManager.Backup(sdrompath);
 			}
 
 			if (i == 0) {
@@ -881,7 +889,8 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				ret = 1; // 1 for failure
 			else {
 				ret = 0; // 0 for success
-				TWFunc::Vibrate(DURATION_MS);
+				TWFunc::Vibrate(sdbackup_completed);
+				TWFunc::drop_caches();
 			}
 		   	operation_end(ret, simulate);
 
@@ -903,7 +912,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				simulate_progress_bar();
 				operation_end(ret, simulate);
 			} else {
-				ret = PartitionManager.NativeSD_Restore(sdrompath);
+				ret = NativeSDManager.Restore(sdrompath);
 			}
 
 			if (i == 0) {
@@ -915,7 +924,8 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				ret = 1; // 1 for failure
 			else {
 				ret = 0; // 0 for success
-				TWFunc::Vibrate(DURATION_MS);
+				TWFunc::Vibrate(sdrestore_completed);
+				TWFunc::drop_caches();
 			}
 		   	operation_end(ret, simulate);
 
@@ -940,7 +950,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				simulate_progress_bar();
 				operation_end(ret, simulate);
 			} else {
-				ret = PartitionManager.NativeSD_Delete(sdrompath);
+				ret = NativeSDManager.Delete(sdrompath);
 			}
 
 			if (i == 0) {
@@ -952,7 +962,6 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				ret = 1; // 1 for failure
 			else {
 				ret = 0; // 0 for success
-				TWFunc::Vibrate(DURATION_MS);
 			}
 		   	operation_end(ret, simulate);
 
@@ -977,7 +986,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				simulate_progress_bar();
 				operation_end(ret, simulate);
 			} else {
-				ret = PartitionManager.NativeSD_Perm(sdrompath);
+				ret = NativeSDManager.Fix_Perm(sdrompath);
 			}
 
 			if (i == 0) {
@@ -989,7 +998,6 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				ret = 1; // 1 for failure
 			else {
 				ret = 0; // 0 for success
-				TWFunc::Vibrate(DURATION_MS);
 			}
 		   	operation_end(ret, simulate);
 
@@ -1014,7 +1022,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				simulate_progress_bar();
 				operation_end(ret, simulate);
 			} else {
-				ret = PartitionManager.NativeSD_WipeData(sdrompath);
+				ret = NativeSDManager.Wipe_Data(sdrompath);
 			}
 
 			if (i == 0) {
@@ -1026,7 +1034,6 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				ret = 1; // 1 for failure
 			else {
 				ret = 0; // 0 for success
-				TWFunc::Vibrate(DURATION_MS);
 			}
 		   	operation_end(ret, simulate);
 
@@ -1051,7 +1058,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				simulate_progress_bar();
 				operation_end(ret, simulate);
 			} else {
-				ret = PartitionManager.NativeSD_WipeDalvik(sdrompath);
+				ret = NativeSDManager.Wipe_Dalvik(sdrompath);
 			}
 
 			if (i == 0) {
@@ -1063,7 +1070,6 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				ret = 1; // 1 for failure
 			else {
 				ret = 0; // 0 for success
-				TWFunc::Vibrate(DURATION_MS);
 			}
 		   	operation_end(ret, simulate);
 
@@ -1116,7 +1122,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				}
 			}
 			operation_end(ret_val, simulate);
-			TWFunc::Vibrate(DURATION_MS);
+			TWFunc::Vibrate(parted_completed);
 			return 0;
 		}
 		if (function == "convertextfs") {
@@ -1136,7 +1142,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				}
 			}
 			operation_end(ret_val, simulate);
-			TWFunc::Vibrate(DURATION_MS);
+			TWFunc::Vibrate((FeedbackReason)150);
 			return 0;
 		}
 		if (function == "convertext2fs") {
@@ -1160,7 +1166,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				}
 			}
 			operation_end(ret_val, simulate);
-			TWFunc::Vibrate(DURATION_MS);
+			TWFunc::Vibrate((FeedbackReason)150);
 			return 0;
 		}	
 		if (function == "screenshot") {
@@ -1185,8 +1191,8 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				if (!PartitionManager.Check_SDCard())
 					ret_val = 1; // failed
 			}
+			TWFunc::Vibrate((FeedbackReason)150);
 			operation_end(ret_val, simulate);
-			TWFunc::Vibrate(DURATION_MS);
 
 			return 0;
 		}	
@@ -1366,8 +1372,8 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 					}
 				}
 			}
+			TWFunc::Vibrate((FeedbackReason)150);
 			operation_end(op_status, simulate);
-			TWFunc::Vibrate(DURATION_MS);
 			return 0;
 		}
 		if (function == "adbsideload")

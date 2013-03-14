@@ -377,13 +377,6 @@ GUIFileSelector::~GUIFileSelector()
 
 int GUIFileSelector::Render(void)
 {
-	// Update the file list if needed
-	if (updateFileList) {
-		string value;
-		DataManager::GetValue(mPathVar, value);
-		GetFileList(value);
-		updateFileList = false;
-	}
 	// First step, fill background
 	gr_color(mBackgroundColor.red, mBackgroundColor.green, mBackgroundColor.blue, 255);
 	gr_fill(mRenderX, mRenderY + mHeaderH, mRenderW, mRenderH - mHeaderH);
@@ -394,6 +387,17 @@ int GUIFileSelector::Render(void)
 		mBackgroundX = mRenderX + ((mRenderW - mBackgroundW) / 2);
 		mBackgroundY = mRenderY + ((mRenderH - mBackgroundH) / 2);
 		gr_blit(mBackground->GetResource(), 0, 0, mBackgroundW, mBackgroundH, mBackgroundX, mBackgroundY);
+	}
+
+	// Update the file list if needed
+	if (updateFileList) {
+		string value;
+		DataManager::GetValue(mPathVar, value);
+		if (GetFileList(value) == 0) {
+			updateFileList = false;
+		} else {
+			return 0;
+		}
 	}
 
 	// This tells us how many lines we can actually render
@@ -550,7 +554,10 @@ int GUIFileSelector::Render(void)
 		gr_fill(mFastScrollRectX, mFastScrollRectY, mFastScrollRectW, mFastScrollRectH);
 	}
 
-	mUpdate = 0;
+	// If a change came in during the render then we need to do another redraw so leave mUpdate alone if updateFileList is true.
+	if (!updateFileList) {
+		mUpdate = 0;
+	}
 	return 0;
 }
 
@@ -636,7 +643,6 @@ int GUIFileSelector::GetSelection(int x, int y)
 
 int GUIFileSelector::NotifyTouch(TOUCH_STATE state, int x, int y)
 {
-	//static int startSelection = -1;
 	static int lastY = 0, last2Y = 0;
 	int selection = 0;
 
@@ -848,9 +854,8 @@ int GUIFileSelector::NotifyVarChange(std::string varName, std::string value)
 	}
 	if (varName == mPathVar || varName == mSortVariable)
 	{
-		// If needed, wait for render to finish before continuing or the list change may not register
-		while (updateFileList || mUpdate) {
-			usleep(500);
+		if (varName == mSortVariable) {
+			DataManager::GetValue(mSortVariable, mSortOrder);
 		}
 		updateFileList = true;
 		mStart = 0;
@@ -999,4 +1004,3 @@ void GUIFileSelector::SetPageFocus(int inFocus)
 		mUpdate = 1;
 	}
 }
-

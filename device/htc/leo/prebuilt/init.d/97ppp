@@ -1,0 +1,20 @@
+#!/system/bin/sh
+
+if [ -f /system/ppp ]
+then
+  echo "preparing to use ppp for data connections..."
+  chown 1001.1001 /dev/smd1
+  touch /etc/ppp/active
+  touch /etc/ppp/pap-secrets
+  touch /etc/ppp/chap-secrets
+  touch /etc/ppp/options.smd
+  touch /etc/ppp/options.smd1
+  touch /etc/ppp/ppp-gprs.pid
+  touch /etc/ppp/resolv.conf
+  chown 0.1001 /system/etc/ppp/*
+  chmod 775 /system/etc/ppp/*
+  chown 0.0 /system/bin/pppd
+  chmod 4755 /system/bin/pppd
+  #/system/bin/pppd /dev/smd1 defaultroute
+fi
+

@@ -70,17 +70,27 @@ class TWPartition {
 		// Ignores wipe commands for /data/media devices and formats the original block device
 		virtual bool Wipe_Encryption();                                           
 		// Checks the fs type using blkid, does not do anything on MTD / yaffs2 because this crashes on some devices
-		virtual void Check_FS_Type();                                             
+		virtual bool Check_FS_Type();                                             
 		// Updates size information
 		virtual bool Update_Size(bool Display_Error);                             
 		// Recreates the /data/media folder
 		virtual void Recreate_Media_Folder();                                     
 
 		// Extended function
+		virtual int CheckFor_ValidIMG();
+		virtual unsigned int FS_Type_Via_statfs();
 		// When formatting card's partitions to different fs
 		virtual void Change_FS_Type(string type);
 	
 	public:
+		// Indicates if the partition is a swap partition
+		bool Swap;                                                        
+		// Indicates if the partition is currently present as a block device
+		bool Is_Present;                                                        
+		// Overall size of the partition
+		unsigned long long Size;                                           
+		// Overall free space
+		unsigned long long Free;
 		// Current file system
 		string Current_File_System;                                               
 		// Actual block device (one of primary, alternate, or decrypted)
@@ -138,17 +148,11 @@ class TWPartition {
 		// Decrypted block device available after decryption
 		string Decrypted_Block_Device;                                            
 		// Indicates if this partition is removable -- affects how often we check overall size, if present, etc.
-		bool Removable;                                                           
-		// Indicates if the partition is currently present as a block device
-		bool Is_Present;                                                          
+		bool Removable;                                                         
 		// Used by make_ext4fs to leave free space at the end of the partition block for things like a crypto footer
 		int Length;                                                               
-		// Overall size of the partition
-		unsigned long long Size;                                                  
 		// Overall used space
-		unsigned long long Used;                                                  
-		// Overall free space
-		unsigned long long Free;                                                  
+		unsigned long long Used;                                                   
 		// Backup size -- may be different than used space especially when /data/media is present
 		unsigned long long Backup_Size;                                           
 		// This partition might be encrypted, affects error handling, can only be true if crypto support is compiled in
@@ -200,7 +204,7 @@ class TWPartition {
 		// Sets up .android_secure settings
 		void Setup_AndSec(void);                                                  
 		// Checks the block device given and follows symlinks until it gets to the real block device
-		void Find_Real_Block_Device(string& Block_Device, bool Display_Error);    
+		void Find_Real_Block_Device(string& Block_Device, bool Display_Error); 
 		// Finds the partition size from /proc/partitions
 		bool Find_Partition_Size();                                               
 		// Uses du to get sizes
@@ -214,7 +218,7 @@ class TWPartition {
 		// Formats as EXFAT
 		bool Wipe_EXFAT();                                                         
 		// Formats as yaffs2 for MTD memory types
-		bool Wipe_MTD();                                                          
+		bool Wipe_YAFFS2();
 		// Uses rm -rf to wipe
 		bool Wipe_RMRF();                                                         
 		// Uses rm -rf to wipe but does not wipe /data/media
@@ -245,6 +249,9 @@ class TWPartition {
 		void Mount_Storage_Retry(void);                                           
 
 	// Extended functions
+		void Recreate_Cache_Recovery_Folder(void);
+		// Returns the partition size from /proc/partitions
+		unsigned long long Get_Blk_Size(void);   
 		// Checks to see if the file system given is swap
 		bool Is_Swap(string File_System);                                         
 		// Formats using nilfs2
@@ -273,6 +280,8 @@ class TWPartitionManager {
 		virtual ~TWPartitionManager() {}
 
 	public:
+		// Format using erase_image for MTD memory types
+		virtual bool Wipe_MTD_By_Name(string ptnName);
 		// Parses the fstab and populates the partitions
 		virtual int Process_Fstab(string Fstab_Filename, bool Display_Error);     
 		// Creates /etc/fstab file that's used by the command line for mount commands
@@ -352,7 +361,9 @@ class TWPartitionManager {
 		// Repartitions the sdcard
 		virtual int Partition_SDCard(void);                                       
 		virtual int Fix_Permissions(); 
-
+		// Generates an MD5 after a backup is made
+		virtual bool Make_MD5(bool generate_md5, string Backup_Folder, string Backup_Filename); 
+		
 	// Extended functions
 		static int Fstab_Proc_Done;
 		// Wipe all partitions except /sdcard
@@ -360,7 +371,8 @@ class TWPartitionManager {
 		// Check filesystem of SD Card's partitions
 		virtual int Check_SDCard(void);						  
 		// Set filesystem on ext
-		virtual int FSConvert_SDEXT(string extpath);                              
+		virtual int FSConvert_SDEXT(string extpath);   
+/*                           
 		// Backup NativeSD Rom
 		virtual int NativeSD_Backup(string RomPath);                              
 		// Restore NativeSD Rom
@@ -374,11 +386,9 @@ class TWPartitionManager {
 		// Wipe dalvik-cache on NativeSD Rom
 		virtual int NativeSD_WipeDalvik(string RomPath);                          
 		// Flash rom's kernel to selected boot partition
-		virtual int NativeSD_Kernel(string ptn, string RomPath);                  	
-	
+		virtual int NativeSD_Kernel(string ptn, string RomPath);   
+*/
 	private:
-		// Generates an MD5 after a backup is made
-		bool Make_MD5(bool generate_md5, string Backup_Folder, string Backup_Filename); 
 		bool Backup_Partition(TWPartition* Part, string Backup_Folder, bool generate_md5,
 					unsigned long long* img_bytes_remaining,
 					unsigned long long* file_bytes_remaining,

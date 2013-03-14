@@ -1,0 +1,4 @@
+#!/system/bin/sh
+# A workaround for native USB Tethering (by tytung)
+
+/system/bin/netcfg usb0 up

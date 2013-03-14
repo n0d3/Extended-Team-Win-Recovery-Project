@@ -1,0 +1,72 @@
+on early-init
+    start ueventd
+
+on init
+    export PATH /sbin
+    export LD_LIBRARY_PATH .:/sbin
+    export ANDROID_ROOT /system
+    export ANDROID_DATA /data
+    export EXTERNAL_STORAGE /sdcard
+
+    symlink /system/etc /etc
+
+    mkdir /system
+    mkdir /data
+    mkdir /cache
+    mount /tmp /tmp tmpfs
+
+    chown root shell /tmp
+    chmod 0775 /tmp
+
+    write /sys/class/android_usb/android0/enable 0
+    write /sys/class/android_usb/android0/idVendor 18D1
+    write /sys/class/android_usb/android0/idProduct D001
+    write /sys/class/android_usb/android0/functions adb
+
+# SD Card tweak
+    write /sys/devices/virtual/bdi/179:0/read_ahead_kb 2048
+
+# Flash tweaks 
+    write /sys/block/mtdblock1/bdi/read_ahead_kb 128
+    write /sys/block/mtdblock2/bdi/read_ahead_kb 128
+    write /sys/block/mtdblock3/bdi/read_ahead_kb 128
+    write /sys/block/mtdblock4/bdi/read_ahead_kb 128
+    write /sys/block/mtdblock5/bdi/read_ahead_kb 128
+
+########################## WIP ##########################
+#on fs
+# Run the script that will edit recovery.fstab:
+# and set the proper fs-type for 'boot' partition,
+# depending on which bootloader is installed.
+#chmod 0750 /sbin/prerecoveryboot.sh
+#service preboot /sbin/prerecoveryboot.sh
+#    user root
+#    oneshot
+
+on boot
+    ifup lo
+    hostname localhost
+    domainname localdomain
+
+    class_start default
+
+service ueventd /sbin/ueventd
+    critical
+
+service recovery /sbin/recovery
+
+service adbd /sbin/adbd recovery
+    disabled
+
+# Always start adbd on userdebug and eng builds
+on property:ro.debuggable=1
+    write /sys/class/android_usb/android0/enable 1
+    start adbd
+    setprop service.adb.root 1
+
+# Restart adbd so it can run as root
+on property:service.adb.root=1
+    write /sys/class/android_usb/android0/enable 0
+    restart adbd
+    write /sys/class/android_usb/android0/enable 1
+

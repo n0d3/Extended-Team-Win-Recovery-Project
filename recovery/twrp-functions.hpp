@@ -24,10 +24,20 @@ typedef enum
     rb_zboot,
 } RebootCommand;
 
+typedef enum
+{
+    button_pressed,
+    backup_completed,
+    restore_completed,
+    install_completed,
+    parted_completed,
+    sdbackup_completed,
+    sdrestore_completed,
+} FeedbackReason;
+
 // Partition class
 class TWFunc {
 	public:
-		static int Check_MD5(string File);
 		// Trims any trailing folders or filenames from the path, also adds a leading / if not present
 		static string Get_Root_Path(string Path);
 		// Trims everything after the last / in the string
@@ -68,6 +78,7 @@ class TWFunc {
 		static unsigned int Get_D_Type_From_Stat(string Path);
 		// read from file
 		static int read_file(string fn, string& results);
+		static int read_file_line_by_line(string fn, vector<string>& lines, bool skip_empty);
 		//write from file
 		static int write_file(string fn, string& line);
 		// Return a diff for 2 times
@@ -84,6 +95,8 @@ class TWFunc {
 		static bool Install_SuperSU(void);
 
 		// Extended functions
+		static unsigned long RoundUpSize(unsigned long sz, unsigned long multiple);
+		static void apply_system_tweaks(int charge_mode);
 		static void screen_off(void);
 		static void power_save(void);
 		static void power_restore(int charge_mode);
@@ -91,14 +104,13 @@ class TWFunc {
 		static string to_string(int number);
 		static bool Tar_Entry_Exists(string tar_file, string entry, int level);
 		static int Get_Archive_Type(string FilePath);
-		static int mtdchk(string mtd_dev);
-		static unsigned int Get_FS_Via_statfs(string Mount_Point);
 		static unsigned long long Get_Archive_Uncompressed_Size(string FilePath);
 		static string Find_File_On_Storage(string Filename);
 		static void Take_Screenshot(void);
-		static int Vibrate(int ms);
+		static int Vibrate(FeedbackReason reason);
 		static int SubDir_Check(string Dir, string subDir1, string subDir2, string subDir3, string subDir4, string subDir5, int min);
-		static vector<string> split_string(const string &in, char del);
+		static vector<string> split_string(const string &in, char del, bool skip_empty);
+		static int Split_NandroidMD5(string File);
 
 	private:
 		static void check_and_fclose(FILE *fp, const char *name);
