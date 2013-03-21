@@ -2182,7 +2182,7 @@ int TWPartition::CheckFor_ValidIMG() {
 }
 
 bool TWPartition::Check_MD5(string restore_folder) {
-	string Full_Filename, NandroidMD5;
+	string Full_Filename, md5file, NandroidMD5;
 	char split_filename[512];
 	int index = 0;
 	twrpDigest md5sum;
@@ -2193,26 +2193,41 @@ bool TWPartition::Check_MD5(string restore_folder) {
 		// ...split it to match TWRP's style.
 		TWFunc::Split_NandroidMD5(NandroidMD5);
 	}
-
+	memset(split_filename, 0, sizeof(split_filename));
 	Full_Filename = restore_folder + "/" + Backup_FileName;
 	if (!TWFunc::Path_Exists(Full_Filename)) {
 		 // This is a split archive, we presume
 		sprintf(split_filename, "%s%03i", Full_Filename.c_str(), index);
+		LOGI("split_filename: %s\n", split_filename);
+		md5file = split_filename;
+		md5file += ".md5";
+		if (!TWFunc::Path_Exists(md5file)) {
+			LOGE("No md5 file found for '%s'.\n", split_filename);
+			LOGE("Please unselect Enable MD5 verification to restore.\n");
+			return false;
+		}
+		md5sum.setfn(split_filename);
 		while (index < 1000 && TWFunc::Path_Exists(split_filename)) {
-			md5sum.setfn(split_filename);
 			if (md5sum.verify_md5digest() != 0) {
 				LOGE("MD5 failed to match on '%s'.\n", split_filename);
 				return false;
 			}
 			index++;
 			sprintf(split_filename, "%s%03i", Full_Filename.c_str(), index);
+			md5sum.setfn(split_filename);
 		}
 		return true;
 	} else {
 		// Single file archive
+		md5file = Full_Filename + ".md5";
+		if (!TWFunc::Path_Exists(md5file)) {
+			LOGE("No md5 file found for '%s'.\n", Full_Filename.c_str());
+			LOGE("Please unselect Enable MD5 verification to restore.\n");
+			return false;
+		}
 		md5sum.setfn(Full_Filename);
 		if (md5sum.verify_md5digest() != 0) {
-			LOGE("MD5 failed to match on '%s'.\n", split_filename);
+			LOGE("MD5 failed to match on '%s'.\n", Full_Filename.c_str());
 			return false;
 		} else
 			return true;
