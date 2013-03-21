@@ -2697,18 +2697,7 @@
 				<font resource="font" color="%button_text_color%" />
 				<text>Power Off</text>
 				<image resource="main_button" />
-				<actions>
-					<action function="set">tw_back=reboot</action>
-					<action function="set">tw_action=reboot</action>
-					<action function="set">tw_action_param=poweroff</action>
-					<action function="set">tw_has_action2=0</action>
-					<action function="set">tw_text1=No OS Installed! Are you</action>
-					<action function="set">tw_text2=sure you wish to power off?</action>
-					<action function="set">tw_action_text1=Turning Off...</action>
-					<action function="set">tw_complete_text1=Turning Off...</action>
-					<action function="set">tw_slider_text=Swipe to Power Off</action>
-					<action function="page">rebootcheck</action>
-				</actions>
+				<action function="reboot">poweroff</action>
 			</object>
 
 			<object type="button">
@@ -2718,18 +2707,7 @@
 				<font resource="font" color="%button_text_color%" />
 				<text>Recovery</text>
 				<image resource="main_button" />
-				<actions>
-					<action function="set">tw_back=reboot</action>
-					<action function="set">tw_action=reboot</action>
-					<action function="set">tw_action_param=recovery</action>
-					<action function="set">tw_has_action2=0</action>
-					<action function="set">tw_text1=No OS Installed! Are you</action>
-					<action function="set">tw_text2=sure you wish to reboot?</action>
-					<action function="set">tw_action_text1=Rebooting...</action>
-					<action function="set">tw_complete_text1=Rebooting...</action>
-					<action function="set">tw_slider_text=Swipe to Reboot</action>
-					<action function="page">rebootcheck</action>
-				</actions>
+				<action function="reboot">recovery</action>
 			</object>
 
 			<object type="button">
@@ -2739,18 +2717,7 @@
 				<font resource="font" color="%button_text_color%" />
 				<text>Bootloader</text>
 				<image resource="main_button" />
-				<actions>
-					<action function="set">tw_back=reboot</action>
-					<action function="set">tw_action=reboot</action>
-					<action function="set">tw_action_param=bootloader</action>
-					<action function="set">tw_has_action2=0</action>
-					<action function="set">tw_text1=No OS Installed! Are you</action>
-					<action function="set">tw_text2=sure you wish to reboot?</action>
-					<action function="set">tw_action_text1=Rebooting...</action>
-					<action function="set">tw_complete_text1=Rebooting...</action>
-					<action function="set">tw_slider_text=Swipe to Reboot</action>
-					<action function="page">rebootcheck</action>
-				</actions>
+				<action function="reboot">bootloader</action>
 			</object>
 
 			<object type="button">
@@ -2781,18 +2748,7 @@
 				<font resource="font" color="%button_text_color%" />
 				<text>sBoot</text>
 				<image resource="medium_button" />
-				<actions>
-					<action function="set">tw_back=reboot</action>
-					<action function="set">tw_action=reboot</action>
-					<action function="set">tw_action_param=sboot</action>
-					<action function="set">tw_has_action2=0</action>
-					<action function="set">tw_text1=No OS Installed! Are you</action>
-					<action function="set">tw_text2=sure you wish to reboot?</action>
-					<action function="set">tw_action_text1=Rebooting...</action>
-					<action function="set">tw_complete_text1=Rebooting...</action>
-					<action function="set">tw_slider_text=Swipe to Reboot</action>
-					<action function="page">rebootcheck</action>
-				</actions>
+				<action function="reboot">sboot</action>
 			</object>
 
 			<object type="button">
@@ -2802,18 +2758,7 @@
 				<font resource="font" color="%button_text_color%" />
 				<text>tBoot</text>
 				<image resource="medium_button" />
-				<actions>
-					<action function="set">tw_back=reboot</action>
-					<action function="set">tw_action=reboot</action>
-					<action function="set">tw_action_param=tboot</action>
-					<action function="set">tw_has_action2=0</action>
-					<action function="set">tw_text1=No OS Installed! Are you</action>
-					<action function="set">tw_text2=sure you wish to reboot?</action>
-					<action function="set">tw_action_text1=Rebooting...</action>
-					<action function="set">tw_complete_text1=Rebooting...</action>
-					<action function="set">tw_slider_text=Swipe to Reboot</action>
-					<action function="page">rebootcheck</action>
-				</actions>
+				<action function="reboot">tboot</action>
 			</object>
 
 			<object type="button">
@@ -2823,18 +2768,7 @@
 				<font resource="font" color="%button_text_color%" />
 				<text>vBoot</text>
 				<image resource="medium_button" />
-				<actions>
-					<action function="set">tw_back=reboot</action>
-					<action function="set">tw_action=reboot</action>
-					<action function="set">tw_action_param=vboot</action>
-					<action function="set">tw_has_action2=0</action>
-					<action function="set">tw_text1=No OS Installed! Are you</action>
-					<action function="set">tw_text2=sure you wish to reboot?</action>
-					<action function="set">tw_action_text1=Rebooting...</action>
-					<action function="set">tw_complete_text1=Rebooting...</action>
-					<action function="set">tw_slider_text=Swipe to Reboot</action>
-					<action function="page">rebootcheck</action>
-				</actions>
+				<action function="reboot">vboot</action>
 			</object>
 
 			<object type="button">
@@ -2844,18 +2778,7 @@
 				<font resource="font" color="%button_text_color%" />
 				<text>wBoot</text>
 				<image resource="medium_button" />
-				<actions>
-					<action function="set">tw_back=reboot</action>
-					<action function="set">tw_action=reboot</action>
-					<action function="set">tw_action_param=wboot</action>
-					<action function="set">tw_has_action2=0</action>
-					<action function="set">tw_text1=No OS Installed! Are you</action>
-					<action function="set">tw_text2=sure you wish to reboot?</action>
-					<action function="set">tw_action_text1=Rebooting...</action>
-					<action function="set">tw_complete_text1=Rebooting...</action>
-					<action function="set">tw_slider_text=Swipe to Reboot</action>
-					<action function="page">rebootcheck</action>
-				</actions>
+				<action function="reboot">wboot</action>
 			</object>
 
 			<object type="button">
@@ -2865,18 +2788,7 @@
 				<font resource="font" color="%button_text_color%" />
 				<text>xBoot</text>
 				<image resource="medium_button" />
-				<actions>
-					<action function="set">tw_back=reboot</action>
-					<action function="set">tw_action=reboot</action>
-					<action function="set">tw_action_param=xboot</action>
-					<action function="set">tw_has_action2=0</action>
-					<action function="set">tw_text1=No OS Installed! Are you</action>
-					<action function="set">tw_text2=sure you wish to reboot?</action>
-					<action function="set">tw_action_text1=Rebooting...</action>
-					<action function="set">tw_complete_text1=Rebooting...</action>
-					<action function="set">tw_slider_text=Swipe to Reboot</action>
-					<action function="page">rebootcheck</action>
-				</actions>
+				<action function="reboot">xboot</action>
 			</object>
 
 			<object type="button">
@@ -2886,18 +2798,7 @@
 				<font resource="font" color="%button_text_color%" />
 				<text>yBoot</text>
 				<image resource="medium_button" />
-				<actions>
-					<action function="set">tw_back=reboot</action>
-					<action function="set">tw_action=reboot</action>
-					<action function="set">tw_action_param=yboot</action>
-					<action function="set">tw_has_action2=0</action>
-					<action function="set">tw_text1=No OS Installed! Are you</action>
-					<action function="set">tw_text2=sure you wish to reboot?</action>
-					<action function="set">tw_action_text1=Rebooting...</action>
-					<action function="set">tw_complete_text1=Rebooting...</action>
-					<action function="set">tw_slider_text=Swipe to Reboot</action>
-					<action function="page">rebootcheck</action>
-				</actions>
+				<action function="reboot">yboot</action>
 			</object>
 
 			<object type="button">
@@ -2907,18 +2808,7 @@
 				<font resource="font" color="%button_text_color%" />
 				<text>zBoot</text>
 				<image resource="medium_button" />
-				<actions>
-					<action function="set">tw_back=reboot</action>
-					<action function="set">tw_action=reboot</action>
-					<action function="set">tw_action_param=zboot</action>
-					<action function="set">tw_has_action2=0</action>
-					<action function="set">tw_text1=No OS Installed! Are you</action>
-					<action function="set">tw_text2=sure you wish to reboot?</action>
-					<action function="set">tw_action_text1=Rebooting...</action>
-					<action function="set">tw_complete_text1=Rebooting...</action>
-					<action function="set">tw_slider_text=Swipe to Reboot</action>
-					<action function="page">rebootcheck</action>
-				</actions>
+				<action function="reboot">zboot</action>
 			</object>
 
 			<object type="button">
@@ -5485,49 +5375,6 @@
 				<action function="page">advanced</action>
 			</object>
 
-			<object type="template" name="footer" />
-		</page>
-
-		<page name="partsdcardconfirm">
-			<object type="template" name="header" />
-
-			<object type="text" color="%text_color%">
-				<font resource="font" />
-				<placement x="%center_x%" y="%row1_text_y%" placement="5"/>
-				<text>Load %tw_theme_file%</text>
-			</object>
-
-			<object type="text" color="%text_color%">
-				<font resource="font" />
-				<placement x="%center_x%" y="%row10_text_y%" placement="5"/>
-				<text>Press back button to cancel.</text>
-			</object>
-
-			<object type="slider">
-				<placement x="%slider_x%" y="%slider_y%" />
-				<resource base="slider" used="slider-used" touch="slider-touch" />
-				<actions>
-					<action function="set">tw_sel_theme_path=%tw_theme_file%/ui.zip</action>
-					<action function="reload"></action>
-				</actions>
-			</object>
-			
-			<object type="text" color="%text_color%">
-				<font resource="font" />
-				<placement x="%center_x%" y="%slider_text_y%" placement="4" />
-				<text>Swipe to Confirm</text>
-			</object>
-
-			<object type="action">
-				<touch key="back" />
-				<action function="page">themeselect</action>
-			</object>
-
-			<object type="action">
-				<touch key="home" />
-				<action function="page">main</action>
-			</object>
-				
 			<object type="template" name="footer" />
 		</page>
 
