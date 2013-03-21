@@ -92,7 +92,10 @@ int TWPartitionManager::Process_Fstab(string Fstab_Filename, bool Display_Error)
 #else
 			if (partition->Mount_Point == "/sdcard")
 #endif
-				DataManager::ReadSettingsFile(); // Why not try to read SettingsFile as soon as storage can be accessible!
+			{
+				// Why not try to read SettingsFile as soon as storage can be accessible!
+				DataManager::ReadSettingsFile();
+			}
 		} else {
 			delete partition;
 		}
@@ -2609,6 +2612,10 @@ int TWPartitionManager::Partition_SDCard(void) {
 		string fs;
 		string flags;
 	} sdcard, sdext, sdext2, sdswap;
+	sdcard.exists = false;
+	sdext.exists = false;
+	sdext2.exists = false;
+	sdswap.exists = false;
 
 	ui_print("Partitioning SD Card...\n");
 	// Find present card's partitions and unmount all of them
@@ -2645,17 +2652,25 @@ int TWPartitionManager::Partition_SDCard(void) {
 
 	// Use 'parted print' to check present ptable
 	Command = "parted " + Device + " print";
+	LOGI("Command is: '%s'\n", Command.c_str());
 	TWFunc::Exec_Cmd(Command, result);
 	if (!result.empty()) {
 		vector<string> lines;
 		// get each line of output
 		lines = TWFunc::split_string(result, '\n', true);
 		if (lines.size() > 4) {
-			int i, j;
+			int i;
+			string tsize;
+			size_t sizeInMB;
 			vector<string> line_parts;
 			// The disk's total size is at 2nd line (lines[1])
 			line_parts = TWFunc::split_string(lines[1], ' ', true);
-			total_size = atoi(line_parts[2].substr(0, line_parts[2].size() - 2).c_str());
+			sizeInMB = line_parts[2].find("M");
+			tsize = line_parts[2].substr(0, line_parts[2].size() - 2);
+			if (sizeInMB != string::npos)
+				total_size = atoi(tsize.c_str());
+			else
+				total_size = (int) (atof(tsize.c_str()) * 1024);
 			// The partition table info start at 6th line (lines[5])
 			for (i = 5; i < (int)lines.size(); i++) {
 				line_parts = TWFunc::split_string(lines[i], ' ', true);
@@ -2667,7 +2682,7 @@ int TWPartitionManager::Partition_SDCard(void) {
 					sdcard.size = line_parts[3];
 					sdcard.type = line_parts[4];
 					sdcard.fs = line_parts[5];
-					if (line_parts.size() > 5)
+					if (line_parts.size() > 6)
 						sdcard.flags = line_parts[6];
 				} else
 				if (line_parts[0] == "2") {
@@ -2679,7 +2694,7 @@ int TWPartitionManager::Partition_SDCard(void) {
 						sdswap.size = line_parts[3];
 						sdswap.type = line_parts[4];
 						sdswap.fs = line_parts[5];
-						if (line_parts.size() > 5)
+						if (line_parts.size() > 6)
 							sdswap.flags = line_parts[6];
 					} else {
 						sdext.exists = true;
@@ -2689,7 +2704,7 @@ int TWPartitionManager::Partition_SDCard(void) {
 						sdext.size = line_parts[3];
 						sdext.type = line_parts[4];
 						sdext.fs = line_parts[5];
-						if (line_parts.size() > 5)
+						if (line_parts.size() > 6)
 							sdext.flags = line_parts[6];
 					}
 				} else
@@ -2702,7 +2717,7 @@ int TWPartitionManager::Partition_SDCard(void) {
 						sdswap.size = line_parts[3];
 						sdswap.type = line_parts[4];
 						sdswap.fs = line_parts[5];
-						if (line_parts.size() > 5)
+						if (line_parts.size() > 6)
 							sdswap.flags = line_parts[6];
 					} else {
 						sdext2.exists = true;
@@ -2712,7 +2727,7 @@ int TWPartitionManager::Partition_SDCard(void) {
 						sdext2.size = line_parts[3];
 						sdext2.type = line_parts[4];
 						sdext2.fs = line_parts[5];
-						if (line_parts.size() > 5)
+						if (line_parts.size() > 6)
 							sdext2.flags = line_parts[6];
 					}
 				} else
@@ -2725,7 +2740,7 @@ int TWPartitionManager::Partition_SDCard(void) {
 						sdswap.size = line_parts[3];
 						sdswap.type = line_parts[4];
 						sdswap.fs = line_parts[5];
-						if (line_parts.size() > 5)
+						if (line_parts.size() > 6)
 							sdswap.flags = line_parts[6];
 					}
 				}
