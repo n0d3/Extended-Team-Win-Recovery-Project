@@ -4743,7 +4743,7 @@
 			<object type="template" name="sort_options" />
 
 			<object type="action">
-				<condition var1="sd_rom5" op="modified" />
+				<condition var1="sd_rom6" op="modified" />
 				<actions>
 					<action function="set">tw_back=nativewipedalvik</action>
 					<action function="set">tw_action=nativewipedalvik_run</action>
