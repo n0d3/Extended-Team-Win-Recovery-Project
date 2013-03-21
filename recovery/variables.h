@@ -18,7 +18,7 @@
 #define _VARIABLES_HEADER_
 
 // Set to run the preboot.sh which edits the recovery.fstab according to bootloader
-#define TW_RUN_PREBOOT_CHK		"tw_run_preboot_chk"
+#define TW_BOOT_IS_MTD			"tw_boot_is_mtd"
 
 // Exclude dalvik-cache and nativesd roms from backup
 #define TW_SKIP_DALVIK			"tw_skip_dalvik"

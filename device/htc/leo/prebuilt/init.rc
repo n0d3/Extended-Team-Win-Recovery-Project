@@ -10,6 +10,7 @@ on init
 
     symlink /system/etc /etc
 
+    mkdir /sdcard
     mkdir /system
     mkdir /data
     mkdir /cache
@@ -34,14 +35,14 @@ on init
     write /sys/block/mtdblock5/bdi/read_ahead_kb 128
 
 ########################## WIP ##########################
-#on fs
+on fs
 # Run the script that will edit recovery.fstab:
 # and set the proper fs-type for 'boot' partition,
 # depending on which bootloader is installed.
-#chmod 0750 /sbin/prerecoveryboot.sh
-#service preboot /sbin/prerecoveryboot.sh
-#    user root
-#    oneshot
+chmod 0750 /sbin/prerecoveryboot.sh
+service preboot /sbin/prerecoveryboot.sh
+    user root
+    oneshot
 
 on boot
     ifup lo

@@ -244,8 +244,10 @@ int DataManager::Detect_BLDR() {
 			cmd = "grep -Fxq \"rel_path=\" /proc/cmdline";
 			if (TWFunc::Exec_Cmd(cmd, result) == 0)				
 				BLDR = 0;
-			else				
+			else {
 				BLDR = 2;
+				SetValue("tw_bldr_is_magldr", 1);
+			}
 		}
 	}
 		
@@ -681,7 +683,7 @@ void DataManager::SetDefaultValues()
 
 	mConstValues.insert(make_pair(TW_VERSION_VAR, TW_VERSION_STR));
 // Extended-start
-	mValues.insert(make_pair(TW_RUN_PREBOOT_CHK, make_pair("1", 1)));
+	mValues.insert(make_pair(TW_BOOT_IS_MTD, make_pair("0", 1)));
 
 	mValues.insert(make_pair(TW_SKIP_DALVIK, make_pair("0", 1)));
 	mValues.insert(make_pair(TW_SKIP_NATIVESD, make_pair("0", 1)));

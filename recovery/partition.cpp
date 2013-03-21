@@ -146,6 +146,12 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 		} else if (item_index == 1) {
 			// Primary Block Device
 			if (Fstab_File_System == "mtd" || Fstab_File_System == "yaffs2") {
+				// Force "mtd" filesystem in case of magldr rboot format
+				if (Mount_Point == "/boot" && DataManager::GetIntValue(TW_BOOT_IS_MTD) > 0) {
+					Fstab_File_System = "mtd";
+					Current_File_System = "mtd";
+					LOGI("Boot partition's file-system forced to 'mtd'.\n");
+				}
 				MTD_Name = ptr;
 				Find_MTD_Block_Device(MTD_Name);
 				if (!Primary_Block_Device.empty())
@@ -196,7 +202,6 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 
 	// Check the file system before setting up the partition
 	Check_FS_Type();
-	//LOGI("Detected_File_System: %s\n", Current_File_System.c_str());
 	if (Is_File_System(Current_File_System)) {
 		if (Is_Present)
 			Setup_File_System(Display_Error);
@@ -981,7 +986,7 @@ unsigned long long TWPartition::Get_Blk_Size(void) {
 
 	fp = fopen("/proc/partitions", "rt");
 	if (fp == NULL)
-		return false;
+		return 0;
 
 	while (fgets(line, sizeof(line), fp) != NULL) {
 		unsigned long major, minor, blocks;

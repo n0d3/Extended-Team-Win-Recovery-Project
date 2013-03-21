@@ -791,12 +791,8 @@ int main(int argc, char **argv) {
 	gui_init();
 	printf("I:=> Linking mtab\n");
 	symlink("/proc/mounts", "/etc/mtab");
-	if (DataManager_GetIntValue(TW_RUN_PREBOOT_CHK)) {
-		// Check for and run 1st script if script exists
-		TWFunc::check_and_run_script("/sbin/prerecoveryboot.sh", "preboot");
-	} else {
-		printf("I:=> Skipping preboot script.\n");
-	}
+	// Check for and run 1st script if script exists
+	//TWFunc::check_and_run_script("/sbin/prerecoveryboot.sh", "preboot");
 	printf("I:=> Processing recovery.fstab\n");
 	if (!PartitionManager.Process_Fstab("/etc/recovery.fstab", 1)) {
 		LOGE("Failing out of recovery due to problem with recovery.fstab.\n");
