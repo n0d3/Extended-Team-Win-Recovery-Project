@@ -836,6 +836,31 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 
 			return 0;
 		}
+		if (function == "nativeboot_run") {
+			int ret = 0;
+			string tmp, sdrompath;
+
+			DataManager::GetValue("sd_rom2", sdrompath);
+			operation_start("NativeSDManager");
+			ui_print("Preparing kernel before rebooting...\n");
+			if (simulate) {
+				simulate_progress_bar();
+				operation_end(ret, simulate);
+			} else {
+				ret = NativeSDManager.Prep_Rom_To_Boot(sdrompath);
+			}
+
+			if (ret == false)
+				ret = 1; // 1 for failure
+			else {
+				ret = 0; // 0 for success
+			}
+		   	operation_end(ret, simulate);
+			sync();
+			DataManager::SetValue("tw_gui_done", 1);
+			DataManager::SetValue("tw_reboot_arg", "system");
+			return 0;
+		}
 		if (function == "nativekernel_run") {
 			int ret = 0;
 			string ptn, sdkernelpath;

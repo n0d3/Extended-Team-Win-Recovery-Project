@@ -10,7 +10,9 @@ class TWNativeSDManager {
 		// Backup NativeSD Rom
 		int Backup(string RomPath);                              
 		// Restore NativeSD Rom
-		int Restore(string RomPath);                             
+		int Restore(string RomPath);  
+		// Copy NativeSD Rom's zImage and initrd.gz to /sdcard/NativeSD in order to load that rom after a reboot [not for cLK]
+		int Prep_Rom_To_Boot(string RomPath);                         
 		// Delete NativeSD Rom
 		int Delete(string RomPath);                              
 		// Fix permissions on NativeSD Rom

@@ -238,9 +238,11 @@ int DataManager::Detect_BLDR() {
 		string result;
 		string cmd = "grep -Fxq \"clk=\" /proc/cmdline";
 
-		if (TWFunc::Exec_Cmd(cmd, result) == 0)
+		if (TWFunc::Exec_Cmd(cmd, result) == 0) {
 			BLDR = 1;
-		else {
+			SetValue("tw_bldr_is_clk", 1);
+		} else {
+			SetValue("tw_bldr_is_clk", 0);
 			cmd = "grep -Fxq \"rel_path=\" /proc/cmdline";
 			if (TWFunc::Exec_Cmd(cmd, result) == 0)				
 				BLDR = 0;

@@ -192,7 +192,7 @@
 			<object type="text" color="%text_color%">
 				<font resource="font" />
 				<placement x="90" y="10" />
-				<text>ExtendedTWRP v%tw_version%.r2</text>
+				<text>ExtendedTWRP v%tw_version%.r4</text>
 			</object>
 
 			<object type="text" color="%text_success_color%">
@@ -2205,7 +2205,7 @@
 			<object type="checkbox">
 				<placement x="%col1_x%" y="%row14_text_y%" />
 				<font resource="font" color="%text_color%" />
-				<text>Enable MD5 verification of backup files.</text>
+				<text>Skip MD5 verification of backup files.</text>
 				<data variable="tw_skip_md5_check" />
 				<image checked="checkbox_true" unchecked="checkbox_false" />
 			</object>
@@ -2743,7 +2743,10 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<condition var1="tw_has_sboot_ptn" var2="1" />
+				<conditions>
+					<condition var1="tw_bldr_is_clk" var2="1" />
+					<condition var1="tw_has_sboot_ptn" var2="1" />
+				</conditions>				
 				<placement x="%col1_medium_x%" y="%row5_medium_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>sBoot</text>
@@ -2753,7 +2756,10 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<condition var1="tw_has_tboot_ptn" var2="1" />
+				<conditions>
+					<condition var1="tw_bldr_is_clk" var2="1" />
+					<condition var1="tw_has_tboot_ptn" var2="1" />
+				</conditions>
 				<placement x="%col2_medium_x%" y="%row5_medium_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>tBoot</text>
@@ -2763,7 +2769,10 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<condition var1="tw_has_vboot_ptn" var2="1" />
+				<conditions>
+					<condition var1="tw_bldr_is_clk" var2="1" />
+					<condition var1="tw_has_vboot_ptn" var2="1" />
+				</conditions>
 				<placement x="%col3_medium_x%" y="%row5_medium_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>vBoot</text>
@@ -2773,7 +2782,10 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<condition var1="tw_has_wboot_ptn" var2="1" />
+				<conditions>
+					<condition var1="tw_bldr_is_clk" var2="1" />
+					<condition var1="tw_has_wboot_ptn" var2="1" />
+				</conditions>
 				<placement x="%col4_medium_x%" y="%row6_medium_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>wBoot</text>
@@ -2783,7 +2795,10 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<condition var1="tw_has_xboot_ptn" var2="1" />
+				<conditions>
+					<condition var1="tw_bldr_is_clk" var2="1" />
+					<condition var1="tw_has_xboot_ptn" var2="1" />
+				</conditions>
 				<placement x="%col1_medium_x%" y="%row6_medium_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>xBoot</text>
@@ -2793,7 +2808,10 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<condition var1="tw_has_yboot_ptn" var2="1" />
+				<conditions>
+					<condition var1="tw_bldr_is_clk" var2="1" />
+					<condition var1="tw_has_yboot_ptn" var2="1" />
+				</conditions>
 				<placement x="%col2_medium_x%" y="%row6_medium_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>yBoot</text>
@@ -2803,12 +2821,28 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<condition var1="tw_has_zboot_ptn" var2="1" />
+				<conditions>
+					<condition var1="tw_bldr_is_clk" var2="1" />
+					<condition var1="tw_has_zboot_ptn" var2="1" />
+				</conditions>
 				<placement x="%col3_medium_x%" y="%row6_medium_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>zBoot</text>
 				<image resource="medium_button" />
 				<action function="reboot">zboot</action>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<conditions>
+					<condition var1="tw_bldr_is_clk" var2="0" />
+					<condition var1="fileexists" var2="/sdcard/NativeSD" />
+				</conditions>
+				<placement x="%col_center_x%" y="%row3_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>NativeSD Rom</text>
+				<image resource="main_button" />
+				<action function="page">nativeboot</action>
 			</object>
 
 			<object type="button">
@@ -2828,6 +2862,55 @@
 			<object type="action">
 				<touch key="back" />
 				<action function="page">main</action>
+			</object>
+
+			<object type="template" name="footer" />
+		</page>
+
+		<page name="nativeboot">
+			<object type="template" name="header" />
+
+			<object type="fileselector">
+				<placement x="%fileselector_x%" y="%row1_y%" w="%fileselector_width%" h="%fileselector_install_height%" />
+				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
+				<fastscroll linecolor="%fastscroll_linecolor%" rectcolor="%fastscroll_rectcolor%" w="%fastscroll_w%" linew="%fastscroll_linew%" rectw="%fastscroll_rectw%" recth="%fastscroll_recth%" />
+				<text>Select NativeSD ROM to boot:</text>
+				<separator color="%fileselector_separatorcolor%" height="%fileselector_separatorheight%" />
+				<sort name="tw_gui_sort_order" />
+				<icon folder="folder_icon" file="file_icon" />
+				<background color="%fileselector_background%" />
+				<highlight color="%fileselector_highlight_color%" />
+				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
+				<filter folders="1" files="0" nav="0" />
+				<path name="sd_rom_location2" default="/sdcard/NativeSD" />
+				<data name="sd_rom2" default="" />
+				<selection name="sd_rom_selection2" />
+			</object>
+
+			<object type="template" name="sort_options" />
+
+			<object type="action">
+				<condition var1="sd_rom2" op="modified" />
+				<actions>
+					<action function="set">tw_back=nativeboot</action>
+					<action function="set">tw_action=nativeboot_run</action>
+					<action function="set">tw_action_param=</action>
+					<action function="set">tw_text1=Boot selected Rom?</action>
+					<action function="set">tw_action_text1=Copying selected Rom's kernel to /sdcard/NativeSD...</action>
+					<action function="set">tw_complete_text1=Operation Completed</action>
+					<action function="set">tw_slider_text=Swipe to Confirm</action>
+					<action function="page">confirm_action</action>
+				</actions>
+			</object>
+
+			<object type="action">
+				<touch key="home" />
+				<action function="page">main</action>
+			</object>
+
+			<object type="action">
+				<touch key="back" />
+				<action function="page">reboot</action>
 			</object>
 
 			<object type="template" name="footer" />
@@ -4225,6 +4308,30 @@
 			<object type="checkbox">
 				<placement x="%col1_x%" y="%row5_text_y%" />
 				<font resource="font" color="%text_color%" />
+				<text>Skip MD5 generation during backup.</text>
+				<data variable="tw_sd_skip_md5_generate" />
+				<image checked="checkbox_true" unchecked="checkbox_false" />
+			</object>
+
+			<object type="checkbox">
+				<placement x="%col1_x%" y="%row6_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>Skip MD5 verification of backup files.</text>
+				<data variable="tw_sd_skip_md5_check" />
+				<image checked="checkbox_true" unchecked="checkbox_false" />
+			</object>
+
+			<object type="checkbox">
+				<placement x="%col1_x%" y="%row7_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>Enable compression.</text>
+				<data variable="tw_sd_use_compression" />
+				<image checked="checkbox_true" unchecked="checkbox_false" />
+			</object>
+
+			<object type="checkbox">
+				<placement x="%col1_x%" y="%row8_text_y%" />
+				<font resource="font" color="%text_color%" />
 				<text>Vibrate at backup completion.</text>
 				<data variable="tw_vibrate_after_sdbackup" />
 				<image checked="checkbox_true" unchecked="checkbox_false" />
@@ -4233,21 +4340,21 @@
 			<object type="text" color="%text_color%">
 				<condition var1="tw_vibrate_after_sdbackup" var2="1" />
 				<font resource="font" />
-				<placement x="%col1_x%" y="%row6_text_y%" />
+				<placement x="%col1_x%" y="%row9_text_y%" />
 				<text>Duration:</text>
 			</object>
 
 			<object type="text" color="%text_color%">
 				<condition var1="tw_vibrate_after_sdbackup" var2="1" />
 				<font resource="font" />
-				<placement x="%col1_x%" y="%row7_text_y%" />
+				<placement x="%col1_x%" y="%row10_text_y%" />
 				<text>%tw_sdbackup_feedback_duration_ms% ms</text>
 			</object>
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_vibrate_after_sdbackup" var2="1" />
-				<placement x="%col2_medium_x%" y="%row6_text_y%" />
+				<placement x="%col2_medium_x%" y="%row9_text_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>100</text>
 				<image resource="medium_button" />
@@ -4256,7 +4363,7 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<placement x="%col3_medium_x%" y="%row6_text_y%" />
+				<placement x="%col3_medium_x%" y="%row9_text_y%" />
 				<condition var1="tw_vibrate_after_sdbackup" var2="1" />
 				<font resource="font" color="%button_text_color%" />
 				<text>150</text>
@@ -4267,7 +4374,7 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_vibrate_after_sdbackup" var2="1" />
-				<placement x="%col4_medium_x%" y="%row6_text_y%" />
+				<placement x="%col4_medium_x%" y="%row9_text_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>200</text>
 				<image resource="medium_button" />
@@ -4275,7 +4382,7 @@
 			</object>
 
 			<object type="checkbox">
-				<placement x="%col1_x%" y="%row9_text_y%" />
+				<placement x="%col1_x%" y="%row12_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Vibrate at restore completion.</text>
 				<data variable="tw_vibrate_after_sdrestore" />
@@ -4285,21 +4392,21 @@
 			<object type="text" color="%text_color%">
 				<condition var1="tw_vibrate_after_sdrestore" var2="1" />
 				<font resource="font" />
-				<placement x="%col1_x%" y="%row10_text_y%" />
+				<placement x="%col1_x%" y="%row13_text_y%" />
 				<text>Duration:</text>
 			</object>
 
 			<object type="text" color="%text_color%">
 				<condition var1="tw_vibrate_after_sdrestore" var2="1" />
 				<font resource="font" />
-				<placement x="%col1_x%" y="%row11_text_y%" />
+				<placement x="%col1_x%" y="%row14_text_y%" />
 				<text>%tw_sdrestore_feedback_duration_ms% ms</text>
 			</object>
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_vibrate_after_sdrestore" var2="1" />
-				<placement x="%col2_medium_x%" y="%row10_text_y%" />
+				<placement x="%col2_medium_x%" y="%row13_text_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>100</text>
 				<image resource="medium_button" />
@@ -4308,7 +4415,7 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<placement x="%col3_medium_x%" y="%row10_text_y%" />
+				<placement x="%col3_medium_x%" y="%row13_text_y%" />
 				<condition var1="tw_vibrate_after_sdrestore" var2="1" />
 				<font resource="font" color="%button_text_color%" />
 				<text>150</text>
@@ -4319,7 +4426,7 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_vibrate_after_sdrestore" var2="1" />
-				<placement x="%col4_medium_x%" y="%row10_text_y%" />
+				<placement x="%col4_medium_x%" y="%row13_text_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>200</text>
 				<image resource="medium_button" />

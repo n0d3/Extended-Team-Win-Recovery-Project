@@ -550,6 +550,19 @@ int TWNativeSDManager::Restore(string RomPath) {
 	return true;
 }
 
+int TWNativeSDManager::Prep_Rom_To_Boot(string RomPath) {
+	string Command, result;
+
+	Command = "cp -f " + RomPath + "/zImage /sdcard/NativeSD/zImage";
+	if (TWFunc::Exec_Cmd(Command, result) != 0)
+		return false;
+	Command = "cp -f " + RomPath + "/initrd.gz /sdcard/NativeSD/initrd.gz";
+	if (TWFunc::Exec_Cmd(Command, result) != 0)
+		return false;
+
+	return true;
+}
+
 int TWNativeSDManager::Delete(string RomPath) {
 	struct stat st;
 	int z;
