@@ -2558,20 +2558,6 @@ int TWPartitionManager::Partition_SDCard(void) {
 	string sdcard_fs, sdext_fs, sdext2_fs;
 	string sdcard_end, sdext_end, sdext2_end, sdswap_end;
 	int sdcard_size, sdext_size, sdext2_size, sdswap_size, total_size = 0;
-	struct sdpartition {
-		bool exists;
-		string number;
-		string start;
-		string end;
-		string size;
-		string type;
-		string fs;
-		string flags;
-	} sdcard, sdext, sdext2, sdswap;
-	sdcard.exists = false;
-	sdext.exists = false;
-	sdext2.exists = false;
-	sdswap.exists = false;
 
 	ui_print("Partitioning SD Card...\n");
 	// Find present card's partitions and unmount all of them
@@ -2598,39 +2584,43 @@ int TWPartitionManager::Partition_SDCard(void) {
 			return false;
 	}
 	Command = "swapoff -a";
-	//Command = "umount \"$SWAPPATH\"";
-	LOGI("Command is: '%s'\n", Command.c_str());
 	TWFunc::Exec_Cmd(Command, result);
 
 	// Use the root block device
 	Device = SDCard->Actual_Block_Device;
 	Device.resize(strlen("/dev/block/mmcblkX"));
+/*
+	struct sdpartition {
+		bool exists;
+		string number;
+		string start;
+		string end;
+		string size;
+		string type;
+		string fs;
+		string flags;
+	} sdcard, sdext, sdext2, sdswap;
 
 	// Use 'parted print' to check present ptable
-	Command = "parted " + Device + " print";
+	Command = "parted " + Device + " unit MB print";
 	LOGI("Command is: '%s'\n", Command.c_str());
 	TWFunc::Exec_Cmd(Command, result);
+	LOGI("%s", result.c_str());
 	if (!result.empty()) {
 		vector<string> lines;
 		// get each line of output
 		lines = TWFunc::split_string(result, '\n', true);
 		if (lines.size() > 4) {
 			int i;
-			string tsize;
-			size_t sizeInMB;
 			vector<string> line_parts;
 			// The disk's total size is at 2nd line (lines[1])
 			line_parts = TWFunc::split_string(lines[1], ' ', true);
-			sizeInMB = line_parts[2].find("M");
-			tsize = line_parts[2].substr(0, line_parts[2].size() - 2);
-			if (sizeInMB != string::npos)
-				total_size = atoi(tsize.c_str());
-			else
-				total_size = (int) (atof(tsize.c_str()) * 1024);
+			total_size = atoi(line_parts[2].substr(0, line_parts[2].size() - 2).c_str());
 			// The partition table info start at 6th line (lines[5])
 			for (i = 5; i < (int)lines.size(); i++) {
 				line_parts = TWFunc::split_string(lines[i], ' ', true);
 				if (line_parts[0] == "1") {
+					// #1 is always sdcard
 					sdcard.exists = true;
 					sdcard.number = line_parts[0];
 					sdcard.start = line_parts[1];
@@ -2642,6 +2632,7 @@ int TWPartitionManager::Partition_SDCard(void) {
 						sdcard.flags = line_parts[6];
 				} else
 				if (line_parts[0] == "2") {
+					// #2 may be either swap or sd-ext
 					if (line_parts[5] == "linux-swap(v1)") {
 						sdswap.exists = true;
 						sdswap.number = line_parts[0];
@@ -2665,6 +2656,7 @@ int TWPartitionManager::Partition_SDCard(void) {
 					}
 				} else
 				if (line_parts[0] == "3") {
+					// #3 may be either swap or sdext2
 					if (line_parts[5] == "linux-swap(v1)") {
 						sdswap.exists = true;
 						sdswap.number = line_parts[0];
@@ -2688,6 +2680,7 @@ int TWPartitionManager::Partition_SDCard(void) {
 					}
 				} else
 				if (line_parts[0] == "4") {
+					// #4 may be swap
 					if (line_parts[5] == "linux-swap(v1)") {
 						sdswap.exists = true;
 						sdswap.number = line_parts[0];
@@ -2702,6 +2695,7 @@ int TWPartitionManager::Partition_SDCard(void) {
 				}
 			}
 			LOGI("Storage's block device is '%s' [Total Size = %iMB]\n", Device.c_str(), total_size);
+			// Print current ptable
 			LOGI("Current partition table layout:\n");
 			if (sdcard.exists)
 				LOGI("1st %s partition\n* FS: %s\n* Size: %s\n", sdcard.type.c_str(), sdcard.fs.c_str(), sdcard.size.c_str());
@@ -2713,9 +2707,8 @@ int TWPartitionManager::Partition_SDCard(void) {
 				LOGI("Swap\n* Size: %s\n", sdswap.size.c_str());
 		}
 	}
-
+*/
 	if (total_size == 0) {
-		LOGI("Getting total size from /proc/partitions\n");
 		// Find the total size using /proc/partitions:
 		FILE *fp = fopen("/proc/partitions", "rt");
 		if (fp == NULL) {
@@ -2738,7 +2731,8 @@ int TWPartitionManager::Partition_SDCard(void) {
 			tmpdevice += device;
 			if (tmpdevice == Device) {
 				// Adjust block size to MB
-				total_size = (int)(blocks / 1024UL);
+				total_size = (int)(blocks * 1024ULL  / 1000000LLU);
+				//total_size = (int)(blocks / 1024UL);
 				break;
 			}
 		}
@@ -2750,16 +2744,15 @@ int TWPartitionManager::Partition_SDCard(void) {
 	sdext2_size = (sdext_size == 0 ? 0 : DataManager::GetIntValue("tw_sdext2_size"));
 	sdswap_size = DataManager::GetIntValue("tw_swap_size");
 	sdcard_size = total_size - (sdext_size + sdext2_size + sdswap_size);
-	if (sdcard_size < 0) {
-		LOGE("EXT + SWAP size is larger than sdcard's size.\n");
-		return false;
-	}
+	// Set up the sizes & args to use in commands
 	sdcard_end = TWFunc::to_string(sdcard_size);
 	sdext_end = TWFunc::to_string(sdcard_size + sdext_size);
 	sdext2_end = TWFunc::to_string(sdcard_size + sdext_size + sdext2_size);
 	sdswap_end = TWFunc::to_string(sdcard_size + sdext_size + sdext2_size + sdswap_size);
 	n_mounts = DataManager::GetIntValue("tw_num_of_mounts_for_fs_check");
 	quick_format = DataManager::GetIntValue("tw_mkntfs_quick_format");
+
+	// Do some basic checks
 	DataManager::GetValue("tw_sdcard_file_system", sdcard_fs);
 	if (sdcard_fs.empty()) {
 		LOGE("sdcard's file-system type was not set.\n");
@@ -2775,6 +2768,8 @@ int TWPartitionManager::Partition_SDCard(void) {
 		LOGE("sdext2's file-system type was not set.\n");
 		return false;
 	}
+
+	// Print new ptable
 	LOGI("New partition table layout:\n");
 	LOGI("1st primary partition\n* FS: %s\n* Size: %iMB\n", sdcard_fs.c_str(), sdcard_size);
 	if (sdext_size > 0)
@@ -2784,93 +2779,125 @@ int TWPartitionManager::Partition_SDCard(void) {
 	if (sdswap_size > 0)
 		LOGI("Swap\n* Size: %iMB\n", sdswap_size);
 
+	// Final check
+	if (sdcard_size == 0) {
+		LOGE("sdcard's size can't be zero!\n");
+		return false;
+	} else if (sdcard_size < 0) {
+		LOGE("[%s%s%s] size > [storage] size!\n",
+			(sdext_size > 0 ? "sd-ext" : ""),
+			(sdext2_size > 0 ? " + sdext2" : ""),
+			(sdswap_size > 0 ? " + swap" : ""));
+		return false;
+	}
+
 	// Start the partitioning by removing the ptable
-	ui_print("Removing partition table...\n");
+	ui_print("Removing current partition table...\n");
 	Command = "parted -s " + Device + " mklabel msdos";
 	LOGI("Command is: '%s'\n", Command.c_str());
-	if (TWFunc::Exec_Cmd(Command, result) != 0) {
+	if (system(Command.c_str()) != 0) {
 		LOGE("Unable to remove partition table.\n");
 		Update_System_Details();
 		return false;
 	}
 
+	// Print partitions in log so we can check what is detected by the kernel
+	Command = "cat /proc/partitions";
+	system(Command.c_str());
+	
 	// Create first primary partition
 	if (sdcard_fs == "vfat") {	
 		ui_print("Creating FAT32 partition...\n");
-		Command = "parted " + Device + " mkpartfs primary fat32 0 " + sdcard_end + "MB";
+		Command = "parted -s " + Device + " mkpartfs primary fat32 0 " + sdcard_end + "MB";
 		LOGI("Command is: '%s'\n", Command.c_str());
-		if (TWFunc::Exec_Cmd(Command, result) != 0) {
+		if (system(Command.c_str()) != 0) {
 			LOGE("Unable to create FAT32 partition.\n");
 			return false;
 		}
+		SDCard->Change_FS_Type(sdcard_fs);
 	}
 #ifdef TW_INCLUDE_MKNTFS
 	else if (sdcard_fs == "ntfs") {
 		ui_print("Creating raw partition...\n");
-		Command = "parted " + Device + " mkpart primary 0 " + sdcard_end + "MB";
+		Command = "parted -s " + Device + " mkpart primary 0 " + sdcard_end + "MB";
 		LOGI("Command is: '%s'\n", Command.c_str());
-		if (TWFunc::Exec_Cmd(Command, result) != 0) {
+		if (system(Command.c_str()) != 0) {
 			LOGE("Unable to create NTFS partition.\n");
 			return false;
 		}
+		SDCard->Change_FS_Type(sdcard_fs);
 	}
 #endif
 #ifdef TW_INCLUDE_EXFAT
 	else if (sdcard_fs == "exfat") {
 		ui_print("Creating raw partition...\n");
-		Command = "parted " + Device + " mkpart primary 0 " + sdcard_end + "MB";
+		Command = "parted -s " + Device + " mkpart primary 0 " + sdcard_end + "MB";
 		LOGI("Command is: '%s'\n", Command.c_str());
-		if (TWFunc::Exec_Cmd(Command, result) != 0) {
+		if (system(Command.c_str()) != 0) {
 			LOGE("Unable to create EXFAT partition.\n");
 			return false;
 		}
+		SDCard->Change_FS_Type(sdcard_fs);
 	}
 #endif
 	else {
 		LOGE("Unsupported file-system type was set.\n");
 		return false;
 	}
+	// Print partitions in log so we can check what is detected by the kernel
+	Command = "cat /proc/partitions";
+	system(Command.c_str());
 	// Create second primary partition
 	if (sdext_size > 0) {
 		ui_print("Creating 1st EXT partition...\n");
 		if (sdext_fs == "nilfs2")
-			Command = "parted " + Device + " mkpart primary " + sdcard_end + "MB " + sdext_end + "MB";
+			Command = "parted -s " + Device + " mkpart primary " + sdcard_end + "MB " + sdext_end + "MB";
 		else
-			Command = "parted " + Device + " mkpartfs primary ext2 " + sdcard_end + "MB " + sdext_end + "MB";
+			Command = "parted -s " + Device + " mkpartfs primary ext2 " + sdcard_end + "MB " + sdext_end + "MB";
 		LOGI("Command is: '%s'\n", Command.c_str());
-		if (TWFunc::Exec_Cmd(Command, result) != 0) {
+		if (system(Command.c_str()) != 0) {
 			LOGE("Unable to create 1st EXT partition.\n");
 			Update_System_Details();
 			return false;
 		}
+		SDext->Change_FS_Type(sdext_fs);
+		SDext->Can_Be_Mounted = true;
+		// Print partitions in log so we can check what is detected by the kernel
+		Command = "cat /proc/partitions";
+		system(Command.c_str());
 	}
 	// Create third primary partition
 	if ((sdext_size > 0) && (sdext2_size > 0)) {
 		ui_print("Creating 2nd EXT partition...\n");
 		if (sdext2_fs == "nilfs2")
-			Command = "parted " + Device + " mkpart primary " + sdext_end + "MB " + sdext2_end + "MB";
+			Command = "parted -s " + Device + " mkpart primary " + sdext_end + "MB " + sdext2_end + "MB";
 		else
-			Command = "parted " + Device + " mkpartfs primary ext2 " + sdext_end + "MB " + sdext2_end + "MB";
+			Command = "parted -s " + Device + " mkpartfs primary ext2 " + sdext_end + "MB " + sdext2_end + "MB";
 		LOGI("Command is: '%s'\n", Command.c_str());
-		if (TWFunc::Exec_Cmd(Command, result) != 0) {
+		if (system(Command.c_str()) != 0) {
 			LOGE("Unable to create 2nd EXT partition.\n");
 			Update_System_Details();
 			return false;
 		}
+		SDext2->Change_FS_Type(sdext2_fs);
+		SDext2->Can_Be_Mounted = true;
+		// Print partitions in log so we can check what is detected by the kernel
+		Command = "cat /proc/partitions";
+		system(Command.c_str());
 	}
 	// Create swap partition
 	if (sdswap_size > 0) {
 		ui_print("Creating swap partition...\n");
-		Command = "parted " + Device + " mkpartfs primary linux-swap " + sdext2_end + "MB " + sdswap_end + "MB";
+		Command = "parted -s " + Device + " mkpartfs primary linux-swap " + sdext2_end + "MB " + sdswap_end + "MB";
 		LOGI("Command is: '%s'\n", Command.c_str());
-		if (TWFunc::Exec_Cmd(Command, result) != 0) {
+		if (system(Command.c_str()) != 0) {
 			LOGE("Unable to create swap partition.\n");
 			Update_System_Details();
 			return false;
 		}
 		if (sdext_size == 0) {
 			// no ext partition
-			LOGI("swap is created @ p2.\n");
+			LOGI("swap is created as 2nd primary partition.\n");
 			if (SDext != NULL) {
 				SDext->Change_FS_Type("swap");
 				SDext->Swap = true;
@@ -2879,14 +2906,23 @@ int TWPartitionManager::Partition_SDCard(void) {
 			// 1st ext partition exists
 			if (sdext2_size == 0) {
 				// no 2nd ext partition
-				LOGI("swap is created @ p3.\n");
+				LOGI("swap is created as 3rd primary partition.\n");
 				if (SDext2 != NULL) {
 					SDext2->Change_FS_Type("swap");
 					SDext2->Swap = true;
 				}
+			} else {
+				// 2nd ext partition exists
+				LOGI("swap is created as 4th primary partition.\n");
 			}
 		}
+		// Print partitions in log so we can check what is detected by the kernel
+		Command = "cat /proc/partitions";
+		system(Command.c_str());
 	}
+
+	Write_Fstab();
+	sync();
 
 	// Format first primary partition if the filesystem is other than vfat
 #ifdef TW_INCLUDE_MKNTFS
@@ -2900,8 +2936,9 @@ int TWPartitionManager::Partition_SDCard(void) {
 		}
 		Command = "mkntfs " + mkntfs_arg + SDCard->Actual_Block_Device;
 		LOGI("Command is: '%s'\n", Command.c_str());
-		TWFunc::Exec_Cmd(Command, result);
-		SDCard->Change_FS_Type(sdcard_fs);
+		system(Command.c_str());
+		Command = "ntfs-3g -o rw,umask=0 " + SDCard->Actual_Block_Device + " " + SDCard->Mount_Point;
+		system(Command.c_str());
 	}
 #endif
 #ifdef TW_INCLUDE_EXFAT
@@ -2909,17 +2946,19 @@ int TWPartitionManager::Partition_SDCard(void) {
 		ui_print("Formatting %s as EXFAT...\n", SDCard->Actual_Block_Device.c_str());
 		Command = "mkexfatfs " + SDCard->Actual_Block_Device;
 		LOGI("Command is: '%s'\n", Command.c_str());
-		TWFunc::Exec_Cmd(Command, result);
-		SDCard->Change_FS_Type(sdcard_fs);
+		system(Command.c_str());
+		Command = "exfat-fuse -o nonempty,big_writes,max_read=131072,max_write=131072 " + SDCard->Actual_Block_Device + " " + SDCard->Mount_Point;
+		system(Command.c_str());
 	}
 #endif
+	if (sdcard_fs == "vfat") {
+		Command = "mount " + SDCard->Actual_Block_Device + " " + SDCard->Mount_Point;
+		system(Command.c_str());
+	}
 
 	// Recreate .android_secure and TWRP folder
-	Command = "mount " + SDCard->Actual_Block_Device + " " + SDCard->Mount_Point;
-	TWFunc::Exec_Cmd(Command, result);
 	SDCard->Recreate_AndSec_Folder();
 	DataManager::SetupTwrpFolder();
-
 	// Rewrite settings - these will be gone after sdcard is partitioned
 	DataManager::Flush();	
 #ifdef TW_EXTERNAL_STORAGE_PATH
@@ -2931,7 +2970,9 @@ int TWPartitionManager::Partition_SDCard(void) {
 	if (DataManager::GetIntValue(TW_USE_EXTERNAL_STORAGE) == 1)
 		DataManager::SetValue(TW_ZIP_LOCATION_VAR, "/sdcard");
 #endif
-
+	Command = "umount " + SDCard->Mount_Point;
+	system(Command.c_str());
+	
 	// If set, format second primary partition
 	if (sdext_size > 0) {
 		if (SDext == NULL) {
@@ -2942,33 +2983,42 @@ int TWPartitionManager::Partition_SDCard(void) {
 			Command = "mkfs.nilfs2 " + SDext->Primary_Block_Device; //dev/block/mmcblk0p2";
 		else
 			Command = "mke2fs -t " + sdext_fs + " -m 0 " + SDext->Primary_Block_Device; //dev/block/mmcblk0p2";
-		ui_print("Formatting /dev/block/mmcblk0p2 as %s...\n", sdext_fs.c_str());
-		SDext->Change_FS_Type(sdext_fs);
+		ui_print("Formatting %s as %s...\n", SDext->Primary_Block_Device.c_str(), sdext_fs.c_str());
 		LOGI("Formatting sd-ext after partitioning, command: '%s'\n", Command.c_str());
-		TWFunc::Exec_Cmd(Command, result);
-		Command = "tune2fs -c " + TWFunc::to_string(n_mounts) + " " + SDext->Primary_Block_Device; //dev/block/mmcblk0p2";
-		TWFunc::Exec_Cmd(Command, result);
+		system(Command.c_str());		
 		DataManager::SetValue(TW_HAS_SDEXT_PARTITION, 1);
 	} else
 		DataManager::SetValue(TW_HAS_SDEXT_PARTITION, 0);
 
-	// If set format third primary partition
+	// If set, format third primary partition
 	if ((sdext_size > 0) && (sdext2_size > 0)) {
 		if (sdext2_fs == "nilfs2")
 			Command = "mkfs.nilfs2 " + SDext2->Primary_Block_Device; //dev/block/mmcblk0p3";
 		else
 			Command = "mke2fs -t " + sdext2_fs + " -m 0 " + SDext2->Primary_Block_Device; //dev/block/mmcblk0p3";
-		ui_print("Formatting /dev/block/mmcblk0p3 as %s...\n", sdext2_fs.c_str());
-		SDext2->Change_FS_Type(sdext2_fs);
+		ui_print("Formatting %s as %s...\n", SDext2->Primary_Block_Device.c_str(), sdext2_fs.c_str());
 		LOGI("Formatting sdext2 after partitioning, command: '%s'\n", Command.c_str());
-		TWFunc::Exec_Cmd(Command, result);
-		Command = "tune2fs -c " + TWFunc::to_string(n_mounts) + " " + SDext2->Primary_Block_Device; //dev/block/mmcblk0p3";
-		TWFunc::Exec_Cmd(Command, result);
+		system(Command.c_str());		
 		DataManager::SetValue(TW_HAS_SDEXT2_PARTITION, 1);
 	} else if (sdext2_size == 0)
     		DataManager::SetValue(TW_HAS_SDEXT2_PARTITION, 0);
 
 	Update_System_Details();
+
+	// Print partitions in log so we can check if new partitions are detected by the kernel
+	Command = "cat /proc/partitions";
+	system(Command.c_str());
+
+	// Run tune2fs to set user selected number of mounts
+	if (sdext_size > 0) {
+		Command = "tune2fs -c " + TWFunc::to_string(n_mounts) + " " + SDext->Primary_Block_Device; //dev/block/mmcblk0p2";
+		system(Command.c_str());
+	}
+	if ((sdext_size > 0) && (sdext2_size > 0)) {
+		Command = "tune2fs -c " + TWFunc::to_string(n_mounts) + " " + SDext2->Primary_Block_Device; //dev/block/mmcblk0p3";
+		system(Command.c_str());
+	}
+
 	ui_print("Partitioning complete.\n");
 	return true;
 }
