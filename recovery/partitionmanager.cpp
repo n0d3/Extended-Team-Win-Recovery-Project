@@ -43,11 +43,7 @@
 #include "twrp-functions.hpp"
 #include "fixPermissions.hpp"
 #include "twrpDigest.hpp"
-#ifdef TW_INCLUDE_LIBTAR
-	#include "twrpTar.hpp"
-#else
-	#include "makelist.hpp"
-#endif
+#include "twrpTar.hpp"
 
 #ifdef TW_INCLUDE_CRYPTO
 	#ifdef TW_INCLUDE_JB_CRYPTO
@@ -664,7 +660,7 @@ bool TWPartitionManager::Backup_Partition(TWPartition* Part,
 }
 
 int TWPartitionManager::Run_Backup(void) {
-	int check, do_md5, partition_count = 0, dataonext = 0, skip_free_space_check = 0;
+	int check, skip_md5_gen, do_md5, partition_count = 0, dataonext = 0, skip_free_space_check = 0;
 	string Backup_Folder, Backup_Name, Full_Backup_Path;
 	unsigned long long total_bytes = 0, file_bytes = 0, img_bytes = 0, free_space = 0, img_bytes_remaining, file_bytes_remaining, subpart_size;
 	unsigned long img_time = 0, file_time = 0;
@@ -693,11 +689,11 @@ int TWPartitionManager::Run_Backup(void) {
 	if (!Mount_Current_Storage(true))
 		return false;
 
-	DataManager::GetValue(TW_SKIP_MD5_GENERATE_VAR, do_md5);
-	if (do_md5 == 0)
-		do_md5 = true;
-	else
+	DataManager::GetValue(TW_SKIP_MD5_GENERATE_VAR, skip_md5_gen);
+	if (skip_md5_gen > 0)
 		do_md5 = false;
+	else
+		do_md5 = true;
 
 	DataManager::GetValue(TW_DATA_ON_EXT, dataonext);	
 
@@ -1074,13 +1070,9 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 					min_size += TWFunc::RoundUpSize(file_size, multiple);
 				} else {
 					// This is an archive
-#ifdef TW_INCLUDE_LIBTAR
 					twrpTar tar;
 					tar.setfn(Full_FileName);
 					tar_size = tar.uncompressedSize();
-#else
-					tar_size = TWFunc::Get_Archive_Uncompressed_Size(Full_FileName);
-#endif
 					min_size += TWFunc::RoundUpSize(tar_size, multiple);
 				}
 				// Now compare the size of the partition and the minimum required size
@@ -1122,7 +1114,6 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 					min_size += TWFunc::RoundUpSize(file_size, multiple);
 				} else {
 					// This is an archive
-#ifdef TW_INCLUDE_LIBTAR
 					twrpTar tar;
 					tar.setfn(Full_FileName);
 					tar_size = tar.uncompressedSize();
@@ -1130,13 +1121,6 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 					// If not we must add enough space for it
 					if (!dataonext && !tar.entryExists("data/dalvik-cache/"))
 						dalvik_found_on_data = 0;
-#else
-					tar_size = TWFunc::Get_Archive_Uncompressed_Size(Full_FileName);
-					// check if the archive contains dalvik-cache.
-					// If not we must add enough space for it
-					if (!dataonext && !TWFunc::Tar_Entry_Exists(Full_FileName, "dalvik-cache", 0))
-						dalvik_found_on_data = 0;
-#endif
 					min_size += TWFunc::RoundUpSize(tar_size, multiple);
 				}
 				if (nodalvikcache && dalvik_host == "/data")
@@ -1255,14 +1239,10 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 					file_size = TWFunc::Get_File_Size(Full_FileName);
 					min_size += TWFunc::RoundUpSize(file_size, multiple);
 				} else {
-					// This is an archive					
-#ifdef TW_INCLUDE_LIBTAR
+					// This is an archive
 					twrpTar tar;
 					tar.setfn(Full_FileName);
 					tar_size = tar.uncompressedSize();
-#else
-					tar_size = TWFunc::Get_Archive_Uncompressed_Size(Full_FileName);
-#endif
 					min_size += TWFunc::RoundUpSize(tar_size, multiple);
 				}
 				// Now compare the size of the partition and the minimum required size
@@ -1316,13 +1296,9 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 					Full_FileName += split_index;
 					while (TWFunc::Path_Exists(Full_FileName)) {
 						ui_print("Getting size of archive %i...\n", index+1);
-#ifdef TW_INCLUDE_LIBTAR
 						twrpTar tar;
 						tar.setfn(Full_FileName);
 						min_size += tar.uncompressedSize();
-#else
-						min_size += TWFunc::Get_Archive_Uncompressed_Size(Full_FileName);
-#endif
 						index++;		
 						sprintf(split_index, "%03i", index);
 						Full_FileName = Restore_Name + "/" + restore_sys->Backup_FileName + split_index;
@@ -1330,7 +1306,6 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 					if (index == 0)
 						LOGE("Error locating restore file: '%s'\n", Full_FileName.c_str());
 				} else {
-#ifdef TW_INCLUDE_LIBTAR
 					twrpTar tar;
 					tar.setfn(Full_FileName);
 					min_size += tar.uncompressedSize();
@@ -1338,13 +1313,6 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 					// If not we must add enough space for it
 					if (!tar.entryExists("sd-ext/dalvik-cache/"))
 						dalvik_found_on_sdext = 0;
-#else
-					min_size += TWFunc::Get_Archive_Uncompressed_Size(Full_FileName);
-					// check if the archive contains dalvik-cache.
-					// If not we must add enough space for it
-					if (!TWFunc::Tar_Entry_Exists(Full_FileName, "dalvik-cache", 0))
-						dalvik_found_on_sdext = 0;
-#endif
 				}
 				if (nodalvikcache && dalvik_host == "/sd-ext")
 					min_size += dc_size;
@@ -1383,13 +1351,9 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 					Full_FileName += split_index;
 					while (TWFunc::Path_Exists(Full_FileName)) {
 						ui_print("Checking archive %i...\n", index+1);
-#ifdef TW_INCLUDE_LIBTAR
 						twrpTar tar;
 						tar.setfn(Full_FileName);
 						min_size += tar.uncompressedSize();
-#else
-						min_size += TWFunc::Get_Archive_Uncompressed_Size(Full_FileName);
-#endif
 						index++;		
 						sprintf(split_index, "%03i", index);
 						Full_FileName = Restore_Name + "/" + restore_sys->Backup_FileName + split_index;
@@ -1397,7 +1361,6 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 					if (index == 0)
 						LOGE("Error locating restore file: '%s'\n", Full_FileName.c_str());
 				} else {
-#ifdef TW_INCLUDE_LIBTAR
 					twrpTar tar;
 					tar.setfn(Full_FileName);
 					min_size += tar.uncompressedSize();
@@ -1405,13 +1368,6 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 					// If not we must add enough space for it
 					if (!tar.entryExists("sdext2/dalvik-cache/"))
 						dalvik_found_on_sdext2 = 0;
-#else
-					min_size += TWFunc::Get_Archive_Uncompressed_Size(Full_FileName);
-					// check if the archive contains dalvik-cache.
-					// If not we must add enough space for it
-					if (!TWFunc::Tar_Entry_Exists(Full_FileName, "dalvik-cache", 0))
-						dalvik_found_on_sdext2 = 0;
-#endif
 				}
 				if (nodalvikcache && dalvik_host == "/sd-ext")
 					min_size += dc_size;

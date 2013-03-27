@@ -102,9 +102,6 @@ class TWFunc {
 		static void power_restore(int charge_mode);
 		static bool replace_string(string& str, const string& search_str, const string& replace_str);
 		static string to_string(int number);
-		static bool Tar_Entry_Exists(string tar_file, string entry, int level);
-		static int Get_Archive_Type(string FilePath);
-		static unsigned long long Get_Archive_Uncompressed_Size(string FilePath);
 		static string Find_File_On_Storage(string Filename);
 		static void Take_Screenshot(void);
 		static int Vibrate(FeedbackReason reason);

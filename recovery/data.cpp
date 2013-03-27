@@ -702,6 +702,9 @@ void DataManager::SetDefaultValues()
 	mValues.insert(make_pair(TW_SD_BACKUP_RESTORE_SYSTEM, make_pair("1", 1)));
     	mValues.insert(make_pair(TW_SD_BACKUP_RESTORE_DATA, make_pair("1", 1)));
     	mValues.insert(make_pair(TW_SD_BACKUP_RESTORE_BOOT, make_pair("1", 1)));
+	mValues.insert(make_pair(TW_SD_USE_COMPRESSION_VAR, make_pair("0", 1)));
+    	mValues.insert(make_pair(TW_SD_SKIP_MD5_CHECK_VAR, make_pair("0", 1)));
+    	mValues.insert(make_pair(TW_SD_SKIP_MD5_GENERATE_VAR, make_pair("0", 1)));
 
 	// Bootloader check
 	if (Detect_BLDR() == 1) // cLK detected

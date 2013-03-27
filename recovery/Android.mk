@@ -37,15 +37,9 @@ LOCAL_SRC_FILES += \
     mtdutils/mtdutils.c \
     twinstall.cpp \
     twrp-functions.cpp \
-    openrecoveryscript.cpp
-
-ifeq ($(TW_INCLUDE_LIBTAR), true)
-    LOCAL_SRC_FILES += \
-        twrpTar.cpp \
-        tarWrite.c
-else
-    LOCAL_SRC_FILES += makelist.cpp
-endif
+    openrecoveryscript.cpp \
+    twrpTar.cpp \
+    tarWrite.c
 
 ifneq ($(TARGET_RECOVERY_REBOOT_SRC),)
     LOCAL_SRC_FILES += $(TARGET_RECOVERY_REBOOT_SRC)
@@ -81,10 +75,7 @@ endif
 ifeq ($(TW_INCLUDE_EXFAT), true)
     LOCAL_STATIC_LIBRARIES += libfuse
 endif
-LOCAL_SHARED_LIBRARIES += libz libc libstlport libcutils libstdc++ libmincrypt libext4_utils libblkid
-ifeq ($(TW_INCLUDE_LIBTAR), true)
-    LOCAL_SHARED_LIBRARIES += libtar
-endif
+LOCAL_SHARED_LIBRARIES += libz libc libstlport libcutils libstdc++ libmincrypt libext4_utils libtar libblkid
 ifneq ($(wildcard system/core/libsparse/Android.mk),)
     LOCAL_SHARED_LIBRARIES += libsparse
 endif
@@ -139,12 +130,6 @@ ifneq ($(SP3_DISPLAY_NAME),)
 endif
 ifneq ($(RECOVERY_SDCARD_ON_DATA),)
 	LOCAL_CFLAGS += -DRECOVERY_SDCARD_ON_DATA
-endif
-ifeq ($(TW_INCLUDE_LIBTAR), true)
-	LOCAL_CFLAGS += -DTW_INCLUDE_LIBTAR
-endif
-ifeq ($(TW_INCLUDE_LIBBLKID), true)
-	LOCAL_CFLAGS += -DTW_INCLUDE_LIBBLKID
 endif
 ifeq ($(TW_INCLUDE_NILFS2), true)
 	LOCAL_CFLAGS += -DTW_INCLUDE_NILFS2
@@ -330,11 +315,9 @@ include $(commands_recovery_local_path)/libjpegtwrp/Android.mk \
     $(commands_recovery_local_path)/mtdutils/Android.mk \
     $(commands_recovery_local_path)/flashutils/Android.mk \
     $(commands_recovery_local_path)/pigz/Android.mk \
-    $(commands_recovery_local_path)/dosfstools/Android.mk
-ifeq ($(TW_INCLUDE_LIBTAR), true)
-    include $(commands_recovery_local_path)/libtar/Android.mk
-endif
-include $(commands_recovery_local_path)/crypto/cryptsettings/Android.mk \
+    $(commands_recovery_local_path)/dosfstools/Android.mk \
+    $(commands_recovery_local_path)/libtar/Android.mk \
+    $(commands_recovery_local_path)/crypto/cryptsettings/Android.mk \
     $(commands_recovery_local_path)/crypto/cryptfs/Android.mk \
     $(commands_recovery_local_path)/libcrecovery/Android.mk \
     $(commands_recovery_local_path)/twmincrypt/Android.mk \

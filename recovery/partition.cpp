@@ -42,11 +42,7 @@
 #include "data.hpp"
 #include "twrp-functions.hpp"
 #include "twrpDigest.hpp"
-#ifdef TW_INCLUDE_LIBTAR
-	#include "twrpTar.hpp"
-#else
-	#include "makelist.hpp"
-#endif
+#include "twrpTar.hpp"
 extern "C" {
 	#include "mtdutils/mtdutils.h"
 	#include "mtdutils/mounts.h"
@@ -823,7 +819,7 @@ bool TWPartition::Get_Size_Via_statfs(bool Display_Error) {
 		string data_pth;
 		DataManager::GetValue(TW_DATA_PATH, data_pth);
 		if (!Path_For_DataOnExt.empty()) {
-			LOGI("Path_For_DataOnExt: '%s'\n", Path_For_DataOnExt.c_str());
+			//LOGI("Path_For_DataOnExt: '%s'\n", Path_For_DataOnExt.c_str());
 			// In case the entered data_path changed after user interaction
 			if (Path_For_DataOnExt != data_pth) {
 				if (CheckFor_DataOnExt() == 1) {
@@ -838,7 +834,7 @@ bool TWPartition::Get_Size_Via_statfs(bool Display_Error) {
 			}
 		}
 		if (dataonext) {
-			LOGI("TW_DATA_PATH: '%s'\n", data_pth.c_str());
+			//LOGI("TW_DATA_PATH: '%s'\n", data_pth.c_str());
 			if (!Is_Mounted())
 				system(("mount " + Primary_Block_Device + " " + Mount_Point).c_str());
 				//Mount(Display_Error);
@@ -917,7 +913,7 @@ bool TWPartition::Get_Size_Via_df(bool Display_Error) {
 		string data_pth;
 		DataManager::GetValue(TW_DATA_PATH, data_pth);
 		if (!Path_For_DataOnExt.empty()) {
-			LOGI("Path_For_DataOnExt: '%s'\n", Path_For_DataOnExt.c_str());
+			//LOGI("Path_For_DataOnExt: '%s'\n", Path_For_DataOnExt.c_str());
 			// In case the entered data_path changed after user interaction
 			if (Path_For_DataOnExt != data_pth) {
 				if (CheckFor_DataOnExt() == 1) {
@@ -932,7 +928,7 @@ bool TWPartition::Get_Size_Via_df(bool Display_Error) {
 			}
 		}
 		if (dataonext) {
-			LOGI("TW_DATA_PATH: '%s'\n", data_pth.c_str());
+			//LOGI("TW_DATA_PATH: '%s'\n", data_pth.c_str());
 			if (!Is_Mounted())
 				system(("mount " + Primary_Block_Device + " " + Mount_Point).c_str());
 				//Mount(Display_Error);
@@ -1660,9 +1656,8 @@ bool TWPartition::Backup_Tar(string backup_folder) {
 	int use_compression, index, backup_count, dataonext, skip_dalvik, skip_native;
 	struct stat st;
 	unsigned long long total_bsize = 0, file_size;
-#ifdef TW_INCLUDE_LIBTAR
 	twrpTar tar;
-#endif
+
 	if (!Mount(true))
 		return false;
 
@@ -1677,9 +1672,9 @@ bool TWPartition::Backup_Tar(string backup_folder) {
 		ui_print("Backing up DataOnExt...\n");
 		DataManager::GetValue(TW_DATA_PATH, data_pth);
 		if (data_pth.size() > 7)
-			pathTodatafolder = data_pth.substr(8, data_pth.size() - 1);
+			pathTodatafolder = data_pth.substr(7, data_pth.size() - 1);
 		else
-			pathTodatafolder = "./*";
+			pathTodatafolder = "";
 	} else {
 		TWFunc::GUI_Operation_Text(TW_BACKUP_TEXT, Display_Name, "Backing Up");
 		ui_print("Backing up %s...\n", Display_Name.c_str());
@@ -1687,12 +1682,9 @@ bool TWPartition::Backup_Tar(string backup_folder) {
 
 	// Skip dalvik-cache during backup?
 	if ((Backup_Path == "/data" || Backup_Path == "/sd-ext" || Backup_Path == "/sdext2") && skip_dalvik) {
-#ifdef TW_INCLUDE_LIBTAR
 		Tar_Excl += "dalvik-cache";
-#else
-		Tar_Excl += " --exclude='dalvik-cache' --exclude='dalvik-cache/*'";
-#endif
 	}
+
 	// Skip any NativeSD Rom during backup of sd-ext
 	if ((Backup_Path == "/sd-ext" || Backup_Path == "/sdext2") && skip_native) {
 		Tar_Excl += Tar_exclude;
@@ -1700,12 +1692,7 @@ bool TWPartition::Backup_Tar(string backup_folder) {
 
 	// Use Compression?
 	DataManager::GetValue(TW_USE_COMPRESSION_VAR, use_compression);
-#ifndef TW_INCLUDE_LIBTAR
-	if (use_compression)
-		Tar_Args += "-cz";
-	else
-		Tar_Args += "-c";
-#endif
+
 	// Set Backup_FileName
 	sprintf(back_name, "%s.%s.win", Backup_Name.c_str(), Current_File_System.c_str());
 	Backup_FileName = back_name;
@@ -1717,7 +1704,6 @@ bool TWPartition::Backup_Tar(string backup_folder) {
 			sprintf(back_name, "%s", data_pth.c_str());
 		else 
 			sprintf(back_name, "%s", Backup_Path.c_str());		
-#ifdef TW_INCLUDE_LIBTAR
 		tar.setexcl(Tar_Excl);
 		tar.setdir(back_name);
 		tar.setfn(Full_FileName);
@@ -1726,37 +1712,11 @@ bool TWPartition::Backup_Tar(string backup_folder) {
 			LOGE("Error tarring split files!\n");
 			return false;
 		}
-#else
-		backup_count = MakeList::Make_File_List(back_name);
-		if (backup_count < 1) {
-			LOGE("Error generating file list!\n");
-			return false;
-		}
-		for (index=0; index<backup_count; index++) {
-			sprintf(split_index, "%03i", index);
-			Full_FileName = backup_folder + Backup_FileName + split_index;
-			Command = "tar " + Tar_Args + Tar_Excl + " -f '" + Full_FileName + "' -T /tmp/list/filelist" + split_index;
-			LOGI("Backup command: '%s'\n", Command.c_str());
-			ui_print("Backup archive %i of %i...\n", (index + 1), backup_count);
-			TWFunc::Exec_Cmd(Command, result); // sending backup command formed earlier above
-
-			file_size = TWFunc::Get_File_Size(Full_FileName);
-			if (file_size == 0) {
-				LOGE("Backup file size for '%s' is 0 bytes.\n", Full_FileName.c_str()); // oh noes! file size is 0, abort! abort!
-				return false;
-			}
-			total_bsize += file_size;
-		}
-		ui_print(" * Total size: %llu bytes.\n", total_bsize);
-		Command = "cd /tmp && rm -rf list";
-		TWFunc::Exec_Cmd(Command, result);
-#endif
 	} else {
 		Full_FileName = backup_folder + Backup_FileName;
-#ifdef TW_INCLUDE_LIBTAR
 		tar.setexcl(Tar_Excl);
 		if (Backup_Path == "/sd-ext" && dataonext)
-			tar.setdir(Backup_Path + "/" + pathTodatafolder);
+			tar.setdir(Backup_Path + pathTodatafolder);
 		else
 			tar.setdir(Backup_Path);
 		tar.setfn(Full_FileName);
@@ -1769,19 +1729,6 @@ bool TWPartition::Backup_Tar(string backup_folder) {
 			if (tar.createTarFork() != 0)
 				return -1;
 		}
-#else
-		if (Has_Data_Media)
-			Command = "cd " + Backup_Path + " && tar " + Tar_Args + " ./ --exclude='media*' -f '" + Full_FileName + "'";
-		else {
-			if (Backup_Path == "/sd-ext" && dataonext) {
-				Command = "cd " + Backup_Path + " && tar "+ Tar_Args + Tar_Excl + " -f '" + Full_FileName + "' " + pathTodatafolder;			
-			} else {
-				Command = "cd " + Backup_Path + " && tar " + Tar_Args + Tar_Excl + " -f '" + Full_FileName + "' ./*";
-			}
-		}
-		LOGI("Backup command: '%s'\n", Command.c_str());
-		TWFunc::Exec_Cmd(Command, result);
-#endif
 		if (TWFunc::Get_File_Size(Full_FileName) == 0) {
 			LOGE("Backup file size for '%s' is 0 bytes.\n", Full_FileName.c_str());
 			return false;
@@ -1789,10 +1736,6 @@ bool TWPartition::Backup_Tar(string backup_folder) {
 	}
 	if (Backup_Path == "/sd-ext" && dataonext) {
 		// Create a file to recognize that this is DataOnExt and not a typical sd-ext backup
-		if (pathTodatafolder == "./*")
-			pathTodatafolder = "";
-		else
-			pathTodatafolder = "/" + pathTodatafolder;
 		Command = "echo /sd-ext" + pathTodatafolder + ">" + backup_folder + ".dataonext";
 		TWFunc::Exec_Cmd(Command, result);
 	}
@@ -1974,7 +1917,6 @@ bool TWPartition::Restore_Tar(string restore_folder, string Restore_File_System)
 		while (TWFunc::Path_Exists(Full_FileName)) {
 			ui_print("Restoring archive %i...\n", index+1);
 			LOGI("Restoring '%s'...\n", Full_FileName.c_str());
-#ifdef TW_INCLUDE_LIBTAR
 			twrpTar tar;			
 			tar.setfn(Full_FileName);
 			if((Backup_Path == "/sd-ext" && tar.entryExists("sd-ext/"))
@@ -1985,16 +1927,6 @@ bool TWPartition::Restore_Tar(string restore_folder, string Restore_File_System)
 				tar.setdir(Backup_Path);
 			if (tar.extractTarFork() != 0)
 				return false;
-#else
-			if((Backup_Path == "/sd-ext" && TWFunc::Tar_Entry_Exists(Full_FileName, "sd-ext", 1))
-			|| (Backup_Path == "/system" && TWFunc::Tar_Entry_Exists(Full_FileName, "system", 1))
-			|| (Backup_Path == "/data" && TWFunc::Tar_Entry_Exists(Full_FileName, "data", 1)))
-				Command = "cd / && tar -xf '" + Full_FileName + "'";
-			else			
-				Command = "cd " + Backup_Path + " && tar -xf '" + Full_FileName + "'";
-			LOGI("Restore command: '%s'\n", Command.c_str());
-			TWFunc::Exec_Cmd(Command, result);	
-#endif
 			index++;		
 			sprintf(split_index, "%03i", index);
 			Full_FileName = restore_folder + "/" + Backup_FileName + split_index;
@@ -2004,7 +1936,6 @@ bool TWPartition::Restore_Tar(string restore_folder, string Restore_File_System)
 			return false;
 		}
 	} else {
-#ifdef TW_INCLUDE_LIBTAR
 		twrpTar tar;
 		tar.setfn(Full_FileName);
 		// For restoring a CWM backup of sd-ext
@@ -2017,18 +1948,6 @@ bool TWPartition::Restore_Tar(string restore_folder, string Restore_File_System)
 			tar.setdir(Backup_Path);
 		if (tar.extractTarFork() != 0)
 			return false;
-#else
-		// For restoring a CWM backup of sd-ext
-		if (Backup_Path == "/sd-ext" && TWFunc::Tar_Entry_Exists(Full_FileName, "sd-ext", 1))
-			Command = "cd / && tar -xf '" + Full_FileName + "'";			
-		// For restoring a CWM backup of android_secure
-		else if ((Backup_Path == "/and-sec" || Backup_Path == Mount_Point + "/.android_secure") && TWFunc::Tar_Entry_Exists(Full_FileName, ".android_secure", 1))
-			Command = "cd " + Storage_Path + " && tar -xf '" + Full_FileName + "'";			
-		else
-			Command = "cd " + Backup_Path + " && tar -xf '" + Full_FileName + "'";
-		LOGI("Restore command: '%s'\n", Command.c_str());
-		TWFunc::Exec_Cmd(Command, result);
-#endif
 	}
 	return true;
 }
@@ -2208,7 +2127,7 @@ bool TWPartition::Check_MD5(string restore_folder) {
 		md5file += ".md5";
 		if (!TWFunc::Path_Exists(md5file)) {
 			LOGE("No md5 file found for '%s'.\n", split_filename);
-			LOGE("Please unselect Enable MD5 verification to restore.\n");
+			LOGE("Please select 'Skip MD5 verification' to restore.\n");
 			return false;
 		}
 		md5sum.setfn(split_filename);
@@ -2227,7 +2146,7 @@ bool TWPartition::Check_MD5(string restore_folder) {
 		md5file = Full_Filename + ".md5";
 		if (!TWFunc::Path_Exists(md5file)) {
 			LOGE("No md5 file found for '%s'.\n", Full_Filename.c_str());
-			LOGE("Please unselect Enable MD5 verification to restore.\n");
+			LOGE("Please select 'Skip MD5 verification' to restore.\n");
 			return false;
 		}
 		md5sum.setfn(Full_Filename);
@@ -2305,11 +2224,7 @@ void TWPartition::CheckFor_NativeSD(void) {
 									count++;
 									LOGI("Excluding : %s\n", pathToCheck.c_str());
 									NativeSD_Size += TWFunc::Get_Folder_Size(pathToCheck, true);
-#ifdef TW_INCLUDE_LIBTAR
 									Tar_exclude += (" " + dname);
-#else
-									Tar_exclude += (" --exclude='" + dname + "' --exclude='" + dname + "/*'");
-#endif
 								}
 							}
 						} else {
@@ -2317,11 +2232,7 @@ void TWPartition::CheckFor_NativeSD(void) {
 							if (TWFunc::Path_Exists(pathToCheck)) {
 								count++;
 								NativeSD_Size += TWFunc::Get_Folder_Size(pathToCheck, true);
-#ifdef TW_INCLUDE_LIBTAR
 								Tar_exclude += (" " + dname);
-#else
-								Tar_exclude += (" --exclude='" + dname + "' --exclude='" + dname + "/*'");
-#endif
 							}
 						}
 					} else

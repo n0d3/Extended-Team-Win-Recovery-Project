@@ -160,7 +160,6 @@ TW_INCLUDE_NTFS_3G := true
 TW_INCLUDE_MKNTFS := true
 TW_INCLUDE_EXFAT := true
 TW_INCLUDE_NILFS2 := true
-TW_INCLUDE_LIBTAR := true
 TW_NO_SCREEN_BLANK := true
 TW_MAX_BRIGHTNESS := 255
 TW_BRIGHTNESS_PATH := "/sys/class/leds/lcd-backlight/brightness"

@@ -41,6 +41,9 @@
 #define TW_SD_BACKUP_RESTORE_SYSTEM 	"tw_sd_backup_restore_system"
 #define TW_SD_BACKUP_RESTORE_DATA   	"tw_sd_backup_restore_data"
 #define TW_SD_BACKUP_RESTORE_BOOT   	"tw_sd_backup_restore_boot"
+#define TW_SD_USE_COMPRESSION_VAR      	"tw_sd_use_compression"
+#define TW_SD_SKIP_MD5_CHECK_VAR       	"tw_sd_skip_md5_check"
+#define TW_SD_SKIP_MD5_GENERATE_VAR    	"tw_sd_skip_md5_generate"
 
 // cLK's extra boot partition
 #define TW_SDBOOT_PARTITION  	    	"tw_sdboot_partition"
