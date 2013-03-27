@@ -2037,7 +2037,7 @@ void TWPartitionManager::Update_System_Details(void) {
 				int backup_display_size = (int)((*iter)->Backup_Size / 1048576LLU);
 				DataManager::SetValue(TW_BACKUP_SDEXT_SIZE, backup_display_size);
 				if ((*iter)->Backup_Size == 0) {
-					DataManager::SetValue(TW_HAS_SDEXT_PARTITION, 0);
+					//DataManager::SetValue(TW_HAS_SDEXT_PARTITION, 0);
 					DataManager::SetValue(TW_BACKUP_SDEXT_VAR, 0);
 				} else
 					DataManager::SetValue(TW_HAS_SDEXT_PARTITION, 1);
@@ -2045,7 +2045,7 @@ void TWPartitionManager::Update_System_Details(void) {
 				int backup_display_size = (int)((*iter)->Backup_Size / 1048576LLU);
 				DataManager::SetValue(TW_BACKUP_SDEXT2_SIZE, backup_display_size);
 				if ((*iter)->Backup_Size == 0) {
-					DataManager::SetValue(TW_HAS_SDEXT2_PARTITION, 0);
+					//DataManager::SetValue(TW_HAS_SDEXT2_PARTITION, 0);
 					DataManager::SetValue(TW_BACKUP_SDEXT2_VAR, 0);
 				} else {
 					DataManager::SetValue(TW_HAS_SDEXT2_PARTITION, 1);
@@ -2054,7 +2054,7 @@ void TWPartitionManager::Update_System_Details(void) {
 				int backup_display_size = (int)((*iter)->Backup_Size / 1048576LLU);
 				DataManager::SetValue(TW_BACKUP_ANDSEC_SIZE, backup_display_size);
 				if ((*iter)->Backup_Size == 0) {
-					DataManager::SetValue(TW_HAS_ANDROID_SECURE, 0);
+					//DataManager::SetValue(TW_HAS_ANDROID_SECURE, 0);
 					DataManager::SetValue(TW_BACKUP_ANDSEC_VAR, 0);
 				} else
 					DataManager::SetValue(TW_HAS_ANDROID_SECURE, 1);
@@ -2091,7 +2091,7 @@ void TWPartitionManager::Update_System_Details(void) {
 				int backup_display_size = (int)((*iter)->Backup_Size / 1048576LLU);
 				DataManager::SetValue(TW_BACKUP_BOOT_SIZE, backup_display_size);
 				if ((*iter)->Backup_Size == 0) {
-					DataManager::SetValue(TW_HAS_BOOT_PARTITION, 0);
+					//DataManager::SetValue(TW_HAS_BOOT_PARTITION, 0);
 					DataManager::SetValue(TW_BACKUP_BOOT_VAR, 0);
 				} else
 					DataManager::SetValue(TW_HAS_BOOT_PARTITION, 1);
@@ -2099,17 +2099,17 @@ void TWPartitionManager::Update_System_Details(void) {
 				int backup_display_size = (int)((*iter)->Backup_Size / 1048576LLU);
 				DataManager::SetValue(TW_BACKUP_RECOVERY_SIZE, backup_display_size);
 				if ((*iter)->Backup_Size == 0) {
-					DataManager::SetValue(TW_HAS_RECOVERY_PARTITION, 0);
+					//DataManager::SetValue(TW_HAS_RECOVERY_PARTITION, 0);
 					DataManager::SetValue(TW_BACKUP_RECOVERY_VAR, 0);
 				} else
 					DataManager::SetValue(TW_HAS_RECOVERY_PARTITION, 1);
 			} else if ((*iter)->Mount_Point == "/data") {
 				data_size += (int)((*iter)->Backup_Size / 1048576LLU);
 			} else if ((*iter)->Mount_Point == "/sd-ext") {
-				DataManager::SetValue(TW_HAS_SDEXT_PARTITION, 0);
+				//DataManager::SetValue(TW_HAS_SDEXT_PARTITION, 0);
 				DataManager::SetValue(TW_BACKUP_SDEXT_VAR, 0);
 			} else if ((*iter)->Mount_Point == "/sdext2") {
-				DataManager::SetValue(TW_HAS_SDEXT2_PARTITION, 0);
+				//DataManager::SetValue(TW_HAS_SDEXT2_PARTITION, 0);
 				DataManager::SetValue(TW_BACKUP_SDEXT2_VAR, 0);
 			}
 #ifdef SP1_NAME

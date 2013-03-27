@@ -694,6 +694,7 @@ void DataManager::SetDefaultValues()
 	mValues.insert(make_pair(TW_BACKUP_SDEXT2_SIZE, make_pair("0", 1)));
     	mValues.insert(make_pair(TW_SDEXT2_SIZE, make_pair("0", 1)));
     	mValues.insert(make_pair(TW_RESTORE_SDEXT2_VAR, make_pair("0", 1)));
+	mValues.insert(make_pair(TW_HAS_SDEXT_PARTITION, make_pair("0", 1)));
 	mValues.insert(make_pair(TW_HAS_SDEXT2_PARTITION, make_pair("0", 1)));
     	mValues.insert(make_pair(TW_USE_SDEXT2_PARTITION, make_pair("0", 1)));
 	mValues.insert(make_pair("tw_sdcard_file_system", make_pair("vfat", 1)));
