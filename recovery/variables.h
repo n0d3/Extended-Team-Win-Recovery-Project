@@ -110,7 +110,7 @@
 #define TW_SET_CPU_F_AT_BOOT		"tw_set_cpu_f_at_boot"
 #define TW_MAX_CPU_F			"tw_max_cpu_f"
 #define TW_MIN_CPU_F			"tw_min_cpu_f"
-#define TW_SET_CPU_GOV_AT_BOOT		"tw_set_io_sched_at_boot"
+#define TW_SET_CPU_GOV_AT_BOOT		"tw_set_cpu_gov_at_boot"
 #define TW_CPU_GOV			"tw_cpu_gov"
 
 // Default definitions
