@@ -41,7 +41,7 @@ int TWNativeSDManager::Backup(string RomPath) {
 	time(&rStart);
     	t = localtime(&seconds);
 
-	PartitionManager.Update_System_Details();
+	PartitionManager.Update_System_Details(false);
 
 	DataManager::GetValue(TW_USE_SDEXT2_PARTITION, z);
 	if (z == 0)
@@ -290,7 +290,7 @@ int TWNativeSDManager::Backup(string RomPath) {
 	unsigned long long actual_backup_size = TWFunc::Get_Folder_Size(Full_Backup_Path, true);
     	actual_backup_size /= (1024LLU * 1024LLU);
 	ui_print("[%llu MB TOTAL BACKED UP]\n", actual_backup_size);
-	PartitionManager.Update_System_Details();
+	PartitionManager.Update_System_Details(true);
 	PartitionManager.UnMount_Main_Partitions();
 	time(&rStop);
 	ui_print("[NATIVESD BACKUP COMPLETED in %d sec]\n\n",(int)difftime(rStop,rStart));
@@ -543,7 +543,7 @@ int TWNativeSDManager::Restore(string RomPath) {
 			return false;
 	}
 	TWFunc::GUI_Operation_Text(TW_UPDATE_SYSTEM_DETAILS_TEXT, "Updating System Details");
-	PartitionManager.Update_System_Details();
+	PartitionManager.Update_System_Details(true);
 	PartitionManager.UnMount_Main_Partitions();
 	time(&rStop);
 	ui_print("[NATIVESD RESTORE COMPLETED IN %d sec]\n\n",(int)difftime(rStop,rStart));

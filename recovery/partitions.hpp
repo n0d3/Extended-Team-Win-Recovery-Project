@@ -347,7 +347,7 @@ class TWPartitionManager {
 		// Refreshes size data of partitions
 		virtual void Refresh_Sizes();                                             
 		// Updates fstab, file systems, sizes, etc.
-		virtual void Update_System_Details();                                     
+		virtual void Update_System_Details(bool Display_Msg);
 		// Attempt to decrypt any encrypted partitions
 		virtual int Decrypt_Device(string Password);                              
 		// Enable USB storage mode
@@ -372,22 +372,7 @@ class TWPartitionManager {
 		virtual int Check_SDCard(void);						  
 		// Set filesystem on ext
 		virtual int FSConvert_SDEXT(string extpath);   
-/*                           
-		// Backup NativeSD Rom
-		virtual int NativeSD_Backup(string RomPath);                              
-		// Restore NativeSD Rom
-		virtual int NativeSD_Restore(string RomPath);                             
-		// Delete NativeSD Rom
-		virtual int NativeSD_Delete(string RomPath);                              
-		// Fix permissions on NativeSD Rom
-		virtual int NativeSD_Perm(string RomPath);                                
-		// Wipe data on NativeSD Rom
-		virtual int NativeSD_WipeData(string RomPath);                            
-		// Wipe dalvik-cache on NativeSD Rom
-		virtual int NativeSD_WipeDalvik(string RomPath);                          
-		// Flash rom's kernel to selected boot partition
-		virtual int NativeSD_Kernel(string ptn, string RomPath);   
-*/
+
 	private:
 		bool Backup_Partition(TWPartition* Part, string Backup_Folder, bool generate_md5,
 					unsigned long long* img_bytes_remaining,

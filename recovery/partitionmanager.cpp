@@ -103,7 +103,7 @@ int TWPartitionManager::Process_Fstab(string Fstab_Filename, bool Display_Error)
 		else
 			LOGI("Error creating fstab\n");
 	}
-	Update_System_Details();
+	Update_System_Details(true);
 	UnMount_Main_Partitions();
 	Fstab_Proc_Done = 1;
 	return true;
@@ -684,7 +684,7 @@ int TWPartitionManager::Run_Backup(void) {
 
 	time(&total_start);
 
-	Update_System_Details();
+	Update_System_Details(false);
 
 	if (!Mount_Current_Storage(true))
 		return false;
@@ -979,7 +979,7 @@ int TWPartitionManager::Run_Backup(void) {
 		DataManager::SetValue(TW_BACKUP_AVG_FILE_RATE, file_bps);
 
 	ui_print("[%llu MB TOTAL BACKED UP]\n", actual_backup_size);
-	Update_System_Details();
+	Update_System_Details(true);
 	UnMount_Main_Partitions();
 	ui_print("[BACKUP COMPLETED IN %d SECONDS]\n\n", total_time); // the end
 	string backup_log = Full_Backup_Path + "recovery.log";
@@ -1542,7 +1542,7 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 		return false;
 
 	TWFunc::GUI_Operation_Text(TW_UPDATE_SYSTEM_DETAILS_TEXT, "Updating System Details");
-	Update_System_Details();
+	Update_System_Details(true);
 	UnMount_Main_Partitions();
 	time(&rStop);
 	ui_print("[RESTORE COMPLETED IN %d SECONDS]\n\n",(int)difftime(rStop,rStart));
@@ -2013,18 +2013,19 @@ int TWPartitionManager::Wipe_Media_From_Data(void) {
 }
 
 void TWPartitionManager::Refresh_Sizes(void) {
-	Update_System_Details();
+	Update_System_Details(true);
 	return;
 }
 
-void TWPartitionManager::Update_System_Details(void) {
+void TWPartitionManager::Update_System_Details(bool Display_Msg) {
 	std::vector<TWPartition*>::iterator iter;
 	int data_size = 0;
 
-	ui_print("Updating partition details...\n");
+	if (Display_Msg)
+		ui_print("Updating partition details...\n");
 	for (iter = Partitions.begin(); iter != Partitions.end(); iter++) {
 		if ((*iter)->Can_Be_Mounted) {
-			(*iter)->Update_Size(true);
+			(*iter)->Update_Size(Display_Msg);
 			if ((*iter)->Mount_Point == "/system") {
 				int backup_display_size = (int)((*iter)->Backup_Size / 1048576LLU);
 				DataManager::SetValue(TW_BACKUP_SYSTEM_SIZE, backup_display_size);
@@ -2175,7 +2176,8 @@ void TWPartitionManager::Update_System_Details(void) {
 	if (!Write_Fstab())
 		LOGE("Error creating fstab\n");
 
-	ui_print("Partition details updated.\n");
+	if (Display_Msg)
+		ui_print("Partition details updated.\n");
 	return;
 }
 
@@ -2294,7 +2296,7 @@ int TWPartitionManager::Decrypt_Device(string Password) {
 				Output_Partition(dat);
 			}
 #endif
-			Update_System_Details();
+			Update_System_Details(true);
 			UnMount_Main_Partitions();
 		} else
 			LOGE("Unable to locate data partition.\n");
@@ -2310,7 +2312,7 @@ int TWPartitionManager::Decrypt_Device(string Password) {
 int TWPartitionManager::Fix_Permissions(void) {
 	int result = 0, sdext_mounted = 0;
 	int dataonext, data_size = 0;
-	Update_System_Details();
+	Update_System_Details(false);
 
 	TWPartition* SDext = Find_Partition_By_Path("/sd-ext");
 	if (SDext != NULL) {
@@ -2433,7 +2435,7 @@ int TWPartitionManager::usb_storage_disable(void) {
 
 		if ((fd = open(lun_file, O_WRONLY)) < 0) {
 			Mount_All_Storage();
-			Update_System_Details();
+			Update_System_Details(false);
 			if (index == 0) {
 				LOGE("Unable to open ums lunfile '%s': (%s)", lun_file, strerror(errno));
 				return false;
@@ -2445,7 +2447,7 @@ int TWPartitionManager::usb_storage_disable(void) {
 		if (write(fd, &ch, 1) < 0) {
 			close(fd);
 			Mount_All_Storage();
-			Update_System_Details();
+			Update_System_Details(false);
 			if (index == 0) {
 				LOGE("Unable to write to ums lunfile '%s': (%s)", lun_file, strerror(errno));
 				return false;
@@ -2456,7 +2458,7 @@ int TWPartitionManager::usb_storage_disable(void) {
 		close(fd);
 	}
 	Mount_All_Storage();
-	Update_System_Details();
+	Update_System_Details(false);
 	UnMount_Main_Partitions();
 	return true;
 }
@@ -3003,7 +3005,7 @@ int TWPartitionManager::Partition_SDCard(void) {
 	} else if (sdext2_size == 0)
     		DataManager::SetValue(TW_HAS_SDEXT2_PARTITION, 0);
 
-	Update_System_Details();
+	Update_System_Details(true);
 
 	// Print partitions in log so we can check if new partitions are detected by the kernel
 	Command = "cat /proc/partitions";
@@ -3085,7 +3087,7 @@ int TWPartitionManager::FSConvert_SDEXT(string extpath) {
 		TWFunc::Exec_Cmd(Command, result);
 		Command = "tune2fs -c " + n_mounts + " " + SDext->Primary_Block_Device;
 		TWFunc::Exec_Cmd(Command, result);
-		Update_System_Details();
+		Update_System_Details(false);
 
 		if (restore_needed) {
 			SDext->Mount(true);
@@ -3096,7 +3098,7 @@ int TWPartitionManager::FSConvert_SDEXT(string extpath) {
 			TWFunc::Exec_Cmd(Command, result);
 		}
 		ui_print("EXT formatting completed.\n");
-		Update_System_Details();
+		Update_System_Details(true);
 	}
 	return true;
 }
