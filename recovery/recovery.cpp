@@ -69,6 +69,7 @@ static const struct option OPTIONS[] = {
 	{ "just_exit", no_argument, NULL, 'x' },
 	{ "nandroid", no_argument, NULL, 'n' },
 	{ "restore", required_argument, NULL, 'r' },
+	{ "partition_sd", required_argument, NULL, 'z' },
 	{ NULL, 0, NULL, 0 },
 };
 
@@ -808,6 +809,7 @@ int main(int argc, char **argv) {
 	const char *send_intent = NULL;
 	const char *update_package = NULL;
 	const char *restore_arg = NULL;
+	const char *partition_arg = NULL;
 	int wipe_data = 0, wipe_cache = 0;
 	bool just_exit = false;
 	bool perform_backup = false;
@@ -824,6 +826,7 @@ int main(int argc, char **argv) {
 		case 'x': just_exit = true; break;
 		case 'n': perform_backup = true; LOGI("nandroid\n"); break;
 		case 'r': restore_arg = optarg; break;
+		case 'z': partition_arg = optarg; break;
 		case '?':
 			LOGE("Invalid command argument\n");
 			continue;
@@ -848,6 +851,11 @@ int main(int argc, char **argv) {
 		printf(" \"%s\"", argv[arg]);
 	}
 	printf("\n");
+
+	if (partition_arg) {
+		string partition_cmd = partition_arg;
+		PartitionManager.Format_SDCard(partition_cmd);
+	}
 
 	if (update_package) {
 		// For backwards compatibility on the cache partition only, if

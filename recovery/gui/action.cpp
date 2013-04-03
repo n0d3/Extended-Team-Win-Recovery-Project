@@ -445,7 +445,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			ui_print("Simulating actions...\n");
 		else {
 			DataManager::ResetDefaults();
-			PartitionManager.Update_System_Details();
+			PartitionManager.Update_System_Details(true);
 			PartitionManager.Mount_Current_Storage(true);
 		}
 		operation_end(0, simulate);
@@ -692,7 +692,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 					ui_print("TWRP injection complete.\n");
 				}
 			}
-			PartitionManager.Update_System_Details();
+			PartitionManager.Update_System_Details(true);
 			zip_queue_index = 0;
 			DataManager::SetValue(TW_ZIP_QUEUE_COUNT, zip_queue_index);
 			DataManager::SetValue(TW_ZIP_INDEX, 0);
@@ -757,7 +757,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 					}
 				}
 			}
-			PartitionManager.Update_System_Details();
+			PartitionManager.Update_System_Details(true);
 			if (ret_val) {
 				ret_val = 0; // 0 is success
 				TWFunc::Vibrate((FeedbackReason)150);
@@ -771,7 +771,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			if (simulate) {
 				simulate_progress_bar();
 			} else
-				PartitionManager.Update_System_Details();
+				PartitionManager.Update_System_Details(true);
 			operation_end(0, simulate);
 		}
 		if (function == "nandroid") {

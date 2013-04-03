@@ -1144,8 +1144,9 @@ void DataManager::ReadSettingsFile(void)
 		return;
 
 	// Load up the values for TWRP - Sleep to let the card be ready
-	char mkdir_path[255], settings_file[255];
-	int is_enc, has_dual, use_ext, has_data_media, has_ext;
+	char mkdir_path[255], settings_file[255], alter_settings_file[255];
+	int is_enc, has_dual, use_ext, has_data_media, has_ext, storage_mounted = 1;
+	string rm = "rm -f ";
 
 	GetValue(TW_IS_ENCRYPTED, is_enc);
 	GetValue(TW_HAS_DATA_MEDIA, has_data_media);
@@ -1156,20 +1157,43 @@ void DataManager::ReadSettingsFile(void)
 
 	memset(mkdir_path, 0, sizeof(mkdir_path));
 	memset(settings_file, 0, sizeof(settings_file));
+	memset(alter_settings_file, 0, sizeof(alter_settings_file));
 	sprintf(mkdir_path, "%s/TWRP", DataManager_GetSettingsStoragePath());
 	sprintf(settings_file, "%s/.twrps", mkdir_path);
+	sprintf(alter_settings_file, "%s/.twrps", "/cache/recovery");
+	rm += alter_settings_file;
 
-	if (!PartitionManager.Mount_Settings_Storage(false))
-	{
-		usleep(500000);
-		if (!PartitionManager.Mount_Settings_Storage(false))
-			LOGE("Unable to mount %s when trying to read settings file.\n", DataManager_GetSettingsStorageMount());
+	if (PartitionManager.Mount_By_Path("/cache", false)) {
+		if (TWFunc::Path_Exists(alter_settings_file)) {
+			LOGI("Attempt to load settings from settings file on /cache...\n");
+			if (LoadValues(alter_settings_file) == 0) {
+				SettingsFileRead = 1;
+				system(rm.c_str());
+				PartitionManager.UnMount_By_Path("/cache", false);
+				goto done;
+			}
+		}
+		PartitionManager.UnMount_By_Path("/cache", false);
 	}
 
-	mkdir(mkdir_path, 0777);
-
 	LOGI("Attempt to load settings from settings file on /sdcard...\n");
-	LoadValues(settings_file);
+	if (!PartitionManager.Mount_Settings_Storage(false)) {
+		storage_mounted = 0;
+		usleep(500000);
+		if (!PartitionManager.Mount_Settings_Storage(false)) {
+			LOGE("Unable to mount %s when trying to read settings file.\n", DataManager_GetSettingsStorageMount());
+			storage_mounted = 0;
+		} else
+			storage_mounted = 1;
+	}
+
+	if (storage_mounted) {
+		mkdir(mkdir_path, 0777);
+		if (LoadValues(settings_file) == 0)
+			SettingsFileRead = 1;
+	}		
+
+done:
 	Output_Version();
 	GetValue(TW_HAS_DUAL_STORAGE, has_dual);
 	GetValue(TW_USE_EXTERNAL_STORAGE, use_ext);
@@ -1196,8 +1220,7 @@ void DataManager::ReadSettingsFile(void)
 		GetValue(TW_EXTERNAL_PATH, ext_path);
 		PartitionManager.Mount_By_Path(ext_path, 0);
 	}
-	update_tz_environment_variables();
-	SettingsFileRead = 1;
+	update_tz_environment_variables();	
 }
 
 string DataManager::GetCurrentStoragePath(void)

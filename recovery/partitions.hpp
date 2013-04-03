@@ -359,13 +359,15 @@ class TWPartitionManager {
 		// Unmounts system and data if not data/media and boot if boot is mountable
 		virtual void UnMount_Main_Partitions(void);                               
 		// Repartitions the sdcard
-		virtual int Partition_SDCard(void);                                       
+		virtual int Partition_SDCard(void); 
+		virtual int Format_SDCard(string cmd);                                    
 		virtual int Fix_Permissions(); 
 		// Generates an MD5 after a backup is made
 		virtual bool Make_MD5(bool generate_md5, string Backup_Folder, string Backup_Filename); 
 		
 	// Extended functions
 		static int Fstab_Proc_Done;
+		static int SD_Partitioning_Done_Once;
 		// Wipe all partitions except /sdcard
 		virtual int Wipe_All_But_SDCARD(void);
 		// Check filesystem of SD Card's partitions
