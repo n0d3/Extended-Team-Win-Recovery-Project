@@ -24,16 +24,6 @@ on init
     write /sys/class/android_usb/android0/idProduct D001
     write /sys/class/android_usb/android0/functions adb
 
-# SD Card tweak
-    write /sys/devices/virtual/bdi/179:0/read_ahead_kb 2048
-
-# Flash tweaks 
-    write /sys/block/mtdblock1/bdi/read_ahead_kb 128
-    write /sys/block/mtdblock2/bdi/read_ahead_kb 128
-    write /sys/block/mtdblock3/bdi/read_ahead_kb 128
-    write /sys/block/mtdblock4/bdi/read_ahead_kb 128
-    write /sys/block/mtdblock5/bdi/read_ahead_kb 128
-
 ########################## WIP ##########################
 on fs
 # Run the script that will edit recovery.fstab:
