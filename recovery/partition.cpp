@@ -1891,8 +1891,7 @@ bool TWPartition::Restore_Tar(string restore_folder, string Restore_File_System)
 	if (Backup_Name == "sd-ext" || Backup_Name == "sdext2") {
 		if ((!dataonext) || (dataonext && data_pth == Backup_Path)) {
 			// Set number of mounts that will trigger a filesystem check from settings
-			int n_mounts = DataManager::GetIntValue("tw_num_of_mounts_for_fs_check");
-			Command = "tune2fs -c " + TWFunc::to_string(n_mounts) + " " + Primary_Block_Device;
+			Command = "tune2fs -c " + DataManager::GetStrValue("tw_num_of_mounts_for_fs_check") + " " + Primary_Block_Device;
 			TWFunc::Exec_Cmd(Command, result);
 		}
 	}
@@ -1908,18 +1907,21 @@ bool TWPartition::Restore_Tar(string restore_folder, string Restore_File_System)
 		LOGI("Backup is multiple archives.\n");
 		sprintf(split_index, "%03i", index);
 		Full_FileName += split_index;
+		string tarDir = Backup_Path;
+		if (Backup_Path == "/sd-ext") {
+			if (TarFindEntry(Full_FileName, "sd-ext/"))
+				tarDir = "/";
+		} else if (Backup_Path == "/system") {
+			if (TarFindEntry(Full_FileName, "system/"))
+				tarDir = "/";
+		} else if (Backup_Path == "/data") {
+			if (TarFindEntry(Full_FileName, "data/"))
+				tarDir = "/";
+		}
 		while (TWFunc::Path_Exists(Full_FileName)) {
 			ui_print("Restoring archive %i...\n", index+1);
 			LOGI("Restoring '%s'...\n", Full_FileName.c_str());
-			twrpTar tar;			
-			tar.setfn(Full_FileName);
-			if((Backup_Path == "/sd-ext" && tar.entryExists("sd-ext/"))
-			|| (Backup_Path == "/system" && tar.entryExists("system/"))
-			|| (Backup_Path == "/data" && tar.entryExists("data/")))
-				tar.setdir("/");
-			else			
-				tar.setdir(Backup_Path);
-			if (tar.extractTarFork() != 0)
+			if (!TarExtract(Full_FileName, tarDir))
 				return false;
 			index++;		
 			sprintf(split_index, "%03i", index);
@@ -1930,17 +1932,17 @@ bool TWPartition::Restore_Tar(string restore_folder, string Restore_File_System)
 			return false;
 		}
 	} else {
-		twrpTar tar;
-		tar.setfn(Full_FileName);
-		// For restoring a CWM backup of sd-ext
-		if (Backup_Path == "/sd-ext" && tar.entryExists("sd-ext/"))
-			tar.setdir("/");
-		// For restoring a CWM backup of android_secure
-		else if ((Backup_Path == "/and-sec" || Backup_Path == Mount_Point + "/.android_secure") && tar.entryExists(".android_secure/"))
-			tar.setdir(Storage_Path);
-		else
-			tar.setdir(Backup_Path);
-		if (tar.extractTarFork() != 0)
+		string tarDir = Backup_Path;
+		if (Backup_Path == "/sd-ext") {
+			// Check needed for restoring a CWM backup of sd-ext
+			if (TarFindEntry(Full_FileName, "sd-ext/"))
+				tarDir = "/";
+		} else if (Backup_Path == "/and-sec" || Backup_Path == Mount_Point + "/.android_secure") {
+			// Check needed for restoring a CWM backup of android_secure
+			if (TarFindEntry(Full_FileName, ".android_secure/"))
+				tarDir = Storage_Path;
+		}
+		if (!TarExtract(Full_FileName, tarDir))
 			return false;
 	}
 	return true;
@@ -2034,6 +2036,28 @@ bool TWPartition::Restore_Yaffs_Image(string restore_folder) {
 void TWPartition::Change_FS_Type(string type) {
 	Current_File_System = type;
 	return;
+}
+
+/************************************************************************************
+ * Some Tar wrappers used in restore
+ */
+int TWPartition::TarExtract(string tarfn, string tardir) {
+	twrpTar tar;
+	tar.setfn(tarfn);
+	tar.setdir(tardir);
+	if (tar.extractTarFork() == 0)
+		return 1;
+
+	return 0;
+}
+
+int TWPartition::TarFindEntry(string tarfn, string entry) {
+	twrpTar tar;
+	tar.setfn(tarfn);
+	if (tar.entryExists(entry))
+		return 1;
+
+	return 0;
 }
 
 /************************************************************************************

@@ -76,12 +76,15 @@ class TWPartition {
 		// Recreates the /data/media folder
 		virtual void Recreate_Media_Folder();                                     
 
-		// Extended function
+		// Extended functions
 		virtual int CheckFor_ValidIMG();
 		virtual unsigned int FS_Type_Via_statfs();
 		// When formatting card's partitions to different fs
 		virtual void Change_FS_Type(string type);
-	
+		// Used in restoring tar
+		virtual int TarExtract(string tarfn, string tardir);
+		virtual int TarFindEntry(string tarfn, string entry);
+
 	public:
 		// Indicates if the partition is a swap partition
 		bool Swap;                                                        

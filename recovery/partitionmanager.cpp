@@ -1543,6 +1543,7 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 	if (restore_sp3 != NULL && !Restore_Partition(restore_sp3, Restore_Name, partition_count))
 		return false;
 
+	sleep(3);
 	TWFunc::GUI_Operation_Text(TW_UPDATE_SYSTEM_DETAILS_TEXT, "Updating System Details");
 	Update_System_Details(true);
 	UnMount_Main_Partitions();
