@@ -8,7 +8,7 @@ LOCAL_MODULE_CLASS := RECOVERY_EXECUTABLES
 LOCAL_MODULE_PATH := $(TARGET_RECOVERY_ROOT_OUT)/sbin
 LOCAL_MODULES_TAGS = optional
 LOCAL_CFLAGS = 
-LOCAL_SRC_FILES = pigz.c yarn.c zopfli/deflate.c zopfli/blocksplitter.c zopfli/tree.c zopfli/lz77.c zopfli/cache.c zopfli/hash.c zopfli/util.c zopfli/squeeze.c zopfli/katajainen.c
+LOCAL_SRC_FILES = pigz.c yarn.c
 LOCAL_C_INCLUDES += $(LOCAL_PATH) \
 					external/zlib
 LOCAL_SHARED_LIBRARIES += libz libc
