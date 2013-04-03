@@ -66,8 +66,13 @@ class twrpTar {
 		int Archive_Current_Type;	// the type of the archive currently chosen to be extracted
 		int getArchiveType();		// 1 for compressed - 0 for uncompressed
 		TAR *t;
+		// for creating
 		FILE* p;
 		int fd;
+		// for opening
+		FILE* rp;	
+		int rfd;
+
 		string tardir;
 		string tarexclude;
 		string tarfn;

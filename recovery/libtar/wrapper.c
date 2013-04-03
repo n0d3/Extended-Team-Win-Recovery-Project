@@ -69,10 +69,12 @@ tar_extract_all(TAR *t, char *prefix)
 		puts("    tar_extract_all(): calling th_get_pathname()");
 #endif
 		filename = th_get_pathname(t);
+		/*if (strcmp(filename, "/") == 0)
+			continue;*/
 		if (t->options & TAR_VERBOSE)
 			th_print_long_ls(t);
-		if (prefix != NULL)
-			snprintf(buf, sizeof(buf), "%s/%s", prefix, filename);
+		if (prefix)
+			snprintf(buf, sizeof(buf), "%s%s", prefix, filename);
 		else
 			strlcpy(buf, filename, sizeof(buf));
 #ifdef DEBUG
@@ -80,12 +82,6 @@ tar_extract_all(TAR *t, char *prefix)
 		       "\"%s\")\n", buf);
 #endif
 		printf("item name: '%s'\n", filename);
-		/*
-		if (strcmp(filename, "/") == 0) {
-			printf("skipping /\n");
-			continue;
-		}
-		*/
 		if (tar_extract_file(t, buf, prefix) != 0)  
 			return -1;
 	}

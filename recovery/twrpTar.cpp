@@ -56,137 +56,181 @@ void twrpTar::setexcl(string exclude) {
 }
 
 int twrpTar::createTarGZFork() {
-	int status;
-	pid_t pid;
-	if ((pid = fork()) == -1) {
-		LOGI("create tar failed to fork.\n");
+	int status = 0;
+	pid_t pid, rc_pid;
+
+	pid = fork();
+	if (pid >= 0) // fork was successful
+	{
+		if (pid == 0) // child process
+		{
+			if (createTGZ() != 0)
+				exit(-1);
+			else
+				exit(0);
+		}
+		else // parent process
+		{
+			sleep(1);
+			rc_pid = waitpid(pid, &status, 0);
+			if (rc_pid > 0) {
+				if (WEXITSTATUS(status) == 0)
+					LOGI("createTarGZFork(): Child process ended with RC=%d\n", WEXITSTATUS(status));
+				else if (WIFSIGNALED(status)) {
+					LOGI("createTarGZFork(): Child process ended with signal: %d\n", WTERMSIG(status));
+					return -1;
+				}					
+			}
+			else // no PID returned
+			{
+				if (errno == ECHILD)
+					LOGI("createTarGZFork(): No child process exist\n");
+				else {
+					LOGI("createTarGZFork(): Unexpected error\n");
+					return -1;
+				}
+			}
+		}
+	}
+	else // fork has failed
+	{
+		LOGI("create tarGZ failed to fork.\n");
 		return -1;
-	}
-	if (pid == 0) {
-		if (createTGZ() != 0)
-			exit(-1);
-		else
-			exit(0);
-	}
-	else {
-		if ((pid = wait(&status)) == -1) {
-			LOGI("Tar creation failed\n");
-			return -1;
-		}
-		else {
-			if (WIFSIGNALED(status) != 0) {
-				LOGI("Child process ended with signal: %d\n", WTERMSIG(status));
-				return -1;
-			}
-			else if (WIFEXITED(status) != 0)
-				LOGI("Tar creation successful\n");
-			else {
-				LOGI("Tar creation failed\n");
-				return -1;
-			}
-		}
 	}
 	return 0;
 }
 
 int twrpTar::createTarFork() {
-	int status;
-	pid_t pid;
-	if ((pid = fork()) == -1) {
+	int status = 0;
+	pid_t pid, rc_pid;
+
+	pid = fork();
+	if (pid >= 0) // fork was successful
+	{
+		if (pid == 0) // child process
+		{
+			if (create() != 0)
+				exit(-1);
+			else
+				exit(0);
+		}
+		else // parent process
+		{
+			sleep(1);
+			rc_pid = waitpid(pid, &status, 0);
+			if (rc_pid > 0) {
+				if (WEXITSTATUS(status) == 0)
+					LOGI("createTarFork(): Child process ended with RC=%d\n", WEXITSTATUS(status));
+				else if (WIFSIGNALED(status)) {
+					LOGI("createTarFork(): Child process ended with signal: %d\n", WTERMSIG(status));
+					return -1;
+				}					
+			}
+			else // no PID returned
+			{
+				if (errno == ECHILD)
+					LOGI("createTarFork(): No child process exist\n");
+				else {
+					LOGI("createTarFork(): Unexpected error\n");
+					return -1;
+				}
+			}
+		}
+	}
+	else // fork has failed
+	{
 		LOGI("create tar failed to fork.\n");
 		return -1;
-	}
-	if (pid == 0) {
-		if (create() != 0)
-			exit(-1);
-		else
-			exit(0);
-	}
-	else {
-		if ((pid = wait(&status)) == -1) {
-			LOGI("Tar creation failed\n");
-			return -1;
-		}
-		else {
-			if (WIFSIGNALED(status) != 0) {
-				LOGI("Child process ended with signal: %d\n", WTERMSIG(status));
-				return -1;
-			}
-			else if (WEXITSTATUS(status) == 0)
-				LOGI("Tar creation successful\n");
-			else {
-				LOGI("Tar creation failed\n");
-				return -1;
-			}
-		}
 	}
 	return 0;
 }
 
 int twrpTar::extractTarFork() {
-	int status;
-	pid_t pid;
-	if ((pid = fork()) == -1) {
+	int status = 0;
+	pid_t pid, rc_pid;
+
+	pid = fork();
+	if (pid >= 0) // fork was successful
+	{
+		if (pid == 0) // child process
+		{
+			if (extract() != 0)
+				exit(-1);
+			else
+				exit(0);
+		}
+		else // parent process
+		{
+			sleep(1);
+			rc_pid = waitpid(pid, &status, 0);
+			if (rc_pid > 0) {
+				if (WEXITSTATUS(status) == 0)
+					LOGI("extractTarFork(): Child process ended with RC=%d\n", WEXITSTATUS(status));
+				else if (WIFSIGNALED(status)) {
+					LOGI("extractTarFork(): Child process ended with signal: %d\n", WTERMSIG(status));
+					return -1;
+				}					
+			}
+			else // no PID returned
+			{
+				if (errno == ECHILD)
+					LOGI("extractTarFork(): No child process exist\n");
+				else {
+					LOGI("extractTarFork(): Unexpected error\n");
+					return -1;
+				}
+			}
+		}
+	}
+	else // fork has failed
+	{
 		LOGI("extract tar failed to fork.\n");
 		return -1;
-	}
-	if (pid == 0) {
-		if (extract() != 0)
-			exit(-1);
-		else
-			exit(0);
-	}
-	else {
-		if ((pid = wait(&status)) == -1) {
-			LOGI("Tar extraction failed\n");
-			return -1;
-		}
-		else {
-			if (WIFSIGNALED(status) != 0) {
-				LOGI("Child process ended with signal: %d\n", WTERMSIG(status));
-				return -1;
-			}
-			else if (WEXITSTATUS(status) == 0)
-				LOGI("Tar extraction successful\n");
-			else {
-				LOGI("Tar extraction failed\n");
-				return -1;
-			}
-		}
 	}
 	return 0;
 }
 
 int twrpTar::splitArchiveFork() {
-	int status;
-	pid_t pid;
-	if ((pid = fork()) == -1) {
-		LOGI("create split-tar failed to fork.\n");
+	int status = 0;
+	pid_t pid, rc_pid;
+
+	pid = fork();
+	if (pid >= 0) // fork was successful
+	{
+		if (pid == 0) // child process
+		{
+			if (Split_Archive() != 0)
+				exit(-1);
+			else
+				exit(0);
+		}
+		else // parent process
+		{
+			sleep(1);
+			rc_pid = waitpid(pid, &status, 0);
+			if (rc_pid > 0) {
+				if (WEXITSTATUS(status) == 0)
+					LOGI("splitArchiveFork(): Child process ended with RC=%d\n", WEXITSTATUS(status));
+				else if (WIFSIGNALED(status)) {
+					LOGI("splitArchiveFork(): Child process ended with signal: %d\n", WTERMSIG(status));
+					return -1;
+				}					
+			}
+			else // no PID returned
+			{
+				if (errno == ECHILD)
+					LOGI("splitArchiveFork(): No child process exist\n");
+				else {
+					LOGI("splitArchiveFork(): Unexpected error\n");
+					return -1;
+				}
+			}
+		}
+	}
+	else // fork has failed
+	{
+		LOGI("split archive failed to fork.\n");
 		return -1;
-	}
-	if (pid == 0) {
-		if (Split_Archive() != 0)
-			exit(-1);
-		else
-			exit(0);
-	}
-	else {
-		if ((pid = wait(&status)) == -1) {
-			LOGI("Tar creation failed\n");
-			return -1;
-		}
-		else {
-			if (WIFSIGNALED(status) != 0) {
-				LOGI("Child process ended with signal: %d\n", WTERMSIG(status));
-				return -1;
-			}
-			else if (WIFEXITED(status) != 0)
-				LOGI("Tar creation successful\n");
-			else {
-				LOGI("Tar creation failed\n");
-				return -1;
-			}
-		}
 	}
 	return 0;
 }
@@ -490,7 +534,6 @@ int twrpTar::addFilesToExistingTar(vector <string> files, string fn) {
 }
 
 int twrpTar::createTar() {
-	char* charRootDir = (char*) tardir.c_str();
 	char* charTarFile = (char*) tarfn.c_str();
 	int use_compression = 0;
 	static tartype_t type = { open, close, read, write_tar };
@@ -514,18 +557,17 @@ int twrpTar::createTar() {
 }
 
 int twrpTar::openTar(bool gzip) {
-	char* charRootDir = (char*) tardir.c_str();
 	char* charTarFile = (char*) tarfn.c_str();
 
 	if (gzip) {
 		LOGI("Opening as a gzip\n");
 		string cmd = "pigz -d -c '" + tarfn + "'";
-		FILE* pipe = popen(cmd.c_str(), "r");
-		int fd = fileno(pipe);
-		if (!pipe) return -1;
-		if(tar_fdopen(&t, fd, charTarFile, NULL, O_RDONLY | O_LARGEFILE, 0644, TAR_GNU) != 0) {
+		rp = popen(cmd.c_str(), "r");
+		rfd = fileno(rp);
+		if (!rp) return -1;
+		if(tar_fdopen(&t, rfd, charTarFile, NULL, O_RDONLY | O_LARGEFILE, 0644, TAR_GNU) != 0) {
 			LOGI("tar_fdopen returned error\n");
-			__pclose(pipe);
+			__pclose(rp);
 			return -1;
 		}
 	}
@@ -625,9 +667,8 @@ int twrpTar::compress(string fn) {
 
 int twrpTar::extractTGZ() {
 	string splatrootdir(tardir);
-	bool gzip = true;
 	char* splatCharRootDir = (char*) splatrootdir.c_str();
-	if (openTar(gzip) == -1)
+	if (openTar(true) == -1)
 		return -1;
 	int ret = tar_extract_all(t, splatCharRootDir);
 	if (tar_close(t) != 0) {
@@ -642,7 +683,6 @@ int twrpTar::entryExists(string entry) {
 	int ret;
 
 	Archive_Current_Type = getArchiveType();
-
 	if (openTar(Archive_Current_Type) == -1)
 		ret = 0;
 	else
@@ -650,6 +690,11 @@ int twrpTar::entryExists(string entry) {
 
 	if (tar_close(t) != 0)
 		LOGI("Unable to close tar file after searching for entry '%s'.\n", entry.c_str());
+
+	if (Archive_Current_Type == 1) {
+		pclose(rp);
+		close(rfd);
+	}
 
 	return ret;
 }
@@ -661,7 +706,6 @@ unsigned long long twrpTar::uncompressedSize() {
 	vector<string> split;
 
 	Tar = TWFunc::Get_Filename(tarfn);
-	LOGI("%s's ", Tar.c_str());
 	type = getArchiveType();
 	if (type == 0)
 		total_size = TWFunc::Get_File_Size(tarfn);
