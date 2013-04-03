@@ -502,15 +502,19 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 		
 		string offset;
 		DataManager::GetValue(TW_TIME_ZONE_GUIOFFSET, offset); // pull in offset
-		
 		string NewTimeZone = Zone;
-		if (offset != "0")
-			NewTimeZone += ":" + offset;
-		
+		string DisplayTimeZone = Zone;
 		if (dst != 0)
-			NewTimeZone += DSTZone;
+			NewTimeZone = DSTZone;
+		if (offset != "0") {
+			NewTimeZone += ":" + offset;
+			DisplayTimeZone += ":" + offset;
+		}
+		if (dst != 0)
+			DisplayTimeZone += " (DST)";
 		
 		DataManager::SetValue(TW_TIME_ZONE_VAR, NewTimeZone);
+		DataManager::SetValue(TW_DISP_TIME_ZONE_VAR, DisplayTimeZone);
 		DataManager::update_tz_environment_variables();
 		return 0;
 	}

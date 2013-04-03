@@ -3188,30 +3188,30 @@
 				<background color="%listbox_background%" />
 				<font resource="font" spacing="%listbox_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
 				<data name="tw_time_zone_guisel" />
-				<listitem name="(UTC -11) Samoa, Midway Island">BST11;BDT</listitem>
-				<listitem name="(UTC -10) Hawaii">HST10;HDT</listitem>
-				<listitem name="(UTC -9) Alaska">AST9;ADT</listitem>
-				<listitem name="(UTC -8) Pacific Time">PST8;PDT</listitem>
-				<listitem name="(UTC -7) Mountain Time">MST7;MDT</listitem>
-				<listitem name="(UTC -6) Central Time">CST6;CDT</listitem>
-				<listitem name="(UTC -5) Eastern Time">EST5;EDT</listitem>
-				<listitem name="(UTC -4) Atlantic Time">AST4;ADT</listitem>
-				<listitem name="(UTC -3) Brazil, Buenos Aires">GRNLNDST3;GRNLNDDT</listitem>
-				<listitem name="(UTC -2) Mid-Atlantic">FALKST2;FALKDT</listitem>
-				<listitem name="(UTC -1) Azores, Cape Verde">AZOREST1;AZOREDT</listitem>
-				<listitem name="(UTC  0) London, Dublin, Lisbon">GMT0;BST</listitem>
-				<listitem name="(UTC +1) Berlin, Brussels, Paris">NFT-1;DFT</listitem>
-				<listitem name="(UTC +2) Athens, Istanbul, South Africa">WET-2;WET</listitem>
-				<listitem name="(UTC +3) Moscow, Baghdad">SAUST-3;SAUDT</listitem>
-				<listitem name="(UTC +4) Abu Dhabi, Tbilisi, Muscat">WST-4;WDT</listitem>
-				<listitem name="(UTC +5) Yekaterinburg, Islamabad">PAKST-5;PAKDT</listitem>
-				<listitem name="(UTC +6) Almaty, Dhaka, Colombo">TASHST-6;TASHDT</listitem>
-				<listitem name="(UTC +7) Bangkok, Hanoi, Jakarta">THAIST-7;THAIDT</listitem>
-				<listitem name="(UTC +8) Beijing, Singapore, Hong Kong">TAIST-8;TAIDT</listitem>
-				<listitem name="(UTC +9) Tokyo, Seoul, Yakutsk">JST-9;JSTDT</listitem>
-				<listitem name="(UTC +10) Eastern Australia, Guam">EET-10;EETDT</listitem>
-				<listitem name="(UTC +11) Vladivostok, Solomon Islands">MET-11;METDT</listitem>
-				<listitem name="(UTC +12) Auckland, Wellington, Fiji">NZST-12;NZDT</listitem>
+				<listitem name="(UTC -11) Samoa, Midway Island">BST11;HST10</listitem>
+				<listitem name="(UTC -10) Hawaii">HST10;AST9</listitem>
+				<listitem name="(UTC -9) Alaska">AST9;PST8</listitem>
+				<listitem name="(UTC -8) Pacific Time">PST8;MST7</listitem>
+				<listitem name="(UTC -7) Mountain Time">MST7;CST6</listitem>
+				<listitem name="(UTC -6) Central Time">CST6;EST5</listitem>
+				<listitem name="(UTC -5) Eastern Time">EST5;AST4</listitem>
+				<listitem name="(UTC -4) Atlantic Time">AST4;GRNLNDST3</listitem>
+				<listitem name="(UTC -3) Brazil, Buenos Aires">GRNLNDST3;FALKST2</listitem>
+				<listitem name="(UTC -2) Mid-Atlantic">FALKST2;AZOREST1</listitem>
+				<listitem name="(UTC -1) Azores, Cape Verde">AZOREST1;GMT0</listitem>
+				<listitem name="(UTC  0) London, Dublin, Lisbon">GMT0;NFT-1</listitem>
+				<listitem name="(UTC +1) Berlin, Brussels, Paris">NFT-1;WET-2</listitem>
+				<listitem name="(UTC +2) Athens, Istanbul, South Africa">WET-2;SAUST-3</listitem>
+				<listitem name="(UTC +3) Moscow, Baghdad">SAUST-3;WST-4</listitem>
+				<listitem name="(UTC +4) Abu Dhabi, Tbilisi, Muscat">WST-4;PAKST-5</listitem>
+				<listitem name="(UTC +5) Yekaterinburg, Islamabad">PAKST-5;TASHST-6</listitem>
+				<listitem name="(UTC +6) Almaty, Dhaka, Colombo">TASHST-6;THAIST-7</listitem>
+				<listitem name="(UTC +7) Bangkok, Hanoi, Jakarta">THAIST-7;TAIST-8</listitem>
+				<listitem name="(UTC +8) Beijing, Singapore, Hong Kong">TAIST-8;JST-9</listitem>
+				<listitem name="(UTC +9) Tokyo, Seoul, Yakutsk">JST-9;EET-10</listitem>
+				<listitem name="(UTC +10) Eastern Australia, Guam">EET-10;MET-11</listitem>
+				<listitem name="(UTC +11) Vladivostok, Solomon Islands">MET-11;NZST-12</listitem>
+				<listitem name="(UTC +12) Auckland, Wellington, Fiji">NZST-12;UTC+11:00</listitem>
 			</object>
 
 			<object type="checkbox">
@@ -3276,7 +3276,7 @@
 			<object type="text" color="%text_color%">
 				<font resource="font" />
 				<placement x="%center_x%" y="%tz_current_y%" placement="5" />
-				<text>Current Time Zone: %tw_time_zone%</text>
+				<text>Current Time Zone: %tw_display_time_zone%</text>
 			</object>
 
 			<object type="action">

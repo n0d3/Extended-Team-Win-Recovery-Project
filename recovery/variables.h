@@ -182,6 +182,7 @@
 #define TW_ZIP_EXTERNAL_VAR         	"tw_zip_external"
 #define TW_REBOOT_AFTER_FLASH_VAR   	"tw_reboot_after_flash_option"
 #define TW_TIME_ZONE_VAR            	"tw_time_zone"
+#define TW_DISP_TIME_ZONE_VAR          	"tw_display_time_zone"
 #define TW_RM_RF_VAR                	"tw_rm_rf"
 
 #define TW_BACKUPS_FOLDER_VAR       	"tw_backups_folder"
