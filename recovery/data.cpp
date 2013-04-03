@@ -327,39 +327,44 @@ int DataManager::LoadValues(const string filename) {
 
 	// Read in the file, if possible
 	FILE* in = fopen(filename.c_str(), "rb");
-	if (!in)	return 0;
+	if (in == NULL)					return -1;
 
-	int file_version;
-	if (fread(&file_version, 1, sizeof(int), in) != sizeof(int))	goto error;
-	if (file_version != FILE_VERSION)							   goto error;
+	int add, position, file_size, file_version, err;
+	int a, b, c, d;
+	fseek(in, 0 , SEEK_END);
+	file_size = ftell(in);
+	rewind(in);
 
-	while (!feof(in))
-	{
+	position = fread(&file_version, 1, sizeof(int), in);
+	if (position != sizeof(int))			goto error;
+	if (file_version != FILE_VERSION)		goto error;
+
+	while (position < file_size) {
 		string Name;
 		string Value;
 		unsigned short length;
 		char array[512];
 
-		if (fread(&length, 1, sizeof(unsigned short), in) != sizeof(unsigned short))	goto error;
-		if (length >= 512)								goto error;
-		if (fread(array, 1, length, in) != length)					goto error;
+		a = fread(&length, 1, sizeof(unsigned short), in);
+		if (a != sizeof(unsigned short))	goto error;
+		if (length >= 512)			goto error;
+		b = fread(array, 1, length, in);
+		if (b != length)			goto error;
 		Name = array;
-
-		if (fread(&length, 1, sizeof(unsigned short), in) != sizeof(unsigned short))	goto error;
-		if (length >= 512)								goto error;
-		if (fread(array, 1, length, in) != length)					goto error;
+		c = fread(&length, 1, sizeof(unsigned short), in);
+		if (c != sizeof(unsigned short))	goto error;
+		if (length >= 512)			goto error;
+		d = fread(array, 1, length, in);
+		if (d != length)			goto error;
 		Value = array;
-
 		map<string, TStrIntPair>::iterator pos;
-
 		pos = mValues.find(Name);
-		if (pos != mValues.end())
-		{
+		if (pos != mValues.end()) {
 			pos->second.first = Value;
 			pos->second.second = 1;
-		}
-		else
+		} else
 			mValues.insert(TNameValuePair(Name, TStrIntPair(Value, 1)));
+		position += (a + b + c + d);
 	}
 	fclose(in);
 	SetBackupFolder(GetCurrentStoragePath());
@@ -369,7 +374,7 @@ error:
 	// File version mismatch. Use defaults.
 	fclose(in);
 	SetBackupFolder(GetCurrentStoragePath());
-	return -1;
+	return 1;
 }
 
 int DataManager::Flush()
@@ -385,6 +390,8 @@ int DataManager::SaveValues()
 	string mount_path = GetSettingsStoragePath();
 	if (!PartitionManager.Is_Mounted_By_Path(mount_path.c_str()))
 		PartitionManager.Mount_By_Path(mount_path.c_str(), 1);
+	if (!PartitionManager.Is_Mounted_By_Path(mount_path.c_str()))
+		return -1;
 
 	FILE* out = fopen(mBackingFile.c_str(), "wb");
 	if (!out)
@@ -394,11 +401,9 @@ int DataManager::SaveValues()
 	fwrite(&file_version, 1, sizeof(int), out);
 
 	map<string, TStrIntPair>::iterator iter;
-	for (iter = mValues.begin(); iter != mValues.end(); ++iter)
-	{
+	for (iter = mValues.begin(); iter != mValues.end(); ++iter) {
 		// Save only the persisted data
-		if (iter->second.second != 0)
-		{
+		if (iter->second.second != 0) {
 			unsigned short length = (unsigned short) iter->first.length() + 1;
 			fwrite(&length, 1, sizeof(unsigned short), out);
 			fwrite(iter->first.c_str(), 1, length, out);
