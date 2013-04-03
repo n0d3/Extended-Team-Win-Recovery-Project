@@ -564,7 +564,8 @@ void TWPartition::Recreate_AndSec_Folder(void) {
 	if (!Has_Android_Secure)
 		return;
 
-	Mount_Storage_Retry();
+	if (!Is_Mounted())
+		Mount_Storage_Retry();
 	if (!Is_Mounted())
 		LOGE("Unable to recreate android secure folder.\n");
 	else if (!TWFunc::Path_Exists(Symlink_Path)) {
@@ -1098,11 +1099,7 @@ bool TWPartition::Mount(bool Display_Error) {
 		return false;
 	}
 	if (mount(Actual_Block_Device.c_str(), Mount_Point.c_str(), Current_File_System.c_str(), 0, NULL) != 0) {
-		LOGI("Actual block device: '%s', current file system: '%s'\n", Actual_Block_Device.c_str(), Current_File_System.c_str());
-		if (Display_Error)
-			LOGE("Unable to natively mount:\n'%s' => '%s' as '%s'\n  Retrying using 'mount'...\n", Actual_Block_Device.c_str(), Mount_Point.c_str(), Current_File_System.c_str());
-		else
-			LOGI("Unable to natively mount:\n'%s' => '%s' as '%s'\n  Retrying using 'mount'...\n", Actual_Block_Device.c_str(), Mount_Point.c_str(), Current_File_System.c_str());
+		LOGI("Unable to natively mount:\n'%s' => '%s' as '%s'\n  Retrying using 'mount'...\n", Actual_Block_Device.c_str(), Mount_Point.c_str(), Current_File_System.c_str());
 		Command = "mount " + Actual_Block_Device + " " + Mount_Point;
 		if (TWFunc::Exec_Cmd(Command, result) == 0)
 			return true;
@@ -1173,10 +1170,7 @@ bool TWPartition::UnMount(bool Display_Error) {
 			umount(Symlink_Mount_Point.c_str());
 
 		if (umount(Mount_Point.c_str()) != 0) {
-			if (Display_Error)
-				LOGE("Unable to unmount '%s'\nRetrying with 'umount -l'\n", Mount_Point.c_str());
-			else
-				LOGI("Unable to unmount '%s'\nRetrying with 'umount -l'\n", Mount_Point.c_str());
+			LOGI("Unable to unmount '%s'\nRetrying with 'umount -l'\n", Mount_Point.c_str());
 			Command = "umount -l " + Mount_Point;
 			if (TWFunc::Exec_Cmd(Command, result) == 0) {
 				return true;
@@ -1216,13 +1210,13 @@ bool TWPartition::Is_Mounted(void) {
 
 void TWPartition::Mount_Storage_Retry(void) {
 	// On some devices, storage doesn't want to mount right away, retry and sleep
-	if (!Mount(true)) {
+	if (!Mount(false)) {
 		int retry_count = 5;
 		while (retry_count > 0 && !Mount(false)) {
 			usleep(500000);
 			retry_count--;
 		}
-		Mount(true);
+		Mount(false);
 	}
 }
 
