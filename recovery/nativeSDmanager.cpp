@@ -179,7 +179,7 @@ int TWNativeSDManager::Backup(string RomPath) {
 		time_t start, stop;
 		time(&start);
 		int skip_dalvik;
-		DataManager::GetValue(TW_SKIP_DALVIK, skip_dalvik);
+		DataManager::GetValue(TW_SD_SKIP_DALVIK, skip_dalvik);
 		if (skip_dalvik)
 			Tar_Excl = "dalvik-cache";
 		ui_print("Backing up %s's data...\n", Rom_Name.c_str());

@@ -693,6 +693,7 @@ void DataManager::SetDefaultValues()
 	mValues.insert(make_pair(TW_BOOT_IS_MTD, make_pair("0", 1)));
 
 	mValues.insert(make_pair(TW_SKIP_DALVIK, make_pair("0", 1)));
+	mValues.insert(make_pair(TW_SD_SKIP_DALVIK, make_pair("0", 1)));
 	mValues.insert(make_pair(TW_SKIP_NATIVESD, make_pair("0", 1)));
 
 	mValues.insert(make_pair(TW_BACKUP_SDEXT2_VAR, make_pair("0", 1)));

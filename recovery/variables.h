@@ -44,6 +44,7 @@
 #define TW_SD_USE_COMPRESSION_VAR      	"tw_sd_use_compression"
 #define TW_SD_SKIP_MD5_CHECK_VAR       	"tw_sd_skip_md5_check"
 #define TW_SD_SKIP_MD5_GENERATE_VAR    	"tw_sd_skip_md5_generate"
+#define TW_SD_SKIP_DALVIK		"tw_sd_skip_dalvik"
 
 // cLK's extra boot partition
 #define TW_SDBOOT_PARTITION  	    	"tw_sdboot_partition"
