@@ -1601,6 +1601,10 @@ void TWPartitionManager::Set_Restore_Files(string Restore_Name) {
 			extn = dname.substr((last_occur + 1), (dname.size() - last_occur - 1));
 			
 			if (extn.size() > 3) {
+				if (strncmp(extn.c_str(), "win-", 4) == 0) {
+					split_archive = false;
+					continue; // skip irrelevant files
+				}
 				// check if file's extension has the format *.winxxx, cause this is part of a split archive
 				if (strncmp(extn.c_str(), "winxxx", 3) == 0) {
 					split_archive = true;

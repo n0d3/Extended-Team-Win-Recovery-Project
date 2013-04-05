@@ -648,7 +648,7 @@ void TWPartition::Find_Real_Block_Device(string& Block, bool Display_Error) {
 		return;
 	} else {
 		Block = device;
-		//LOGI("Block: '%s'\n", Block.c_str());
+		LOGI("Block: '%s'\n", Block.c_str());
 		return;
 	}
 }
@@ -657,15 +657,15 @@ void TWPartition::Find_Actual_Block_Device(void) {
 	if (TWFunc::Path_Exists(Primary_Block_Device)) {		
 		Actual_Block_Device = (Is_Decrypted ? Decrypted_Block_Device : Primary_Block_Device);
 		Is_Present = true;
-		//LOGI("Actual_Block_Device: '%s'\n", Actual_Block_Device.c_str());
+		LOGI("Actual_Block_Device: '%s'\n", Actual_Block_Device.c_str());
 		return;
 	} else if (!Alternate_Block_Device.empty() && TWFunc::Path_Exists(Alternate_Block_Device)) {
 		Actual_Block_Device = Alternate_Block_Device;
 		Is_Present = true;
-		//LOGI("Actual_Block_Device: '%s'\n", Actual_Block_Device.c_str());
+		LOGI("Actual_Block_Device: '%s'\n", Actual_Block_Device.c_str());
 		return;
 	}
-	//LOGI("Actual_Block_Device: 'null'\n");
+	LOGI("Actual_Block_Device: 'null'\n");
 	Actual_Block_Device = "";
 	Is_Present = false;
 }
@@ -703,14 +703,14 @@ bool TWPartition::Find_MTD_Block_Device(string MTD_Name) {
 			if (sscanf(device,"mtd%d", &deviceId) == 1) {
 				sprintf(device, "/dev/block/mtdblock%d", deviceId);
 				Primary_Block_Device = device;
-				//LOGI("Primary_Block_Device: '%s'\n", Primary_Block_Device.c_str());
+				LOGI("Primary_Block_Device: '%s'\n", Primary_Block_Device.c_str());
 				fclose(fp);
 				return true;
 			}
 		}
 	}
 	fclose(fp);
-	//LOGI("Primary_Block_Device: 'null'\n");
+	LOGI("Primary_Block_Device: 'null'\n");
 	return false;
 }
 
@@ -2072,13 +2072,15 @@ bool TWPartition::Check_FS_Type() {
 	&& Fstab_File_System != "mtd"
 	&& Fstab_File_System != "bml") {
 		blkid_probe pr = blkid_new_probe_from_filename(Actual_Block_Device.c_str());
-		if (blkid_do_fullprobe(pr))
+		if (blkid_do_fullprobe(pr)) {
 			blkid_free_probe(pr);
-		else {
+			LOGI("Can't probe device %s\n", Actual_Block_Device.c_str());
+		} else {
 			const char* type;
-			if (blkid_probe_lookup_value(pr, "TYPE", &type, NULL) < 0)
+			if (blkid_probe_lookup_value(pr, "TYPE", &type, NULL) < 0) {
 				blkid_free_probe(pr);
-			else
+				LOGI("can't find filesystem on device %s\n", Actual_Block_Device.c_str());
+			} else
 				Current_File_System = type;
 		}
 	} else if (!Is_Present)
