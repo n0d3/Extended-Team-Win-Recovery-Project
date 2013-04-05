@@ -26,6 +26,11 @@ on init
 
 ########################## WIP ##########################
 on fs
+    wait /dev/block/mmcblk0p1
+    wait /dev/block/mmcblk0p1
+    wait /dev/block/mmcblk0p1
+    wait /dev/block/mmcblk0p1
+
 # Run the script that will edit recovery.fstab:
 # and set the proper fs-type for 'boot' partition,
 # depending on which bootloader is installed.
