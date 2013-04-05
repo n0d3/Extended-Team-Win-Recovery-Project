@@ -74,7 +74,7 @@ tar_extract_all(TAR *t, char *prefix)
 		if (t->options & TAR_VERBOSE)
 			th_print_long_ls(t);
 		if (prefix)
-			snprintf(buf, sizeof(buf), "%s%s", prefix, filename);
+			snprintf(buf, sizeof(buf), "%s/%s", prefix, filename);
 		else
 			strlcpy(buf, filename, sizeof(buf));
 #ifdef DEBUG
