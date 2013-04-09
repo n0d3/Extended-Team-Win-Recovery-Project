@@ -2602,6 +2602,14 @@ int TWPartitionManager::Partition_SDCard(void) {
 			if (!TWFunc::Path_Exists("/cache/recovery/."))
 				mkdir("/cache/recovery", S_IRWXU | S_IRWXG | S_IWGRP | S_IXGRP);
 			if (TWFunc::Path_Exists("/cache/recovery/.")) {
+				unsigned long long l = TWFunc::Get_File_Size("/sdcard/TWRP/.twrps");
+				if (Cache->Size - Cache->Backup_Size <= l) {
+					string rm, res;
+					rm = "rm -f /cache/recovery/last_log";
+					TWFunc::Exec_Cmd(rm, res);
+					rm = "rm -f /cache/recovery/last_install";
+					TWFunc::Exec_Cmd(rm, res);
+				}
 				TWFunc::copy_file("/sdcard/TWRP/.twrps", "/cache/recovery/.twrps", 0755);
 				LOGI("Saved a copy of settings file to /cache/recovery.\n");
 			}

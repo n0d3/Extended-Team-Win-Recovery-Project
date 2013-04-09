@@ -761,7 +761,23 @@ bool TWPartition::Update_Size(bool Display_Error) {
 			Can_Be_Mounted = false;
 			Can_Be_Wiped = false;
 		}
-	}	
+	}
+	if (Mount_Point == "/cache") {
+		if (Size - Backup_Size < 1024) {
+			LOGI("Cleaning /cache/recovery logs to free some space...\n");
+			string rm, result;
+			unsigned long long l;
+
+			l = TWFunc::Get_File_Size("/cache/recovery/last_log");
+			rm = "rm -f /cache/recovery/last_log";
+			if (TWFunc::Exec_Cmd(rm, result) == 0)
+				Backup_Size -= l;
+			l = TWFunc::Get_File_Size("/cache/recovery/last_install");
+			rm = "rm -f /cache/recovery/last_install";
+			if (TWFunc::Exec_Cmd(rm, result) == 0)
+				Backup_Size -= l;
+		}
+	}
 	if (Has_Data_Media) {
 		if (Mount(Display_Error)) {
 			unsigned long long data_media_used, actual_data;
