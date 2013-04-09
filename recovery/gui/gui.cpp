@@ -35,10 +35,8 @@
 
 
 extern "C" {
-#include "../common.h"
-#include "../roots.h"
+#include "../twcommon.h"
 #include "../minuitwrp/minui.h"
-#include "../recovery_ui.h"
 #include "../minzip/Zip.h"
 #include <pixelflinger/pixelflinger.h>
 }
@@ -95,7 +93,8 @@ void rapidxml::parse_error_handler(const char *what, void *where)
 {
     fprintf(stderr, "Parser error: %s\n", what);
     fprintf(stderr, "  Start of string: %s\n", (char*) where);
-    abort();
+    LOGERR("Error parsing XML file.\n");
+    //abort();
 }
 
 static void curtainSet()
@@ -202,25 +201,25 @@ static void *input_thread(void *cookie)
 		touch_repeat = 1;
 		gettimeofday(&touchStart, NULL);
 #ifdef _EVENT_LOGGING
-                LOGE("TOUCH_HOLD: %d,%d\n", x, y);
+                LOGERR("TOUCH_HOLD: %d,%d\n", x, y);
 #endif
 		PageManager::NotifyTouch(TOUCH_HOLD, x, y);
 	    } else if (touch_repeat && mtime > 100) {
 #ifdef _EVENT_LOGGING
-                LOGE("TOUCH_REPEAT: %d,%d\n", x, y);
+                LOGERR("TOUCH_REPEAT: %d,%d\n", x, y);
 #endif
 		gettimeofday(&touchStart, NULL);
 		PageManager::NotifyTouch(TOUCH_REPEAT, x, y);
 	    } else if (key_repeat == 1 && mtime > 500) {
 #ifdef _EVENT_LOGGING
-                LOGE("KEY_HOLD: %d,%d\n", x, y);
+                LOGERR("KEY_HOLD: %d,%d\n", x, y);
 #endif
 		gettimeofday(&touchStart, NULL);
 		key_repeat = 2;
 		kb.KeyRepeat();
 	    } else if (key_repeat == 2 && mtime > 100) {
 #ifdef _EVENT_LOGGING
-                LOGE("KEY_REPEAT: %d,%d\n", x, y);
+                LOGERR("KEY_REPEAT: %d,%d\n", x, y);
 #endif
 		gettimeofday(&touchStart, NULL);
 		kb.KeyRepeat();
@@ -233,7 +232,7 @@ static void *input_thread(void *cookie)
             if (ev.code == 0) {
                 if (state == 0) {
 #ifdef _EVENT_LOGGING
-                    LOGE("TOUCH_RELEASE: %d,%d\n", x, y);
+                    LOGERR("TOUCH_RELEASE: %d,%d\n", x, y);
 #endif
                     PageManager::NotifyTouch(TOUCH_RELEASE, x, y);
 		    touch_and_hold = 0;
@@ -246,7 +245,7 @@ static void *input_thread(void *cookie)
             } else {
                 if (!drag) {
 #ifdef _EVENT_LOGGING
-                    LOGE("TOUCH_START: %d,%d\n", x, y);
+                    LOGERR("TOUCH_START: %d,%d\n", x, y);
 #endif
                     if (PageManager::NotifyTouch(TOUCH_START, x, y) > 0)
                         state = 1;
@@ -258,7 +257,7 @@ static void *input_thread(void *cookie)
                 } else {
                     if (state == 0) {
 #ifdef _EVENT_LOGGING
-                        LOGE("TOUCH_DRAG: %d,%d\n", x, y);
+                        LOGERR("TOUCH_DRAG: %d,%d\n", x, y);
 #endif
                         if (PageManager::NotifyTouch(TOUCH_DRAG, x, y) > 0)
                             state = 1;
@@ -269,7 +268,7 @@ static void *input_thread(void *cookie)
         } else if (ev.type == EV_KEY) {
             // Handle key-press here
 #ifdef _EVENT_LOGGING
-            LOGE("TOUCH_KEY: %d\n", ev.code);
+            LOGERR("TOUCH_KEY: %d\n", ev.code);
 #endif
 	    if (ev.value != 0) {
 		// This is a key press
@@ -297,14 +296,14 @@ static void *input_thread(void *cookie)
 		|| ev.code == 114 || ev.code == 139 || ev.code == 158
 		|| ev.code == 231)) {
 #ifdef _EVENT_LOGGING
-		    LOGE("Hard-Key[%d] wakes up device.\n", ev.code);
+		    LOGERR("Hard-Key[%d] wakes up device.\n", ev.code);
 #endif
 		    key_pressed = 1;
 		} else {
 		    TWFunc::Vibrate(button_pressed);
 		    blankTimer.resetTimerAndUnblank();
 #ifdef _EVENT_LOGGING
-		    LOGE("Screen unblank & Timer reset.\n");
+		    LOGERR("Screen unblank & Timer reset.\n");
 #endif
 		}
 	    }
@@ -459,7 +458,7 @@ int gui_forceRender(void)
 
 int gui_changePage(std::string newPage)
 {
-    LOGI("Set page: '%s'\n", newPage.c_str());
+    LOGINFO("Set page: '%s'\n", newPage.c_str());
     PageManager::ChangePage(newPage);
     pthread_mutex_trylock(&gForceRendermutex);
     gForceRender = 1;
@@ -554,7 +553,7 @@ extern "C" int gui_loadResources()
 	if (check) {
 		if (PageManager::LoadPackage("TWRP", "/res/ui.xml", "decrypt"))
 		{
-			LOGE("Failed to load base packages.\n");
+			LOGERR("Failed to load base packages.\n");
 			goto error;
 		} else
 			check = 1;
@@ -571,7 +570,7 @@ extern "C" int gui_loadResources()
 				retry_count--;
 			}
 			if (!PartitionManager.Mount_Settings_Storage(false)) {
-				LOGE("Unable to mount %s during GUI startup.\n", theme_path.c_str());
+				LOGERR("Unable to mount %s during GUI startup.\n", theme_path.c_str());
 				check = 1;
 			}
 		}
@@ -584,7 +583,7 @@ extern "C" int gui_loadResources()
 		{
 			if (PageManager::LoadPackage("TWRP", "/res/ui.xml", "main"))
 			{
-				LOGE("Failed to load base packages.\n");
+				LOGERR("Failed to load base packages.\n");
 				goto error;
 			}
 		}
@@ -597,7 +596,7 @@ extern "C" int gui_loadResources()
     return 0;
 
 error:
-    LOGE("An internal error has occurred.\n");
+    LOGERR("An internal error has occurred.\n");
     gGuiInitialized = 0;
     return -1;
 }
@@ -732,7 +731,7 @@ extern "C" int gui_start()
 	pthread_t b_update;
 	pthread_create(&b_update, NULL, battery_thread, NULL);
 	if (offmode_charge) {
-	    LOGI("Offmode-charging...\n");
+	    LOGINFO("Offmode-charging...\n");
 	    TWFunc::screen_off();
 	    TWFunc::power_save();	    
 	    for(;;);
@@ -794,7 +793,7 @@ static void *console_thread(void *cookie)
                 flip();
 
             if (ret < 0)
-                LOGE("An update request has failed.\n");
+                LOGERR("An update request has failed.\n");
         }
         else
         {

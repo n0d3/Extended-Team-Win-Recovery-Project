@@ -115,7 +115,7 @@
 #define TW_CPU_GOV			"tw_cpu_gov"
 
 // Default definitions
-#define TW_VERSION_STR			"2.4.4.0"
+#define TW_VERSION_STR			"2.5.0.0"
 
 #define TW_USE_COMPRESSION_VAR      	"tw_use_compression"
 #define TW_SKIP_MD5_CHECK_VAR       	"tw_skip_md5_check"
@@ -274,6 +274,7 @@
 // For OpenRecoveryScript
 #define SCRIPT_FILE_CACHE "/cache/recovery/openrecoveryscript"
 #define SCRIPT_FILE_TMP "/tmp/openrecoveryscript"
+#define TMP_LOG_FILE "/tmp/recovery.log"
 
 // Max archive size for tar backups before we split
 //536870912LLU	= 512MB 

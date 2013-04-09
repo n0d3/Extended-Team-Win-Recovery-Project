@@ -50,6 +50,13 @@ struct bootloader_message {
  */
 int get_bootloader_message(struct bootloader_message *out);
 int set_bootloader_message(const struct bootloader_message *in);
+int set_bootloader_message_mtd_name(const struct bootloader_message *in, const char* mtd_name);
+int set_bootloader_message_block_name(const struct bootloader_message *in, const char* block_name);
+
+// Functions from twbootloader.cpp
+int tw_get_bootloader_message(struct bootloader_message *out);
+int tw_set_bootloader_message(const struct bootloader_message *in);
+void tw_get_args(int *argc, char ***argv);
 
 #ifdef __cplusplus
 }

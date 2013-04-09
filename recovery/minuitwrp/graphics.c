@@ -45,15 +45,13 @@
 #include "font_10x18.h"
 #endif
 
-#include "../common.h"
-
 typedef struct {
     GGLSurface texture;
     unsigned offset[97];
     unsigned cheight;
     unsigned ascent;
 } GRFont;
-#define NUM_BUFFERS 2
+
 static GRFont *gr_font = 0;
 static GGLContext *gr_context = 0;
 static GGLSurface gr_font_texture;
@@ -71,14 +69,14 @@ static struct fb_fix_screeninfo fi;
 #ifdef PRINT_SCREENINFO
 static void print_fb_var_screeninfo()
 {
-    LOGI("vi.xres: %d\n", vi.xres);
-    LOGI("vi.yres: %d\n", vi.yres);
-    LOGI("vi.xres_virtual: %d\n", vi.xres_virtual);
-    LOGI("vi.yres_virtual: %d\n", vi.yres_virtual);
-    LOGI("vi.xoffset: %d\n", vi.xoffset);
-    LOGI("vi.yoffset: %d\n", vi.yoffset);
-    LOGI("vi.bits_per_pixel: %d\n", vi.bits_per_pixel);
-    LOGI("vi.grayscale: %d\n", vi.grayscale);
+	printf("vi.xres: %d\n", vi.xres);
+	printf("vi.yres: %d\n", vi.yres);
+	printf("vi.xres_virtual: %d\n", vi.xres_virtual);
+	printf("vi.yres_virtual: %d\n", vi.yres_virtual);
+	printf("vi.xoffset: %d\n", vi.xoffset);
+	printf("vi.yoffset: %d\n", vi.yoffset);
+	printf("vi.bits_per_pixel: %d\n", vi.bits_per_pixel);
+	printf("vi.grayscale: %d\n", vi.grayscale);
 }
 #endif
 
@@ -181,7 +179,7 @@ static int get_framebuffer(GGLSurface *fb)
     fb->width = vi.xres;
     fb->height = vi.yres;
 #ifdef BOARD_HAS_JANKY_BACKBUFFER
-    LOGI("    Setting JANKY BACKBUFFER\n");
+    printf("setting JANKY BACKBUFFER\n");
     fb->stride = fi.line_length/2;
 #else
     fb->stride = vi.xres_virtual;
@@ -248,7 +246,7 @@ typedef unsigned char byte;
 void* tryfbmap(int framebufferHandle, int size) {
     void *fbPixels = mmap(0, size, PROT_READ, MAP_SHARED, framebufferHandle, 0);
     if(fbPixels == MAP_FAILED) {
-	LOGI("failed to map memory\n");
+	printf("failed to map memory\n");
 	return NULL;
     }
     return fbPixels;
@@ -260,19 +258,19 @@ int gr_screenshot(const char* bmpName) {
 
     int screenshotHandle = open(bmpName, O_WRONLY | O_CREAT);
     if (screenshotHandle < 0) {
-	LOGI("Failed to create %s.\n", bmpName);
+	printf("Failed to create %s.\n", bmpName);
 	goto done;
     }
 
     struct fb_var_screeninfo vinfo;
     framebufferHandle = open("/dev/graphics/fb0", O_RDONLY);
     if(framebufferHandle < 0) {
-	LOGI("failed to open /dev/graphics/fb0.\n");
+	printf("failed to open /dev/graphics/fb0.\n");
 	goto done;
     }
 
     if(ioctl(framebufferHandle, FBIOGET_VSCREENINFO, &vinfo) < 0) {
-	LOGI("failed to open ioctl.\n");
+	printf("failed to open ioctl.\n");
 	goto done;
     }
     int w = vinfo.xres;
@@ -314,7 +312,7 @@ int gr_screenshot(const char* bmpName) {
 	    pos += 4;
 	}
     } else {
-	LOGI("Unsupported pixel format.\n");
+	printf("Unsupported pixel format.\n");
 	    goto done;
     }
 	
@@ -833,8 +831,8 @@ int gr_fb_blank(int blank)
 
     if (gr_fb_fd >= 0) {
 	    ret = ioctl(gr_fb_fd, FBIOBLANK, blank ? FB_BLANK_POWERDOWN : FB_BLANK_UNBLANK);
-	    /*if (ret < 0)
-		perror("ioctl(): blank");*/
+	    if (ret < 0)
+		perror("ioctl(): blank");
     }
     return ret;
 }

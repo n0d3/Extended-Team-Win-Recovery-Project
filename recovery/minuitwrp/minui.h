@@ -30,6 +30,8 @@
 #define PIXEL_SIZE 2
 #endif
 
+#define NUM_BUFFERS 2
+
 //#define PRINT_SCREENINFO 1 // Enables printing of screen info to log
 //#define BOARD_HAS_JANKY_BACKBUFFER 1
 

@@ -62,8 +62,6 @@ class TWFunc {
 		static void GUI_Operation_Text(string Read_Value, string Partition_Name, string Default_Text);
 		// Returns the size of a file
 		static unsigned long Get_File_Size(string Path);
-		// Writes the log to last_log
-		static void twfinish_recovery(const char *send_intent);
 		// Prepares the device for rebooting
 		static int tw_reboot(RebootCommand command);
 		// checks for the existence of a script, chmods it to 755, then runs it
@@ -93,6 +91,9 @@ class TWFunc {
 		static int tw_chmod(string fn, string mode); 
 		// Installs su binary and apk and sets proper permissions
 		static bool Install_SuperSU(void);
+		static void Update_Intent_File(string Intent);
+		static void Copy_Log(string Source, string Destination);
+		static void Update_Log_File(void);
 
 		// Extended functions
 		static unsigned long RoundUpSize(unsigned long sz, unsigned long multiple);
@@ -108,10 +109,8 @@ class TWFunc {
 		static int SubDir_Check(string Dir, string subDir1, string subDir2, string subDir3, string subDir4, string subDir5, int min);
 		static vector<string> split_string(const string &in, char del, bool skip_empty);
 		static int Split_NandroidMD5(string File);
-
-	private:
-		static void check_and_fclose(FILE *fp, const char *name);
-		static void copy_log_file(const char* source, const char* destination, int append);
 };
+
+extern int Log_Offset;
 
 #endif // _TWRPFUNCTIONS_HPP

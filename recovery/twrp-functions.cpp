@@ -20,10 +20,11 @@
 #include <sstream>
 #include "twrp-functions.hpp"
 #include "partitions.hpp"
-#include "common.h"
+#include "twcommon.h"
 #include "data.hpp"
-#include "bootloader.h"
 #include "variables.h"
+#include "bootloader.h"
+
 extern "C" {
 	#include "minuitwrp/minui.h"
 	#include "libcrecovery/common.h"
@@ -101,33 +102,33 @@ void TWFunc::install_htc_dumlock(void) {
 	if (!PartitionManager.Mount_By_Path("/data", true))
 		return;
 
-	ui_print("Installing HTC Dumlock to system...\n");
+	gui_print("Installing HTC Dumlock to system...\n");
 	copy_file("/res/htcd/htcdumlocksys", "/system/bin/htcdumlock", 0755);
 	if (!Path_Exists("/system/bin/flash_image")) {
-		ui_print("Installing flash_image...\n");
+		gui_print("Installing flash_image...\n");
 		copy_file("/res/htcd/flash_imagesys", "/system/bin/flash_image", 0755);
 		need_libs = 1;
 	} else
-		ui_print("flash_image is already installed, skipping...\n");
+		gui_print("flash_image is already installed, skipping...\n");
 	if (!Path_Exists("/system/bin/dump_image")) {
-		ui_print("Installing dump_image...\n");
+		gui_print("Installing dump_image...\n");
 		copy_file("/res/htcd/dump_imagesys", "/system/bin/dump_image", 0755);
 		need_libs = 1;
 	} else
-		ui_print("dump_image is already installed, skipping...\n");
+		gui_print("dump_image is already installed, skipping...\n");
 	if (need_libs) {
-		ui_print("Installing libs needed for flash_image and dump_image...\n");
+		gui_print("Installing libs needed for flash_image and dump_image...\n");
 		copy_file("/res/htcd/libbmlutils.so", "/system/lib/libbmlutils.so", 0755);
 		copy_file("/res/htcd/libflashutils.so", "/system/lib/libflashutils.so", 0755);
 		copy_file("/res/htcd/libmmcutils.so", "/system/lib/libmmcutils.so", 0755);
 		copy_file("/res/htcd/libmtdutils.so", "/system/lib/libmtdutils.so", 0755);
 	}
-	ui_print("Installing HTC Dumlock app...\n");
+	gui_print("Installing HTC Dumlock app...\n");
 	mkdir("/data/app", 0777);
 	unlink("/data/app/com.teamwin.htcdumlock*");
 	copy_file("/res/htcd/HTCDumlock.apk", "/data/app/com.teamwin.htcdumlock.apk", 0777);
 	sync();
-	ui_print("HTC Dumlock is installed.\n");
+	gui_print("HTC Dumlock is installed.\n");
 }
 
 void TWFunc::htc_dumlock_restore_original_boot(void) {
@@ -135,18 +136,18 @@ void TWFunc::htc_dumlock_restore_original_boot(void) {
 	if (!PartitionManager.Mount_By_Path("/sdcard", true))
 		return;
 
-	ui_print("Restoring original boot...\n");
+	gui_print("Restoring original boot...\n");
 	Exec_Cmd("htcdumlock restore", status);
-	ui_print("Original boot restored.\n");
+	gui_print("Original boot restored.\n");
 }
 
 void TWFunc::htc_dumlock_reflash_recovery_to_boot(void) {
 	string status;
 	if (!PartitionManager.Mount_By_Path("/sdcard", true))
 		return;
-	ui_print("Reflashing recovery to boot...\n");
+	gui_print("Reflashing recovery to boot...\n");
 	Exec_Cmd("htcdumlock recovery noreboot", status);
-	ui_print("Recovery is flashed to boot.\n");
+	gui_print("Recovery is flashed to boot.\n");
 }
 
 int TWFunc::Recursive_Mkdir(string Path) {
@@ -158,7 +159,7 @@ int TWFunc::Recursive_Mkdir(string Path) {
 	{
 		wholePath = pathCpy.substr(0, pos);
 		if (mkdir(wholePath.c_str(), 0777) && errno != EEXIST) {
-			LOGE("Unable to create folder: %s  (errno=%d)\n", wholePath.c_str(), errno);
+			LOGERR("Unable to create folder: %s  (errno=%d)\n", wholePath.c_str(), errno);
 			return false;
 		}
 
@@ -173,11 +174,11 @@ unsigned long long TWFunc::Get_Folder_Size(const string& Path, bool Display_Erro
 	DIR* d = opendir(Path.c_str());
 	if (d == NULL) {
 		if (Display_Error) {
-			LOGE("[Get_Folder_Size()] error opening '%s'\n", Path.c_str());
-			LOGE("error: %s\n", strerror(errno));
+			LOGERR("[Get_Folder_Size()] error opening '%s'\n", Path.c_str());
+			LOGERR("error: %s\n", strerror(errno));
 		} else {
-			LOGI("[Get_Folder_Size()] error opening '%s'\n", Path.c_str());
-			LOGI("error: %s\n", strerror(errno));
+			LOGINFO("[Get_Folder_Size()] error opening '%s'\n", Path.c_str());
+			LOGINFO("error: %s\n", strerror(errno));
 		}
 		return 0;
 	}
@@ -251,81 +252,62 @@ unsigned long TWFunc::RoundUpSize(unsigned long sz, unsigned long multiple) {
 	return (sz + multiple - remainder);
 }
 
-static const char *COMMAND_FILE = "/cache/recovery/command";
-static const char *INTENT_FILE = "/cache/recovery/intent";
-static const char *LOG_FILE = "/cache/recovery/log";
-static const char *LAST_LOG_FILE = "/cache/recovery/last_log";
-static const char *LAST_INSTALL_FILE = "/cache/recovery/last_install";
-static const char *CACHE_ROOT = "/cache";
-static const char *SDCARD_ROOT = "/sdcard";
-static const char *TEMPORARY_LOG_FILE = "/tmp/recovery.log";
-static const char *TEMPORARY_INSTALL_FILE = "/tmp/last_install";
-
-// close a file, log an error if the error indicator is set
-void TWFunc::check_and_fclose(FILE *fp, const char *name) {
-    fflush(fp);
-    if (ferror(fp)) LOGE("Error in %s\n(%s)\n", name, strerror(errno));
-    fclose(fp);
+void TWFunc::Copy_Log(string Source, string Destination) {
+	FILE *destination_log = fopen(Destination.c_str(), "a");
+	if (destination_log == NULL) {
+		LOGERR("TWFunc::Copy_Log -- Can't open destination log file: '%s'\n", Destination.c_str());
+	} else {
+		FILE *source_log = fopen(Source.c_str(), "r");
+		if (source_log != NULL) {
+			fseek(source_log, Log_Offset, SEEK_SET);
+			char buffer[4096];
+			while (fgets(buffer, sizeof(buffer), source_log))
+				fputs(buffer, destination_log); // Buffered write of log file
+			Log_Offset = ftell(source_log);
+			fflush(source_log);
+			fclose(source_log);
+		}
+		fflush(destination_log);
+		fclose(destination_log);
+	}
 }
 
-void TWFunc::copy_log_file(const char* source, const char* destination, int append) {
-    FILE *log = fopen_path(destination, append ? "a" : "w");
-    if (log == NULL) {
-        LOGE("Can't open %s\n", destination);
-    } else {
-        FILE *tmplog = fopen(source, "r");
-        if (tmplog != NULL) {
-            if (append) {
-                fseek(tmplog, tmplog_offset, SEEK_SET);  // Since last write
-            }
-            char buf[4096];
-            while (fgets(buf, sizeof(buf), tmplog)) fputs(buf, log);
-            if (append) {
-                tmplog_offset = ftell(tmplog);
-            }
-            check_and_fclose(tmplog, source);
-        }
-        check_and_fclose(log, destination);
-    }
-}
+void TWFunc::Update_Log_File(void) {
+	// Copy logs to cache so the system can find out what happened.
+	Copy_Log(TMP_LOG_FILE, "/cache/recovery/log");
+	copy_file("/cache/recovery/log", "/cache/recovery/last_log", 600);
+	chown("/cache/recovery/log", 1000, 1000);
+	chmod("/cache/recovery/log", 0600);
+	chmod("/cache/recovery/last_log", 0640);
 
-// clear the recovery command and prepare to boot a (hopefully working) system,
-// copy our log file to cache as well (for the system to read), and
-// record any intent we were asked to communicate back to the system.
-// this function is idempotent: call it as many times as you like.
-void TWFunc::twfinish_recovery(const char *send_intent) {
-	// By this point, we're ready to return to the main system...
-	if (send_intent != NULL) {
-		FILE *fp = fopen_path(INTENT_FILE, "w");
-		if (fp == NULL) {
-		    LOGE("Can't open %s\n", INTENT_FILE);
+	// Reset bootloader message
+	TWPartition* Part = PartitionManager.Find_Partition_By_Path("/misc");
+	if (Part != NULL) {
+		struct bootloader_message boot;
+		memset(&boot, 0, sizeof(boot));
+		if (Part->Current_File_System == "mtd") {
+			if (set_bootloader_message_mtd_name(&boot, Part->MTD_Name.c_str()) != 0)
+				LOGERR("Unable to set MTD bootloader message.\n");
+		} else if (Part->Current_File_System == "emmc") {
+			if (set_bootloader_message_block_name(&boot, Part->Actual_Block_Device.c_str()) != 0)
+				LOGERR("Unable to set emmc bootloader message.\n");
 		} else {
-		    fputs(send_intent, fp);
-		    check_and_fclose(fp, INTENT_FILE);
+			LOGERR("Unknown file system for /misc: '%s'\n", Part->Current_File_System.c_str());
 		}
 	}
 
-	// Copy logs to cache so the system can find out what happened.
-	copy_log_file(TEMPORARY_LOG_FILE, LOG_FILE, true);
-	copy_log_file(TEMPORARY_LOG_FILE, LAST_LOG_FILE, false);
-	copy_log_file(TEMPORARY_INSTALL_FILE, LAST_INSTALL_FILE, false);
-	chmod(LOG_FILE, 0600);
-	chown(LOG_FILE, 1000, 1000);   // system user
-	chmod(LAST_LOG_FILE, 0640);
-	chmod(LAST_INSTALL_FILE, 0644);
-
-	// Reset to normal system boot so recovery won't cycle indefinitely.
-	struct bootloader_message boot;
-	memset(&boot, 0, sizeof(boot));
-	set_bootloader_message(&boot);
-
-	// Remove the command file, so recovery won't repeat indefinitely.
-	if (!PartitionManager.Mount_By_Path("/system", true) || (unlink(COMMAND_FILE) && errno != ENOENT)) {
-        	LOGW("Can't unlink %s\n", COMMAND_FILE);
+	if (!PartitionManager.Mount_By_Path("/cache", true) || (unlink("/cache/recovery/command") && errno != ENOENT)) {
+		LOGINFO("Can't unlink %s\n", "/cache/recovery/command");
 	}
 
 	PartitionManager.UnMount_By_Path("/cache", true);
-	sync();  // For good measure.
+	sync();
+}
+
+void TWFunc::Update_Intent_File(string Intent) {
+	if (PartitionManager.Mount_By_Path("/cache", false) && !Intent.empty()) {
+		TWFunc::write_file("/cache/recovery/intent", Intent);
+	}
 }
 
 // reboot: Reboot the system. Return -1 on error, no return on success
@@ -335,13 +317,14 @@ int TWFunc::tw_reboot(RebootCommand command) {
 	string tmpbuf;
 
     	switch (command) {
-    		case rb_current:
     		case rb_hot:        		
 			Exec_Cmd("busybox killall recovery", tmpbuf);
         		return 0;
+    		case rb_current:
     		case rb_system:
-        		twfinish_recovery("s");
-			sync();
+				Update_Log_File();
+				Update_Intent_File("s");
+				sync();
 			check_and_run_script("/sbin/rebootsystem.sh", "reboot system");
         		return reboot(RB_AUTOBOOT);
     		case rb_recovery:
@@ -384,10 +367,10 @@ void TWFunc::check_and_run_script(const char* script_file, const char* display_n
 	struct stat st;
 	string result;
 	if (stat(script_file, &st) == 0) {
-		ui_print("Running %s script...\n", display_name);
+		gui_print("Running %s script...\n", display_name);
 		chmod(script_file, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
 		Exec_Cmd(script_file, result);
-		ui_print("Finished running %s script.\n", display_name);
+		gui_print("Finished running %s script.\n", display_name);
 	}
 }
 
@@ -397,7 +380,7 @@ int TWFunc::removeDir(const string path, bool skipParent) {
 	string new_path;
 
 	if (d == NULL) {
-		LOGE("[removeDir()] Error opening '%s'\n", path.c_str());
+		LOGERR("[removeDir()] Error opening '%s'\n", path.c_str());
 		return -1;
 	}
 
@@ -406,7 +389,6 @@ int TWFunc::removeDir(const string path, bool skipParent) {
 		while (!r && (p = readdir(d))) {
 			if (!strcmp(p->d_name, ".") || !strcmp(p->d_name, ".."))
 				continue;
-			//LOGI("checking :%s\n", p->d_name);
 			new_path = path + "/";
 			new_path.append(p->d_name);
 			if (p->d_type == DT_DIR) {
@@ -415,12 +397,12 @@ int TWFunc::removeDir(const string path, bool skipParent) {
 					if (p->d_type == DT_DIR) 
 						r = rmdir(new_path.c_str());
 					else
-						LOGI("Unable to removeDir '%s': %s\n", new_path.c_str(), strerror(errno));
+						LOGINFO("Unable to removeDir '%s': %s\n", new_path.c_str(), strerror(errno));
 				}
 			} else if (p->d_type == DT_REG || p->d_type == DT_LNK || p->d_type == DT_FIFO || p->d_type == DT_SOCK) {
 				r = unlink(new_path.c_str());
 				if (r != 0)
-					LOGI("Unable to unlink '%s'\n", new_path.c_str());
+					LOGINFO("Unable to unlink '%s'\n", new_path.c_str());
 			}
 		}
 		closedir(d);
@@ -436,7 +418,7 @@ int TWFunc::removeDir(const string path, bool skipParent) {
 }
 
 int TWFunc::copy_file(string src, string dst, int mode) {
-	LOGI("Copying file %s to %s\n", src.c_str(), dst.c_str());
+	LOGINFO("Copying file %s to %s\n", src.c_str(), dst.c_str());
 	ifstream srcfile(src.c_str(), ios::binary);
 	ofstream dstfile(dst.c_str(), ios::binary);
 	dstfile << srcfile.rdbuf();
@@ -444,7 +426,6 @@ int TWFunc::copy_file(string src, string dst, int mode) {
 	dstfile.close();
 	if (chmod(dst.c_str(), mode) != 0)
 		return -1;
-
 	return 0;
 }
 
@@ -477,7 +458,7 @@ int TWFunc::read_file(string fn, string& results) {
 		file.close();
 		return 0;
 	}
-	LOGI("Cannot find file %s\n", fn.c_str());
+	LOGINFO("Cannot find file %s\n", fn.c_str());
 	return -1;
 }
 
@@ -497,7 +478,7 @@ int TWFunc::read_file_line_by_line(string fn, vector<string>& lines, bool skip_e
 		file.close();
 		return 1;
 	}
-	LOGI("Cannot find file %s\n", fn.c_str());
+	LOGINFO("Cannot find file %s\n", fn.c_str());
 	return 0;
 }
 
@@ -509,7 +490,7 @@ int TWFunc::write_file(string fn, string& line) {
 		fclose(file);
 		return 0;
 	}
-	LOGI("Cannot find file %s\n", fn.c_str());
+	LOGINFO("Cannot find file %s\n", fn.c_str());
 	return -1;
 }
 
@@ -555,7 +536,7 @@ void TWFunc::screen_off(void) {
 		gr_fb_blank(1);
 #endif
 		write_file(brightness_file, off);
-		LOGI("Screen turned off to save power.\n");
+		LOGINFO("Screen turned off to save power.\n");
 	}
 }
 
@@ -571,7 +552,7 @@ void TWFunc::power_save(void) {
 		write_file(cpu_max_freq, low_power_freq);
 		string cpu_min_freq = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq";
 		write_file(cpu_min_freq, low_power_freq);
-		LOGI("Powersave cpu settings loaded.\n");
+		LOGINFO("Powersave cpu settings loaded.\n");
 		sync();
 	}
 }
@@ -604,7 +585,7 @@ void TWFunc::power_restore(int charge_mode) {
 		write_file(cpu_governor, default_gov);
 		write_file(cpu_max_freq, max_power_freq);
 		write_file(cpu_min_freq, low_power_freq);
-		LOGI("Default cpu settings loaded.\n");
+		LOGINFO("Default cpu settings loaded.\n");
 		sync();
 	}
 }
@@ -619,19 +600,19 @@ void TWFunc::apply_system_tweaks(int charge_mode) {
 		set_cpu_f = DataManager::GetIntValue(TW_SET_CPU_F_AT_BOOT);
 		set_drop_caches = DataManager::GetIntValue(TW_SET_DROP_CACHES_AT_BOOT);
 		if (set_io_sched || set_cpu_gov || set_cpu_f || set_drop_caches)
-			LOGI("Applying system tweaks...\n");
+			LOGINFO("Applying system tweaks...\n");
 		if (set_io_sched) {
 			string io_scheduler = "/sys/block/mmcblk0/queue/scheduler";
 			default_io_sched = DataManager::GetStrValue(TW_IO_SCHED);
 			cmd = "echo \"" + default_io_sched + "\" > " + io_scheduler;
 			Exec_Cmd(cmd, res);
-			LOGI("I/O Scheduler: %s\n", default_io_sched.c_str());
+			LOGINFO("I/O Scheduler: %s\n", default_io_sched.c_str());
 		}
 		if (set_cpu_gov) {
 			string cpu_governor = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor";
 			default_gov = DataManager::GetStrValue(TW_CPU_GOV) + "\n";
 			write_file(cpu_governor, default_gov);
-			LOGI("CPU Governor: %s", default_gov.c_str());
+			LOGINFO("CPU Governor: %s", default_gov.c_str());
 		}
 		if (set_cpu_f) {
 			string cpu_max_freq = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq";
@@ -640,12 +621,12 @@ void TWFunc::apply_system_tweaks(int charge_mode) {
 			low_power_freq = DataManager::GetStrValue(TW_MIN_CPU_F) + "\n";
 			write_file(cpu_max_freq, max_power_freq);
 			write_file(cpu_min_freq, low_power_freq);
-			LOGI("Max cpu freq: %s", max_power_freq.c_str());
-			LOGI("Min cpu freq: %s", low_power_freq.c_str());
+			LOGINFO("Max cpu freq: %s", max_power_freq.c_str());
+			LOGINFO("Min cpu freq: %s", low_power_freq.c_str());
 		}
 		if (set_drop_caches) {
 			DataManager::SetValue(TW_DROP_CACHES, 1);
-			LOGI("Drop caches after backup/restore completion: true\n");
+			LOGINFO("Drop caches after backup/restore completion: true\n");
 		} else {
 			DataManager::SetValue(TW_DROP_CACHES, 0);
 		}
@@ -728,7 +709,7 @@ string TWFunc::Find_File_On_Storage(string Filename) {
 		PartitionManager.Mount_Current_Storage(false);
 
 	if (File_Name.size() != 0) {
-		LOGI("Scanning storage for %s...\n", File_Name.c_str());
+		LOGINFO("Scanning storage for %s...\n", File_Name.c_str());
 		string result, cmd;
 		cmd = "find " + Current_Storage_Path + " -type f -iname " + File_Name + " | sed 1q";
 		TWFunc::Exec_Cmd(cmd, result);
@@ -789,13 +770,13 @@ void TWFunc::Take_Screenshot(void) {
 	string scr_path = twrp_dir + "/screenshots";
 	if (!Path_Exists(twrp_dir)) {
 		if (!Recursive_Mkdir(twrp_dir)) {
-			LOGI("Failed to create TWRP folder.\n");
+			LOGINFO("Failed to create TWRP folder.\n");
 			scr_path = current_storage_path;
 		}
 	} else {
 		if (!Path_Exists(scr_path)) {
 			if (system(("cd " + twrp_dir + " && mkdir screenshots").c_str()) != 0) {
-				LOGI("Failed to make sub-folder for screenshots.\nRoot of %s will be used instead.\n", current_storage_path.c_str());
+				LOGINFO("Failed to make sub-folder for screenshots.\nRoot of %s will be used instead.\n", current_storage_path.c_str());
 				scr_path = current_storage_path;
 			}
 		}
@@ -805,7 +786,7 @@ void TWFunc::Take_Screenshot(void) {
 	int bmp_inc = 0, count = 0;
 	DIR* Dir = opendir(scr_path.c_str());
 	if (Dir == NULL)
-		LOGI("Unable to open %s\n", scr_path.c_str());
+		LOGINFO("Unable to open %s\n", scr_path.c_str());
 	else {
 		struct dirent* DirEntry;
 		while ((DirEntry = readdir(Dir)) != NULL) {
@@ -816,16 +797,16 @@ void TWFunc::Take_Screenshot(void) {
 				// Try to parse bmp's increasement before taking shot
 				size_t first_mark = dname.find("-");
 				count++;
-				//LOGI("[%i] File: %s\n", count, DirEntry->d_name);
+				//LOGINFO("[%i] File: %s\n", count, DirEntry->d_name);
 				if (first_mark == string::npos) {
-					//LOGI("Unable to find filename's increasement (first mark).\n");
+					//LOGINFO("Unable to find filename's increasement (first mark).\n");
 					continue;
 				}
 				
 				bmp_num = dname.substr(first_mark + 1, dname.size() - first_mark - 1);
 				size_t last_period = bmp_num.find(".");
 				if (last_period == string::npos) {
-					//LOGI("Unable to find filename's increasement (last period).\n");
+					//LOGINFO("Unable to find filename's increasement (last period).\n");
 					continue;
 				}
 				bmp_num.resize(last_period);
@@ -847,7 +828,7 @@ void TWFunc::Take_Screenshot(void) {
 	string bmp_full_pth = scr_path + "/TWRPScr-" + bmp_num + ".bmp";	
 
     	if (gr_screenshot(bmp_full_pth.c_str()))
-		LOGI("Saved screenshot at %s\n", bmp_full_pth.c_str());
+		LOGINFO("Saved screenshot at %s\n", bmp_full_pth.c_str());
 }
 
 /* Checks if a Directory has any of the subDirs we're looking for and
@@ -918,44 +899,44 @@ bool TWFunc::Fix_su_Perms(void) {
 	string file = "/system/bin/su";
 	if (TWFunc::Path_Exists(file)) {
 		if (chown(file.c_str(), 0, 0) != 0) {
-			LOGE("Failed to chown '%s'\n", file.c_str());
+			LOGERR("Failed to chown '%s'\n", file.c_str());
 			return false;
 		}
 		if (tw_chmod(file, "6755") != 0) {
-			LOGE("Failed to chmod '%s'\n", file.c_str());
+			LOGERR("Failed to chmod '%s'\n", file.c_str());
 			return false;
 		}
 	}
 	file = "/system/xbin/su";
 	if (TWFunc::Path_Exists(file)) {
 		if (chown(file.c_str(), 0, 0) != 0) {
-			LOGE("Failed to chown '%s'\n", file.c_str());
+			LOGERR("Failed to chown '%s'\n", file.c_str());
 			return false;
 		}
 		if (tw_chmod(file, "6755") != 0) {
-			LOGE("Failed to chmod '%s'\n", file.c_str());
+			LOGERR("Failed to chmod '%s'\n", file.c_str());
 			return false;
 		}
 	}
 	file = "/system/bin/.ext/.su";
 	if (TWFunc::Path_Exists(file)) {
 		if (chown(file.c_str(), 0, 0) != 0) {
-			LOGE("Failed to chown '%s'\n", file.c_str());
+			LOGERR("Failed to chown '%s'\n", file.c_str());
 			return false;
 		}
 		if (tw_chmod(file, "6755") != 0) {
-			LOGE("Failed to chmod '%s'\n", file.c_str());
+			LOGERR("Failed to chmod '%s'\n", file.c_str());
 			return false;
 		}
 	}
 	file = "/system/app/Superuser.apk";
 	if (TWFunc::Path_Exists(file)) {
 		if (chown(file.c_str(), 0, 0) != 0) {
-			LOGE("Failed to chown '%s'\n", file.c_str());
+			LOGERR("Failed to chown '%s'\n", file.c_str());
 			return false;
 		}
 		if (tw_chmod(file, "0644") != 0) {
-			LOGE("Failed to chmod '%s'\n", file.c_str());
+			LOGERR("Failed to chmod '%s'\n", file.c_str());
 			return false;
 		}
 	}
@@ -1064,7 +1045,7 @@ int TWFunc::tw_chmod(string fn, string mode) {
 	}
 
 	if (chmod(fn.c_str(), mask) != 0) {
-		LOGE("Unable to chmod '%s' %l\n", fn.c_str(), mask);
+		LOGERR("Unable to chmod '%s' %l\n", fn.c_str(), mask);
 		return -1;
 	}
 
@@ -1076,11 +1057,11 @@ bool TWFunc::Install_SuperSU(void) {
 		return false;
 
 	if (copy_file("/supersu/su", "/system/xbin/su", 0755) != 0) {
-		LOGE("Failed to copy su binary to /system/bin\n");
+		LOGERR("Failed to copy su binary to /system/bin\n");
 		return false;
 	}
 	if (copy_file("/supersu/Superuser.apk", "/system/app/Superuser.apk", 0644) != 0) {
-		LOGE("Failed to copy Superuser app to /system/app\n");
+		LOGERR("Failed to copy Superuser app to /system/app\n");
 		return false;
 	}
 	if (!Fix_su_Perms())

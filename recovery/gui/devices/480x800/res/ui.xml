@@ -40,7 +40,6 @@
 		<resource name="keyboard2" type="image" filename="keyboard2" />
 		<resource name="keyboard3" type="image" filename="keyboard3" />
 		<resource name="keyboard4" type="image" filename="keyboard4" />
-		<resource name="exclamation" type="image" filename="exclamation200" />
 	</resources>
 
 	<variables>
@@ -175,8 +174,27 @@
 		<variable name="row_dst_text_y" value="440" />
 		<variable name="row_offset_text_y" value="480" />
 		<variable name="row_offset_medium_y" value="505" />
-		<variable name="exclamation_x" value="140" />
-		<variable name="exclamation_y" value="300" />
+		<variable name="button_fill_color" value="#303030" />
+		<variable name="button_fill_full_width" value="455" />
+		<variable name="button_fill_main_width" value="225" />
+		<variable name="button_fill_main_height" value="135" />
+		<variable name="button_fill_half_height" value="67" />
+		<variable name="button_fill_quarter_height" value="34" />
+		<variable name="backup_list_height" value="325" />
+		<variable name="backup_button_row1" value="480" />
+		<variable name="backup_button_row2" value="520" />
+		<variable name="mount_list_height" value="380" />
+		<variable name="mount_storage_row" value="500" />
+		<variable name="storage_list_height" value="400" />
+		<variable name="wipe_list_height" value="550" />
+		<variable name="wipe_button_y" value="400" />
+		<variable name="slidervalue_w" value="460" />
+		<variable name="slidervalue_line_clr" value="#FFFFFF" />
+		<variable name="slidervalue_slider_clr" value="#33B5E5" />
+		<variable name="slidervalue_lineh" value="1" />
+		<variable name="slidervalue_padding" value="13" />
+		<variable name="slidervalue_sliderw" value="7" />
+		<variable name="slidervalue_sliderh" value="40" />
 	</variables>
 
 	<templates>
@@ -192,7 +210,7 @@
 			<object type="text" color="%text_color%">
 				<font resource="font" />
 				<placement x="90" y="10" />
-				<text>ExtendedTWRP v%tw_version%.r7</text>
+				<text>ExtendedTWRP v%tw_version%.r1</text>
 			</object>
 
 			<object type="text" color="%text_success_color%">
@@ -862,7 +880,6 @@
 				<action function="set">tw_has_cancel=0</action>
 				<action function="set">tw_cancel_action=</action>
 				<action function="set">tw_cancel_param=</action>
-				<action function="set">tw_show_exclamation=0</action>
 				<action function="set">tw_show_reboot=0</action>
 				<action function="page">%tw_clear_destination%</action>
 			</object>
@@ -870,15 +887,6 @@
 
 		<page name="confirm_action">
 			<object type="template" name="header" />
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<condition var1="tw_show_exclamation" var2="1" />
-				<placement x="%exclamation_x%" y="%exclamation_y%" />
-				<font resource="font" color="%button_text_color%" />
-				<text></text>
-				<image resource="exclamation" />
-			</object>
 
 			<object type="text" color="%text_color%">
 				<font resource="font" />
@@ -1378,7 +1386,6 @@
 					<action function="set">tw_action_text1=Formatting Data...</action>
 					<action function="set">tw_complete_text1=Data Format Complete</action>
 					<action function="set">tw_slider_text=Swipe to Format</action>
-					<action function="set">tw_show_exclamation=1</action>
 					<action function="page">confirm_action</action>
 				</actions>
 			</object>
@@ -3544,6 +3551,50 @@
 				<text>Screen Settings</text>
 			</object>
 
+			<object type="button">
+				<placement x="%col1_x%" y="%row2_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<condition var1="tw_screen_timeout_secs" op="=" var2="0" />
+				<text>Enable screen timeout.</text>
+				<image resource="checkbox_false" />
+				<action function="set">tw_screen_timeout_secs=60</action>
+			</object>
+
+			<object type="button">
+				<placement x="%col1_x%" y="%row2_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<condition var1="tw_screen_timeout_secs" op="!=" var2="0" />
+				<text>Enable screen timeout.</text>
+				<image resource="checkbox_true" />
+				<action function="set">tw_screen_timeout_secs=0</action>
+			</object>
+
+			<object type="slidervalue">
+				<condition var1="tw_screen_timeout_secs" op="!=" var2="0" />
+				<placement x="col1_x" y="%row4_text_y%" w="%slidervalue_w%" />
+				<font resource="font" color="%text_color%" />
+				<colors line="%slidervalue_line_clr%" slider="%slidervalue_slider_clr%" />
+				<dimensions lineh="%slidervalue_lineh%" linepadding="%slidervalue_padding%" sliderw="%slidervalue_sliderw%" sliderh="%slidervalue_sliderh%" />
+				<text>Screen timeout in seconds:</text>
+				<data variable="tw_screen_timeout_secs" min="15" max="300" />
+			</object>
+
+			<object type="slidervalue">
+				<condition var1="tw_has_brightnesss_file" var2="1" />
+				<placement x="col1_x" y="%row12_text_y%" w="%slidervalue_w%" />
+				<font resource="font" color="%text_color%" />
+				<colors line="%slidervalue_line_clr%" slider="%slidervalue_slider_clr%" />
+				<dimensions lineh="%slidervalue_lineh%" linepadding="%slidervalue_padding%" sliderw="%slidervalue_sliderw%" sliderh="%slidervalue_sliderh%" />
+				<text>Brightness: %tw_brightness_pct%%</text>
+				<data variable="tw_brightness_pct" min="10" max="100" />
+				<actions>
+					<action function="set">tw_brightness=%tw_brightness_max%</action>
+					<action function="compute">tw_brightness*%tw_brightness_pct%</action>
+					<action function="compute">tw_brightness/100</action>
+					<action function="cmd">echo %tw_brightness% > &quot;%tw_brightness_file%&quot;</action>
+				</actions>
+			</object>
+<!--
 			<object type="text" color="%text_color%">
 				<font resource="font" />
 				<placement x="%center_x%" y="%row3_text_y%" placement="5" />
@@ -3648,7 +3699,7 @@
 					<action function="set">tw_brightness=%tw_brightness_100%</action>
 				</actions>
 			</object>
-
+-->
 			<object type="action">
 				<touch key="home" />
 				<action function="page">main</action>
@@ -3679,6 +3730,17 @@
 				<image checked="checkbox_true" unchecked="checkbox_false" />
 			</object>
 
+			<object type="slidervalue">
+				<condition var1="tw_vibrate_after_button_press" var2="1" />
+				<placement x="col1_x" y="%row2_text_y%" w="%slidervalue_w%" />
+				<font resource="font" color="%text_color%" />
+				<colors line="%slidervalue_line_clr%" slider="%slidervalue_slider_clr%" />
+				<dimensions lineh="%slidervalue_lineh%" linepadding="%slidervalue_padding%" sliderw="%slidervalue_sliderw%" sliderh="%slidervalue_sliderh%" />
+				<text>Duration in ms:</text>
+				<data variable="tw_button_feedback_duration_ms" min="25" max="150" />
+			</object>
+
+<!--
 			<object type="text" color="%text_color%">
 				<condition var1="tw_vibrate_after_button_press" var2="1" />
 				<font resource="font" />
@@ -3722,7 +3784,7 @@
 				<image resource="medium_button" />
 				<action function="set">tw_button_feedback_duration_ms=125</action>
 			</object>
-
+-->
 			<object type="checkbox">
 				<placement x="%col1_x%" y="%row5_text_y%" />
 				<font resource="font" color="%text_color%" />
@@ -3731,6 +3793,17 @@
 				<image checked="checkbox_true" unchecked="checkbox_false" />
 			</object>
 
+			<object type="slidervalue">
+				<condition var1="tw_vibrate_after_backup" var2="1" />
+				<placement x="col1_x" y="%row6_text_y%" w="%slidervalue_w%" />
+				<font resource="font" color="%text_color%" />
+				<colors line="%slidervalue_line_clr%" slider="%slidervalue_slider_clr%" />
+				<dimensions lineh="%slidervalue_lineh%" linepadding="%slidervalue_padding%" sliderw="%slidervalue_sliderw%" sliderh="%slidervalue_sliderh%" />
+				<text>Duration in ms:</text>
+				<data variable="tw_backup_feedback_duration_ms" min="100" max="500" />
+			</object>
+
+<!--
 			<object type="text" color="%text_color%">
 				<condition var1="tw_vibrate_after_backup" var2="1" />
 				<font resource="font" />
@@ -3774,7 +3847,7 @@
 				<image resource="medium_button" />
 				<action function="set">tw_backup_feedback_duration_ms=200</action>
 			</object>
-
+-->
 			<object type="checkbox">
 				<placement x="%col1_x%" y="%row9_text_y%" />
 				<font resource="font" color="%text_color%" />
@@ -3783,6 +3856,17 @@
 				<image checked="checkbox_true" unchecked="checkbox_false" />
 			</object>
 
+			<object type="slidervalue">
+				<condition var1="tw_vibrate_after_restore" var2="1" />
+				<placement x="col1_x" y="%row10_text_y%" w="%slidervalue_w%" />
+				<font resource="font" color="%text_color%" />
+				<colors line="%slidervalue_line_clr%" slider="%slidervalue_slider_clr%" />
+				<dimensions lineh="%slidervalue_lineh%" linepadding="%slidervalue_padding%" sliderw="%slidervalue_sliderw%" sliderh="%slidervalue_sliderh%" />
+				<text>Duration in ms:</text>
+				<data variable="tw_restore_feedback_duration_ms" min="100" max="500" />
+			</object>
+
+<!--
 			<object type="text" color="%text_color%">
 				<condition var1="tw_vibrate_after_restore" var2="1" />
 				<font resource="font" />
@@ -3826,7 +3910,7 @@
 				<image resource="medium_button" />
 				<action function="set">tw_restore_feedback_duration_ms=200</action>
 			</object>
-
+-->
 			<object type="checkbox">
 				<placement x="%col1_x%" y="%row13_text_y%" />
 				<font resource="font" color="%text_color%" />
@@ -3835,6 +3919,17 @@
 				<image checked="checkbox_true" unchecked="checkbox_false" />
 			</object>
 
+			<object type="slidervalue">
+				<condition var1="tw_vibrate_after_install" var2="1" />
+				<placement x="col1_x" y="%row14_text_y%" w="%slidervalue_w%" />
+				<font resource="font" color="%text_color%" />
+				<colors line="%slidervalue_line_clr%" slider="%slidervalue_slider_clr%" />
+				<dimensions lineh="%slidervalue_lineh%" linepadding="%slidervalue_padding%" sliderw="%slidervalue_sliderw%" sliderh="%slidervalue_sliderh%" />
+				<text>Duration in ms:</text>
+				<data variable="tw_install_feedback_duration_ms" min="100" max="500" />
+			</object>
+
+<!--
 			<object type="text" color="%text_color%">
 				<condition var1="tw_vibrate_after_install" var2="1" />
 				<font resource="font" />
@@ -3878,7 +3973,7 @@
 				<image resource="medium_button" />
 				<action function="set">tw_install_feedback_duration_ms=200</action>
 			</object>
-
+-->
 			<object type="checkbox">
 				<placement x="%col1_x%" y="%row17_text_y%" />
 				<font resource="font" color="%text_color%" />
@@ -3887,6 +3982,17 @@
 				<image checked="checkbox_true" unchecked="checkbox_false" />
 			</object>
 
+			<object type="slidervalue">
+				<condition var1="tw_vibrate_after_parted" var2="1" />
+				<placement x="col1_x" y="%row18_text_y%" w="%slidervalue_w%" />
+				<font resource="font" color="%text_color%" />
+				<colors line="%slidervalue_line_clr%" slider="%slidervalue_slider_clr%" />
+				<dimensions lineh="%slidervalue_lineh%" linepadding="%slidervalue_padding%" sliderw="%slidervalue_sliderw%" sliderh="%slidervalue_sliderh%" />
+				<text>Duration in ms:</text>
+				<data variable="tw_parted_feedback_duration_ms" min="100" max="500" />
+			</object>
+
+<!--
 			<object type="text" color="%text_color%">
 				<condition var1="tw_vibrate_after_parted" var2="1" />
 				<font resource="font" />
@@ -3930,7 +4036,7 @@
 				<image resource="medium_button" />
 				<action function="set">tw_parted_feedback_duration_ms=200</action>
 			</object>
-
+-->
 			<object type="action">
 				<touch key="home" />
 				<action function="page">main</action>
@@ -4345,6 +4451,17 @@
 				<image checked="checkbox_true" unchecked="checkbox_false" />
 			</object>
 
+			<object type="slidervalue">
+				<condition var1="tw_vibrate_after_sdbackup" var2="1" />
+				<placement x="col1_x" y="%row10_text_y%" w="%slidervalue_w%" />
+				<font resource="font" color="%text_color%" />
+				<colors line="%slidervalue_line_clr%" slider="%slidervalue_slider_clr%" />
+				<dimensions lineh="%slidervalue_lineh%" linepadding="%slidervalue_padding%" sliderw="%slidervalue_sliderw%" sliderh="%slidervalue_sliderh%" />
+				<text>Duration in ms:</text>
+				<data variable="tw_sdbackup_feedback_duration_ms" min="100" max="500" />
+			</object>
+
+<!--
 			<object type="text" color="%text_color%">
 				<condition var1="tw_vibrate_after_sdbackup" var2="1" />
 				<font resource="font" />
@@ -4388,7 +4505,7 @@
 				<image resource="medium_button" />
 				<action function="set">tw_sdbackup_feedback_duration_ms=200</action>
 			</object>
-
+-->
 			<object type="checkbox">
 				<placement x="%col1_x%" y="%row13_text_y%" />
 				<font resource="font" color="%text_color%" />
@@ -4397,6 +4514,17 @@
 				<image checked="checkbox_true" unchecked="checkbox_false" />
 			</object>
 
+			<object type="slidervalue">
+				<condition var1="tw_vibrate_after_sdrestore" var2="1" />
+				<placement x="col1_x" y="%row14_text_y%" w="%slidervalue_w%" />
+				<font resource="font" color="%text_color%" />
+				<colors line="%slidervalue_line_clr%" slider="%slidervalue_slider_clr%" />
+				<dimensions lineh="%slidervalue_lineh%" linepadding="%slidervalue_padding%" sliderw="%slidervalue_sliderw%" sliderh="%slidervalue_sliderh%" />
+				<text>Duration in ms:</text>
+				<data variable="tw_sdrestore_feedback_duration_ms" min="100" max="500" />
+			</object>
+
+<!--
 			<object type="text" color="%text_color%">
 				<condition var1="tw_vibrate_after_sdrestore" var2="1" />
 				<font resource="font" />
@@ -4440,7 +4568,7 @@
 				<image resource="medium_button" />
 				<action function="set">tw_sdrestore_feedback_duration_ms=200</action>
 			</object>
-
+-->
 			<object type="action">
 				<touch key="home" />
 				<action function="page">main</action>

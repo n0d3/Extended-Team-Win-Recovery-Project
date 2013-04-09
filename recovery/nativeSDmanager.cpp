@@ -18,8 +18,7 @@
 #include <sstream>
 #include <iomanip>
 #include "variables.h"
-#include "common.h"
-#include "ui.h"
+#include "twcommon.h"
 #include "partitions.hpp"
 #include "data.hpp"
 #include "twrp-functions.hpp"
@@ -28,7 +27,6 @@
 #include "nativeSDmanager.hpp"
 #include "twrpTar.hpp"
 
-extern RecoveryUI* ui;
 int TWNativeSDManager::Backup(string RomPath) {
 	int z, inc_system, inc_data, inc_boot, do_md5, skip_md5_gen;
 	string extpath, Rom_Name, Backup_Folder, Backup_Name, Full_Backup_Path;
@@ -71,14 +69,14 @@ int TWNativeSDManager::Backup(string RomPath) {
 	DataManager::GetValue(TW_SD_BACKUP_RESTORE_BOOT, inc_boot);
 	Full_Backup_Path = Backup_Folder + "/" + Backup_Name + "/";
 
-	ui_print("\n[NATIVESD BACKUP STARTED]\n");
-    	ui_print(" * Backup Folder:\n   %s\n @ %s\n", Backup_Name.c_str(), Backup_Folder.c_str());
+	gui_print("\n[NATIVESD BACKUP STARTED]\n");
+    	gui_print(" * Backup Folder:\n   %s\n @ %s\n", Backup_Name.c_str(), Backup_Folder.c_str());
 	if (!TWFunc::Recursive_Mkdir(Full_Backup_Path)) {
-		LOGE("Failed to make backup folder.\n");
+		LOGERR("Failed to make backup folder.\n");
 		return false;
 	}
 
-	LOGI("Calculating backup details...\n");
+	LOGINFO("Calculating backup details...\n");
 	unsigned long long system_backup_size = 0;
 	if (TWFunc::Path_Exists(RomPath + "/system"))
 		system_backup_size = TWFunc::Get_Folder_Size(RomPath + "/system", true);
@@ -91,22 +89,22 @@ int TWNativeSDManager::Backup(string RomPath) {
 
 	total_bytes = system_backup_size + data_backup_size + boot_backup_size;
 	remaining_bytes = total_bytes;
-    	ui_print(" * Total size of all data: %lluMB\n", total_bytes / 1024 / 1024);
+    	gui_print(" * Total size of all data: %lluMB\n", total_bytes / 1024 / 1024);
 	storage = PartitionManager.Find_Partition_By_Path(DataManager::GetCurrentStoragePath());
 	if (storage != NULL) {
 		free_space = storage->Free;
-		ui_print(" * Available space: %lluMB\n", free_space / 1024 / 1024);
+		gui_print(" * Available space: %lluMB\n", free_space / 1024 / 1024);
 	} else {
-		LOGE("Unable to locate storage device.\n");
+		LOGERR("Unable to locate storage device.\n");
 		return false;
 	}
 	if (free_space - (32 * 1024 * 1024) < total_bytes) {
 		// We require an extra 32MB just in case
-		LOGE("Not enough free space on storage.\n");
+		LOGERR("Not enough free space on storage.\n");
 		return false;
 	}
 
-	ui->SetProgress(0.0);
+	DataManager::SetProgress(0.0);
 
 	char back_name[255], split_index[5];
 	string Full_FileName, Command, Tar_Excl = "";
@@ -126,17 +124,17 @@ int TWNativeSDManager::Backup(string RomPath) {
 	if (inc_system && system_backup_size > 0) {
 		time_t start, stop;
 		time(&start);
-		ui_print("Backing up %s's system...\n", Rom_Name.c_str());
+		gui_print("Backing up %s's system...\n", Rom_Name.c_str());
 		string SYS_Backup_FileName = "system.tar";
 		remain_time = remaining_bytes / (unsigned long)file_bps;
 		pos = (total_time - remain_time) / (float) total_time;
-		ui->SetProgress(pos);
+		DataManager::SetProgress(pos);
 		section_time = system_backup_size / file_bps;
 		pos = section_time / (float) total_time;
-		ui->ShowProgress(pos, section_time);
+		DataManager::ShowProgress(pos, section_time);
 		if (system_backup_size > MAX_ARCHIVE_SIZE) {
 			// This backup needs to be split into multiple archives
-			ui_print("Breaking backup file into multiple archives...\nGenerating file lists\n");
+			gui_print("Breaking backup file into multiple archives...\nGenerating file lists\n");
 			sprintf(back_name, "%s/system", RomPath.c_str());
 			twrpTar tar;
 			tar.setexcl("");
@@ -144,7 +142,7 @@ int TWNativeSDManager::Backup(string RomPath) {
 			tar.setfn(Full_FileName);
 			backup_count = tar.splitArchiveFork();
 			if (backup_count == -1) {
-				LOGE("Error tarring split files!\n");
+				LOGERR("Error tarring split files!\n");
 				return false;
 			}
 		} else {
@@ -163,13 +161,13 @@ int TWNativeSDManager::Backup(string RomPath) {
 					return -1;
 			}
 			if (TWFunc::Get_File_Size(Full_FileName) == 0) {
-				LOGE("Backup file size for '%s' is 0 bytes.\n", Full_FileName.c_str());
+				LOGERR("Backup file size for '%s' is 0 bytes.\n", Full_FileName.c_str());
 				return false;
 			}
 		}
 		time(&stop);
 		backup_time = (int) difftime(stop, start);
-		LOGI("System Backup time: %d\n", backup_time);
+		LOGINFO("System Backup time: %d\n", backup_time);
 		remaining_bytes -= system_backup_size;
 		file_time += backup_time;
 		if (do_md5)
@@ -182,17 +180,17 @@ int TWNativeSDManager::Backup(string RomPath) {
 		DataManager::GetValue(TW_SD_SKIP_DALVIK, skip_dalvik);
 		if (skip_dalvik)
 			Tar_Excl = "dalvik-cache";
-		ui_print("Backing up %s's data...\n", Rom_Name.c_str());
+		gui_print("Backing up %s's data...\n", Rom_Name.c_str());
 		string DATA_Backup_FileName = "data.tar";
 		remain_time = remaining_bytes / (unsigned long)file_bps;
 		pos = (total_time - remain_time) / (float) total_time;
-		ui->SetProgress(pos);
+		DataManager::SetProgress(pos);
 		section_time = data_backup_size / file_bps;
 		pos = section_time / (float) total_time;
-		ui->ShowProgress(pos, section_time);
+		DataManager::ShowProgress(pos, section_time);
 		if (data_backup_size > MAX_ARCHIVE_SIZE) {
 			// This backup needs to be split into multiple archives
-			ui_print("Breaking backup file into multiple archives...\nGenerating file lists\n");
+			gui_print("Breaking backup file into multiple archives...\nGenerating file lists\n");
 			sprintf(back_name, "%s/data", RomPath.c_str());
 			twrpTar tar;
 			tar.setexcl(Tar_Excl);
@@ -200,7 +198,7 @@ int TWNativeSDManager::Backup(string RomPath) {
 			tar.setfn(Full_FileName);
 			backup_count = tar.splitArchiveFork();
 			if (backup_count == -1) {
-				LOGE("Error tarring split files!\n");
+				LOGERR("Error tarring split files!\n");
 				return false;
 			}
 		} else {
@@ -219,13 +217,13 @@ int TWNativeSDManager::Backup(string RomPath) {
 					return -1;
 			}
 			if (TWFunc::Get_File_Size(Full_FileName) == 0) {
-				LOGE("Backup file size for '%s' is 0 bytes.\n", Full_FileName.c_str());
+				LOGERR("Backup file size for '%s' is 0 bytes.\n", Full_FileName.c_str());
 				return false;
 			}
 		}
 		time(&stop);
 		backup_time = (int) difftime(stop, start);
-		LOGI("Data Backup time: %d\n", backup_time);
+		LOGINFO("Data Backup time: %d\n", backup_time);
 		remaining_bytes -= data_backup_size;
 		file_time += backup_time;
 		if (do_md5)
@@ -234,14 +232,14 @@ int TWNativeSDManager::Backup(string RomPath) {
 	if (inc_boot && boot_backup_size > 0) {
 		time_t start, stop;
 		time(&start);
-		ui_print("Backing up %s's boot...\n", Rom_Name.c_str());
+		gui_print("Backing up %s's boot...\n", Rom_Name.c_str());
 		string BOOT_Backup_FileName = "boot.tar";
 		remain_time = remaining_bytes / (unsigned long)file_bps;
 		pos = (total_time - remain_time) / (float) total_time;
-		ui->SetProgress(pos);
+		DataManager::SetProgress(pos);
 		section_time = boot_backup_size / file_bps;
 		pos = section_time / (float) total_time;
-		ui->ShowProgress(pos, section_time);
+		DataManager::ShowProgress(pos, section_time);
 		Full_FileName = Full_Backup_Path + BOOT_Backup_FileName;
 		twrpTar tar;
 		tar.setexcl("");
@@ -257,12 +255,12 @@ int TWNativeSDManager::Backup(string RomPath) {
 				return -1;
 		}
 		if (TWFunc::Get_File_Size(Full_FileName) == 0) {
-			LOGE("Backup file size for '%s' is 0 bytes.\n", Full_FileName.c_str());
+			LOGERR("Backup file size for '%s' is 0 bytes.\n", Full_FileName.c_str());
 			return false;
 		}
 		time(&stop);
 		backup_time = (int) difftime(stop, start);
-		LOGI("Boot Backup time: %d\n", backup_time);
+		LOGINFO("Boot Backup time: %d\n", backup_time);
 		remaining_bytes -= boot_backup_size;
 		file_time += backup_time;
 		if (do_md5)
@@ -289,11 +287,11 @@ int TWNativeSDManager::Backup(string RomPath) {
 
 	unsigned long long actual_backup_size = TWFunc::Get_Folder_Size(Full_Backup_Path, true);
     	actual_backup_size /= (1024LLU * 1024LLU);
-	ui_print("[%llu MB TOTAL BACKED UP]\n", actual_backup_size);
+	gui_print("[%llu MB TOTAL BACKED UP]\n", actual_backup_size);
 	PartitionManager.Update_System_Details(true);
 	PartitionManager.UnMount_Main_Partitions();
 	time(&rStop);
-	ui_print("[NATIVESD BACKUP COMPLETED in %d sec]\n\n",(int)difftime(rStop,rStart));
+	gui_print("[NATIVESD BACKUP COMPLETED in %d sec]\n\n",(int)difftime(rStop,rStart));
     	return true;
 }
 
@@ -319,7 +317,7 @@ int TWNativeSDManager::Restore(string RomPath) {
 	// Parse backup filename to extract the rom's name
 	at = Rom_Backup.find("@");
 	if (at == string::npos) {
-		LOGE("Unable to find Rom's name.\n");
+		LOGERR("Unable to find Rom's name.\n");
 	}
 	Rom_Name = Rom_Backup.substr(0, at);
 	Rom_Restore_Path = extpath + "/" + Rom_Name;
@@ -327,19 +325,19 @@ int TWNativeSDManager::Restore(string RomPath) {
 	Data_Restore_Path = extpath + "/" + Rom_Name + "/data";
 	Boot_Restore_Path = "/sdcard/NativeSD/" + Rom_Name;
 	
-	ui_print("\n[NATIVESD RESTORE STARTED]\n\n");
-	ui_print(" * Restore folder:\n   %s\n @ '%s'\n", Rom_Backup.c_str(), Backup_Folder.c_str());
+	gui_print("\n[NATIVESD RESTORE STARTED]\n\n");
+	gui_print(" * Restore folder:\n   %s\n @ '%s'\n", Rom_Backup.c_str(), Backup_Folder.c_str());
 
 	if (!PartitionManager.Mount_Current_Storage(true))
 		return false;
 
 	DataManager::GetValue(TW_SD_SKIP_MD5_CHECK_VAR, skip_check_md5);
 	if (skip_check_md5 > 0)
-		ui_print("Skipping MD5 check based on user setting.\n");
+		gui_print("Skipping MD5 check based on user setting.\n");
 	else {
 		// Check MD5 files first before restoring to ensure that all of them match before starting a restore
 		TWFunc::GUI_Operation_Text(TW_VERIFY_MD5_TEXT, "Verifying MD5");
-		ui_print("Verifying MD5...\n");
+		gui_print("Verifying MD5...\n");
 
 		string md5file, Full_Filename;
 		char split_filename[512];
@@ -351,18 +349,18 @@ int TWNativeSDManager::Restore(string RomPath) {
 			if (!TWFunc::Path_Exists(Full_Filename)) {
 				// This is a split archive, we presume
 				sprintf(split_filename, "%s%03i", Full_Filename.c_str(), index);
-				LOGI("split_filename: %s\n", split_filename);
+				LOGINFO("split_filename: %s\n", split_filename);
 				md5file = split_filename;
 				md5file += ".md5";
 				if (!TWFunc::Path_Exists(md5file)) {
-					LOGE("No md5 file found for '%s'.\n", split_filename);
-					LOGE("Please select 'Skip MD5 verification' to restore.\n");
+					LOGERR("No md5 file found for '%s'.\n", split_filename);
+					LOGERR("Please select 'Skip MD5 verification' to restore.\n");
 					return false;
 				}
 				md5sum.setfn(split_filename);
 				while (index < 1000 && TWFunc::Path_Exists(split_filename)) {
 					if (md5sum.verify_md5digest() != 0) {
-						LOGE("MD5 failed to match on '%s'.\n", split_filename);
+						LOGERR("MD5 failed to match on '%s'.\n", split_filename);
 						return false;
 					}
 					index++;
@@ -374,13 +372,13 @@ int TWNativeSDManager::Restore(string RomPath) {
 				// Single file archive
 				md5file = Full_Filename + ".md5";
 				if (!TWFunc::Path_Exists(md5file)) {
-					LOGE("No md5 file found for '%s'.\n", Full_Filename.c_str());
-					LOGE("Please select 'Skip MD5 verification' to restore.\n");
+					LOGERR("No md5 file found for '%s'.\n", Full_Filename.c_str());
+					LOGERR("Please select 'Skip MD5 verification' to restore.\n");
 					return false;
 				}
 				md5sum.setfn(Full_Filename);
 				if (md5sum.verify_md5digest() != 0) {
-					LOGE("MD5 failed to match on '%s'.\n", split_filename);
+					LOGERR("MD5 failed to match on '%s'.\n", split_filename);
 					return false;
 				} else
 					return true;
@@ -394,14 +392,14 @@ int TWNativeSDManager::Restore(string RomPath) {
 				md5file = split_filename;
 				md5file += ".md5";
 				if (!TWFunc::Path_Exists(md5file)) {
-					LOGE("No md5 file found for '%s'.\n", split_filename);
-					LOGE("Please select 'Skip MD5 verification' to restore.\n");
+					LOGERR("No md5 file found for '%s'.\n", split_filename);
+					LOGERR("Please select 'Skip MD5 verification' to restore.\n");
 					return false;
 				}
 				md5sum.setfn(split_filename);
 				while (index < 1000 && TWFunc::Path_Exists(split_filename)) {
 					if (md5sum.verify_md5digest() != 0) {
-						LOGE("MD5 failed to match on '%s'.\n", split_filename);
+						LOGERR("MD5 failed to match on '%s'.\n", split_filename);
 						return false;
 					}
 					index++;
@@ -413,13 +411,13 @@ int TWNativeSDManager::Restore(string RomPath) {
 				// Single file archive
 				md5file = Full_Filename + ".md5";
 				if (!TWFunc::Path_Exists(md5file)) {
-					LOGE("No md5 file found for '%s'.\n", Full_Filename.c_str());
-					LOGE("Please select 'Skip MD5 verification' to restore.\n");
+					LOGERR("No md5 file found for '%s'.\n", Full_Filename.c_str());
+					LOGERR("Please select 'Skip MD5 verification' to restore.\n");
 					return false;
 				}
 				md5sum.setfn(Full_Filename);
 				if (md5sum.verify_md5digest() != 0) {
-					LOGE("MD5 failed to match on '%s'.\n", split_filename);
+					LOGERR("MD5 failed to match on '%s'.\n", split_filename);
 					return false;
 				} else
 					return true;
@@ -431,20 +429,20 @@ int TWNativeSDManager::Restore(string RomPath) {
 				// Single file archive
 				md5file = Full_Filename + ".md5";
 				if (!TWFunc::Path_Exists(md5file)) {
-					LOGE("No md5 file found for '%s'.\n", Full_Filename.c_str());
-					LOGE("Please select 'Skip MD5 verification' to restore.\n");
+					LOGERR("No md5 file found for '%s'.\n", Full_Filename.c_str());
+					LOGERR("Please select 'Skip MD5 verification' to restore.\n");
 					return false;
 				}
 				md5sum.setfn(Full_Filename);
 				if (md5sum.verify_md5digest() != 0) {
-					LOGE("MD5 failed to match on '%s'.\n", split_filename);
+					LOGERR("MD5 failed to match on '%s'.\n", split_filename);
 					return false;
 				} else
 					return true;
 			}
 		}
 
-		ui_print("Done verifying MD5.\n");
+		gui_print("Done verifying MD5.\n");
 	}
 
 	string Full_FileName, Command;
@@ -454,18 +452,18 @@ int TWNativeSDManager::Restore(string RomPath) {
 	Command = "cd " + extpath + " && busybox mkdir "+ Rom_Name;
 	system(Command.c_str());
 	if (inc_system) {
-		ui_print(" * Restoring %s's system...\n", Rom_Name.c_str());
+		gui_print(" * Restoring %s's system...\n", Rom_Name.c_str());
 		if (TWFunc::Path_Exists(Sys_Restore_Path)) {			
 			system(("rm -rf " + Sys_Restore_Path).c_str());
 		}
 		Full_FileName = Full_Backup_Path + "/system.tar";
 		if (!TWFunc::Path_Exists(Full_FileName)) {
 			// Backup is multiple archives
-			LOGI("Backup is multiple archives.\n");
+			LOGINFO("Backup is multiple archives.\n");
 			sprintf(split_index, "%03i", index);
 			Full_FileName += split_index;
 			while (TWFunc::Path_Exists(Full_FileName)) {
-				ui_print("Restoring archive %i...\n", index + 1);
+				gui_print("Restoring archive %i...\n", index + 1);
 				twrpTar tar;
 				tar.setdir("/");
 				tar.setfn(Full_FileName);
@@ -476,7 +474,7 @@ int TWNativeSDManager::Restore(string RomPath) {
 				Full_FileName = Full_Backup_Path + "/system.tar" + split_index;
 			}
 			if (index == 0) {
-				LOGE("Error locating restore file:\n'%s'\n", Full_FileName.c_str());
+				LOGERR("Error locating restore file:\n'%s'\n", Full_FileName.c_str());
 				return false;
 			}
 		} else {
@@ -488,7 +486,7 @@ int TWNativeSDManager::Restore(string RomPath) {
 		}
 	}
 	if (inc_data) {
-		ui_print(" * Restoring %s's data...\n", Rom_Name.c_str());
+		gui_print(" * Restoring %s's data...\n", Rom_Name.c_str());
 		if (TWFunc::Path_Exists(Data_Restore_Path)) {			
 			system(("rm -rf " + Data_Restore_Path).c_str());
 		}
@@ -496,11 +494,11 @@ int TWNativeSDManager::Restore(string RomPath) {
 		if (!TWFunc::Path_Exists(Full_FileName)) {
 			// Backup is multiple archives
 			index = 0;
-			LOGI("Backup is multiple archives.\n");
+			LOGINFO("Backup is multiple archives.\n");
 			sprintf(split_index, "%03i", index);
 			Full_FileName += split_index;
 			while (TWFunc::Path_Exists(Full_FileName)) {
-				ui_print("Restoring archive %i...\n", index + 1);
+				gui_print("Restoring archive %i...\n", index + 1);
 				twrpTar tar;
 				tar.setdir("/");
 				tar.setfn(Full_FileName);
@@ -511,7 +509,7 @@ int TWNativeSDManager::Restore(string RomPath) {
 				Full_FileName = Full_Backup_Path + "/data.tar" + split_index;
 			}
 			if (index == 0) {
-				LOGE("Error locating restore file:\n'%s'\n", Full_FileName.c_str());
+				LOGERR("Error locating restore file:\n'%s'\n", Full_FileName.c_str());
 				return false;
 			}
 		} else {
@@ -523,10 +521,10 @@ int TWNativeSDManager::Restore(string RomPath) {
 		}
 	}
 	if (inc_boot) {
-		ui_print(" * Restoring %s's boot...\n", Rom_Name.c_str());
+		gui_print(" * Restoring %s's boot...\n", Rom_Name.c_str());
 		if (!TWFunc::Path_Exists(Boot_Restore_Path)) {
 			if (!TWFunc::Recursive_Mkdir(Boot_Restore_Path)) {
-				LOGE("Failed to make boot folder.\n");
+				LOGERR("Failed to make boot folder.\n");
 			}
 		} else {
 			system(("rm -rf " + Boot_Restore_Path).c_str());
@@ -546,7 +544,7 @@ int TWNativeSDManager::Restore(string RomPath) {
 	PartitionManager.Update_System_Details(true);
 	PartitionManager.UnMount_Main_Partitions();
 	time(&rStop);
-	ui_print("[NATIVESD RESTORE COMPLETED IN %d sec]\n\n",(int)difftime(rStop,rStart));
+	gui_print("[NATIVESD RESTORE COMPLETED IN %d sec]\n\n",(int)difftime(rStop,rStart));
 	return true;
 }
 
@@ -580,7 +578,7 @@ int TWNativeSDManager::Delete(string RomPath) {
 					system(("rm -rf /sdcard/NativeSD/" + RomPath.substr(8, RomPath.size() - 1)).c_str());
         	    			system("rm -f /sdcard/NativeSD/initrd.gz");
         	    			system("rm -f /sdcard/NativeSD/zImage");
-        	    			ui_print("Selected NativeSD Rom deleted.\n");
+        	    			gui_print("Selected NativeSD Rom deleted.\n");
 					return true;
 				}
     	    		}
@@ -594,21 +592,21 @@ int TWNativeSDManager::Kernel_Update(string ptn, string RomPath) {
 	string Rom_Name, mkbootimg, eraseimg, flashimg, clean;
 	Rom_Name = RomPath.substr(17, RomPath.size() - 1);
 
-	ui_print("\n[NATIVESD KERNEL RESTORE STARTED]\n\n");
-	ui_print("Building img-file...\n");
+	gui_print("\n[NATIVESD KERNEL RESTORE STARTED]\n\n");
+	gui_print("Building img-file...\n");
 	mkbootimg = "mkbootimg --kernel " + RomPath + "/zImage --ramdisk " + RomPath + "/initrd.gz --cmdline \"rel_path=\"" + Rom_Name + " --base 0x11800000 --output /sdcard/" + ptn + ".img";
 	if (system(mkbootimg.c_str()) != 0)
 		return false;
 	eraseimg = "erase_image " + ptn;
 	if (system(eraseimg.c_str()) != 0)
 		return false;
-	ui_print("Flashing img-file...\n");
+	gui_print("Flashing img-file...\n");
 	flashimg = "flash_image " + ptn + " /sdcard/" + ptn + ".img";
 	if (system(flashimg.c_str()) != 0)
 		return false;
 	clean = "rm -f /sdcard/" + ptn + ".img";
 	system(clean.c_str());
-	ui_print("\n[NATIVESD KERNEL RESTORE COMPLETED]\n\n");
+	gui_print("\n[NATIVESD KERNEL RESTORE COMPLETED]\n\n");
 	
 	return true;
 }
@@ -625,7 +623,7 @@ int TWNativeSDManager::Fix_Perm(string RomPath) {
 	TWPartition* sdext = PartitionManager.Find_Partition_By_Path(extpath);
 	if (sdext != NULL) {
 		if (TWFunc::Path_Exists(RomPath)) {
-			ui_print("\n[NATIVESD PERM-FIX STARTED]\n\n");
+			gui_print("\n[NATIVESD PERM-FIX STARTED]\n\n");
 			if (PartitionManager.Is_Mounted_By_Path("/system"))
 				PartitionManager.UnMount_By_Path("/system", false);
 			sleep(2);
@@ -641,7 +639,7 @@ int TWNativeSDManager::Fix_Perm(string RomPath) {
 			system("umount /system");
 			sleep(2);
 			system("umount /data");
-			ui_print("\n[NATIVESD PERM-FIX COMPLETED]\n\n");
+			gui_print("\n[NATIVESD PERM-FIX COMPLETED]\n\n");
 			return true;
 		}
 	}
@@ -664,7 +662,7 @@ int TWNativeSDManager::Wipe_Data(string RomPath) {
 			if (stat((RomPath + "/data").c_str(), &st) == 0) {
 				system(("rm -rf " + RomPath + "/data/*").c_str());
 				system(("rm -rf " + RomPath + "/data/.*").c_str());
-                		ui_print("NativeSD Rom's data wiped.\n");
+                		gui_print("NativeSD Rom's data wiped.\n");
 				return true;
     	    		}
         	}
@@ -687,7 +685,7 @@ int TWNativeSDManager::Wipe_Dalvik(string RomPath) {
 		if (sdext->Is_Present && sdext->Mount(false)) {
 			if (stat((RomPath + "/data/dalvik-cache").c_str(), &st) == 0) {
                 		if (system(("rm -rf " + RomPath + "/data/dalvik-cache/*").c_str()) == 0) {
-        	    			ui_print("NativeSD Rom's dalvik-cache wiped.\n");
+        	    			gui_print("NativeSD Rom's dalvik-cache wiped.\n");
 					return true;
 				}
     	    		}

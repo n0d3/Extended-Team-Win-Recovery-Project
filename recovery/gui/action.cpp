@@ -1,4 +1,20 @@
-// image.cpp - GUIImage object
+/*
+	Copyright 2013 bigbiff/Dees_Troy TeamWin
+	This file is part of TWRP/TeamWin Recovery Project.
+
+	TWRP is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	TWRP is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with TWRP.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -22,17 +38,16 @@
 #include "../twrp-functions.hpp"
 #include "../openrecoveryscript.hpp"
 
-#include "../ui.h"
 #include "../adb_install.h"
 #include "blanktimer.hpp"
 #include "../nativeSDmanager.hpp"
 
 extern "C" {
-#include "../common.h"
+#include "../twcommon.h"
 #include "../minuitwrp/minui.h"
-#include "../recovery_ui.h"
 #include "../variables.h"
 #include "../twinstall.h"
+#include "cutils/properties.h"
 #include "../minadbd/adb.h"
 
 int TWinstall_zip(const char* path, int* wipe_cache);
@@ -44,7 +59,6 @@ int gui_start();
 #include "rapidxml.hpp"
 #include "objects.hpp"
 
-extern RecoveryUI* ui;
 extern blanktimer blankTimer;
 TWNativeSDManager NativeSDManager;
 void curtainClose(void);
@@ -133,7 +147,7 @@ int GUIAction::NotifyVarChange(std::string varName, std::string value) {
 }
 
 void GUIAction::simulate_progress_bar(void) {
-	ui_print("Simulating actions...\n");
+	gui_print("Simulating actions...\n");
 	for (int i = 0; i < 5; i++) {
 		usleep(500000);
 		DataManager::SetValue("ui_progress", i * 20);
@@ -146,7 +160,7 @@ int GUIAction::flash_zip(std::string filename, std::string pageName, const int s
 	DataManager::SetValue("ui_progress", 0);
 
 	if (filename.empty()) {
-		LOGE("No file specified.\n");
+		LOGERR("No file specified.\n");
 		return -1;
 	}
 
@@ -160,7 +174,7 @@ int GUIAction::flash_zip(std::string filename, std::string pageName, const int s
 		return -1;
 
 	if (mzOpenZipArchive(filename.c_str(), &zip)) {
-		LOGE("Unable to open zip file.\n");
+		LOGERR("Unable to open zip file.\n");
 		return -1;
 	}
 
@@ -195,9 +209,9 @@ int GUIAction::flash_zip(std::string filename, std::string pageName, const int s
 		if (stat("/sbin/installTwrp", &st) == 0) {
 			DataManager::SetValue("tw_operation", "Configuring TWRP");
 			DataManager::SetValue("tw_partition", "");
-			ui_print("Configuring TWRP...\n");
+			gui_print("Configuring TWRP...\n");
 			if (TWFunc::Exec_Cmd("/sbin/installTwrp reinstall", result) < 0) {
-				ui_print("Unable to configure TWRP with this kernel.\n");
+				gui_print("Unable to configure TWRP with this kernel.\n");
 			}
 		}
 	}
@@ -218,31 +232,31 @@ int GUIAction::doActions() {
 	pthread_t t;
 	pthread_attr_t tattr;
 	if (pthread_attr_init(&tattr)) {
-		LOGE("Unable to pthread_attr_init\n");
+		LOGERR("Unable to pthread_attr_init\n");
 		return -1;
 	}
 	if (pthread_attr_setdetachstate(&tattr, PTHREAD_CREATE_JOINABLE)) {
-		LOGE("Error setting pthread_attr_setdetachstate\n");
+		LOGERR("Error setting pthread_attr_setdetachstate\n");
 		return -1;
 	}
 	if (pthread_attr_setscope(&tattr, PTHREAD_SCOPE_SYSTEM)) {
-		LOGE("Error setting pthread_attr_setscope\n");
+		LOGERR("Error setting pthread_attr_setscope\n");
 		return -1;
 	}
 	/*if (pthread_attr_setstacksize(&tattr, 524288)) {
-		LOGE("Error setting pthread_attr_setstacksize\n");
+		LOGERR("Error setting pthread_attr_setstacksize\n");
 		return -1;
 	}*/
 	int ret = pthread_create(&t, &tattr, thread_start, this);
 	if (ret) {
-		LOGI("Unable to create more threads for actions... continuing in same thread! %i\n", ret);
+		LOGINFO("Unable to create more threads for actions... continuing in same thread! %i\n", ret);
 		thread_start(this);
 	} else {
 		if (pthread_join(t, NULL))
-			LOGE("Error joining threads\n");
+			LOGERR("Error joining threads\n");
 	}
 	if (pthread_attr_destroy(&tattr)) {
-		LOGE("Failed to pthread_attr_destroy\n");
+		LOGERR("Failed to pthread_attr_destroy\n");
 		return -1;
 	}
 
@@ -342,7 +356,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 		usleep(1100);
 		root_path = DataManager::GetSettingsStoragePath();
 		if (PartitionManager.Mount_By_Path(root_path.c_str(), 1) < 0) {
-			LOGE("Unable to mount %s during reload function startup.\n", root_path.c_str());
+			LOGERR("Unable to mount %s during reload function startup.\n", root_path.c_str());
 			check = 1;
 		}
 
@@ -352,9 +366,9 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			theme_path = "/res/ui.xml";
 		if (check != 0 || PageManager::ReloadPackage("TWRP", theme_path) != 0) {
 			// Loading the custom theme failed - try loading the stock theme
-			LOGI("Attempting to reload stock theme...\n");
+			LOGINFO("Attempting to reload stock theme...\n");
 			if (PageManager::ReloadPackage("TWRP", "/res/ui.xml")) {
-				LOGE("Failed to load base packages.\n");
+				LOGERR("Failed to load base packages.\n");
 				ret_val = 1;
 			}
 		}
@@ -405,7 +419,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			if (!simulate)
 				PartitionManager.usb_storage_enable();
 			else
-				ui_print("Simulating actions...\n");
+				gui_print("Simulating actions...\n");
 		}
 		else if (!simulate) {
 			string cmd;
@@ -416,7 +430,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			else
 				PartitionManager.Mount_By_Path(arg, true);
 		} else
-			ui_print("Simulating actions...\n");
+			gui_print("Simulating actions...\n");
 		return 0;
 	}
 	if (function == "umount" || function == "unmount") {
@@ -424,7 +438,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			if (!simulate)
 				PartitionManager.usb_storage_disable();
 			else
-				ui_print("Simulating actions...\n");
+				gui_print("Simulating actions...\n");
 			DataManager::SetValue(TW_ACTION_BUSY, 0);
 		}
 		else if (!simulate) {
@@ -436,13 +450,13 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			else
 				PartitionManager.UnMount_By_Path(arg, true);
 		} else
-			ui_print("Simulating actions...\n");
+			gui_print("Simulating actions...\n");
 		return 0;
 	}
 	if (function == "restoredefaultsettings") {
 		operation_start("Restore Defaults");
 		if (simulate) // Simulated so that people don't accidently wipe out the "simulation is on" setting
-			ui_print("Simulating actions...\n");
+			gui_print("Simulating actions...\n");
 		else {
 			DataManager::ResetDefaults();
 			PartitionManager.Update_System_Details(true);
@@ -456,9 +470,9 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			string dst;
 			PartitionManager.Mount_Current_Storage(true);
 			dst = DataManager::GetCurrentStoragePath() + "/recovery.log";
-			TWFunc::copy_file("/tmp/recovery.log", dst.c_str(), 0755);
+			TWFunc::Copy_Log("/tmp/recovery.log", dst.c_str());
 			sync();
-			ui_print("Copied recovery log to %s.\n", DataManager::GetCurrentStoragePath().c_str());
+			gui_print("Copied recovery log to %s.\n", DataManager::GetCurrentStoragePath().c_str());
 		} else
 			simulate_progress_bar();
 		operation_end(0, simulate);
@@ -490,6 +504,33 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			DataManager::SetValue(varName, value);
 			return 0;
 		}
+		if (arg.find("*") != string::npos)
+		{
+			string varName = arg.substr(0, arg.find('*'));
+			string multiply_by_str = gui_parse_text(arg.substr(arg.find('*') + 1, string::npos));
+			int multiply_by = atoi(multiply_by_str.c_str());
+			int value;
+
+			DataManager::GetValue(varName, value);
+			DataManager::SetValue(varName, value*multiply_by);
+			return 0;
+		}
+		if (arg.find("/") != string::npos)
+		{
+			string varName = arg.substr(0, arg.find('/'));
+			string divide_by_str = gui_parse_text(arg.substr(arg.find('/') + 1, string::npos));
+			int divide_by = atoi(divide_by_str.c_str());
+			int value;
+
+			if(divide_by != 0)
+			{
+				DataManager::GetValue(varName, value);
+				DataManager::SetValue(varName, value/divide_by);
+			}
+			return 0;
+		}
+		LOGERR("Unable to perform compute '%s'\n", arg.c_str());
+		return -1;
 	}	
 	if (function == "setguitimezone") {
 		string SelectedZone;
@@ -576,7 +617,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 		return gui_changeOverlay(arg);
 	if (function == "queuezip") {
 		if (zip_queue_index >= 10) {
-			ui_print("Maximum zip queue reached!\n");
+			gui_print("Maximum zip queue reached!\n");
 			return 0;
 		}
 		DataManager::GetValue("tw_filename", zip_queue[zip_queue_index]);
@@ -588,7 +629,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 	}
 	if (function == "cancelzip") {
 		if (zip_queue_index <= 0) {
-			ui_print("Minimum zip queue reached!\n");
+			gui_print("Minimum zip queue reached!\n");
 			return 0;
 		} else {
 			zip_queue_index--;
@@ -654,7 +695,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			operation_start("AppExec");
 			ret = flash_zip(appfile, arg, simulate, &wipe_cache);
 			if (ret != 0) {
-				ui_print("Error with zip '%s'\n", appfile.c_str());				
+				gui_print("Error with zip '%s'\n", appfile.c_str());				
 				ret = 1;
 			}
 		   	operation_end(ret, simulate);
@@ -671,7 +712,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 
 				ret_val = flash_zip(zip_queue[i], arg, simulate, &wipe_cache);
 				if (ret_val != 0) {
-					ui_print("Error flashing zip '%s'\n", zip_queue[i].c_str());
+					gui_print("Error flashing zip '%s'\n", zip_queue[i].c_str());
 					i = 10; // Error flashing zip - exit queue
 					ret_val = 1;
 				}
@@ -682,7 +723,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			string result;
 			if (DataManager::GetIntValue(TW_HAS_INJECTTWRP) == 1 && DataManager::GetIntValue(TW_INJECT_AFTER_ZIP) == 1) {
 				operation_start("ReinjectTWRP");
-				ui_print("Injecting TWRP into boot image...\n");
+				gui_print("Injecting TWRP into boot image...\n");
 				if (simulate) {
 					simulate_progress_bar();
 				} else {
@@ -693,7 +734,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 						string injectcmd = "injecttwrp --dump /tmp/backup_recovery_ramdisk.img /tmp/injected_boot.img --flash bd=" + Boot->Actual_Block_Device;
 						TWFunc::Exec_Cmd(injectcmd, result);
 					}
-					ui_print("TWRP injection complete.\n");
+					gui_print("TWRP injection complete.\n");
 				}
 			}
 			PartitionManager.Update_System_Details(true);
@@ -751,13 +792,13 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 					string Storage_Path = DataManager::GetSettingsStoragePath();
 
 					if (PartitionManager.Mount_By_Path(Storage_Path, true)) {
-						LOGI("Making TWRP folder and saving settings.\n");
+						LOGINFO("Making TWRP folder and saving settings.\n");
 						Storage_Path += "/TWRP";
 						mkdir(Storage_Path.c_str(), 0777);
 						DataManager::SetupTwrpFolder();
 						DataManager::Flush();
 					} else {
-						LOGE("Unable to recreate TWRP folder and save settings.\n");
+						LOGERR("Unable to recreate TWRP folder and save settings.\n");
 					}
 				}
 			}
@@ -822,7 +863,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			string scrfile;
 			DataManager::GetValue("tw_script_file", scrfile);
 			string command = "chmod 0775 " + scrfile + " && " + scrfile;
-			LOGI("ScriptExec: %s.\n", command.c_str());
+			LOGINFO("ScriptExec: %s.\n", command.c_str());
 
 			operation_start("ScriptExec");
 			if (simulate) {
@@ -846,7 +887,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 
 			DataManager::GetValue("sd_rom2", sdrompath);
 			operation_start("NativeSDManager");
-			ui_print("Preparing kernel before rebooting...\n");
+			gui_print("Preparing kernel before rebooting...\n");
 			if (simulate) {
 				simulate_progress_bar();
 				operation_end(ret, simulate);
@@ -974,7 +1015,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				sdrompath = "/sdext2" + tmp.substr(16, tmp.size() - 1);
 			}
 			operation_start("NativeSDManager");
-			ui_print("Deleting %s\n", sdrompath.c_str());
+			gui_print("Deleting %s\n", sdrompath.c_str());
 			if (simulate) {
 				simulate_progress_bar();
 				operation_end(ret, simulate);
@@ -1010,7 +1051,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				sdrompath = "/sdext2" + tmp.substr(16, tmp.size() - 1);
 			}
 			operation_start("NativeSDManager");
-			ui_print("Fixing permissions on %s\n", sdrompath.c_str());
+			gui_print("Fixing permissions on %s\n", sdrompath.c_str());
 			if (simulate) {
 				simulate_progress_bar();
 				operation_end(ret, simulate);
@@ -1046,7 +1087,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				sdrompath = "/sdext2" + tmp.substr(16, tmp.size() - 1);
 			}
 			operation_start("NativeSDManager");
-			ui_print("Wiping data on %s\n", sdrompath.c_str());
+			gui_print("Wiping data on %s\n", sdrompath.c_str());
 			if (simulate) {
 				simulate_progress_bar();
 				operation_end(ret, simulate);
@@ -1082,7 +1123,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				sdrompath = "/sdext2" + tmp.substr(16, tmp.size() - 1);
 			}
 			operation_start("NativeSDManager");
-			ui_print("Wiping dalvik-cache on %s\n", sdrompath.c_str());
+			gui_print("Wiping dalvik-cache on %s\n", sdrompath.c_str());
 			if (simulate) {
 				simulate_progress_bar();
 				operation_end(ret, simulate);
@@ -1144,7 +1185,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				int allow_partition;
 				DataManager::GetValue(TW_ALLOW_PARTITION_SDCARD, allow_partition);
 				if (allow_partition == 0) {
-					ui_print("This device does not have a real SD Card!\nAborting!\n");
+					gui_print("This device does not have a real SD Card!\nAborting!\n");
 				} else {
 					if (!PartitionManager.Partition_SDCard())
 						ret_val = 1; // failed
@@ -1164,7 +1205,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				int allow_partition;
 				DataManager::GetValue(TW_ALLOW_PARTITION_SDCARD, allow_partition);
 				if (allow_partition == 0) {
-					ui_print("This device does not have a real SD Card!\nAborting!\n");
+					gui_print("This device does not have a real SD Card!\nAborting!\n");
 				} else {
 					if (!PartitionManager.FSConvert_SDEXT("/sd-ext"))
 						ret_val = 1; // failed
@@ -1187,7 +1228,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 					int allow_partition;
 					DataManager::GetValue(TW_ALLOW_PARTITION_SDCARD, allow_partition);
 					if (allow_partition == 0) {
-						ui_print("This device does not have a real SD Card!\nAborting!\n");
+						gui_print("This device does not have a real SD Card!\nAborting!\n");
 					} else {
 						if (!PartitionManager.FSConvert_SDEXT("/sdext2"))
 							ret_val = 1; // failed
@@ -1263,7 +1304,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			string result;
 
 			operation_start("Command");
-			LOGI("Running command: '%s'\n", arg.c_str());
+			LOGINFO("Running command: '%s'\n", arg.c_str());
 			if (simulate) {
 				simulate_progress_bar();
 			} else {
@@ -1282,19 +1323,19 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 
 			DataManager::GetValue("tw_terminal_location", cmdpath);
 			operation_start("CommandOutput");
-			ui_print("%s # %s\n", cmdpath.c_str(), arg.c_str());
+			gui_print("%s # %s\n", cmdpath.c_str(), arg.c_str());
 			if (simulate) {
 				simulate_progress_bar();
 				operation_end(op_status, simulate);
 			} else {
 				command = "cd \"" + cmdpath + "\" && " + arg + " 2>&1";;
-				LOGI("Actual command is: '%s'\n", command.c_str());
+				LOGINFO("Actual command is: '%s'\n", command.c_str());
 				DataManager::SetValue("tw_terminal_command_thread", command);
 				DataManager::SetValue("tw_terminal_state", 1);
 				DataManager::SetValue("tw_background_thread_running", 1);
 				op_status = pthread_create(&terminal_command, NULL, command_thread, NULL);
 				if (op_status != 0) {
-					LOGE("Error starting terminal command thread, %i.\n", op_status);
+					LOGERR("Error starting terminal command thread, %i.\n", op_status);
 					DataManager::SetValue("tw_terminal_state", 0);
 					DataManager::SetValue("tw_background_thread_running", 0);
 					operation_end(1, simulate);
@@ -1306,7 +1347,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 		{
 			int op_status = 0;
 
-			LOGI("Sending kill command...\n");
+			LOGINFO("Sending kill command...\n");
 			operation_start("KillCommand");
 			DataManager::SetValue("tw_operation_status", 0);
 			DataManager::SetValue("tw_operation_state", 1);
@@ -1320,12 +1361,12 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			int op_status = 0;
 			string result;
 			operation_start("ReinjectTWRP");
-			ui_print("Injecting TWRP into boot image...\n");
+			gui_print("Injecting TWRP into boot image...\n");
 			if (simulate) {
 				simulate_progress_bar();
 			} else {
 				TWFunc::Exec_Cmd("injecttwrp --dump /tmp/backup_recovery_ramdisk.img /tmp/injected_boot.img --flash", result);
-				ui_print("TWRP injection complete.\n");
+				gui_print("TWRP injection complete.\n");
 			}
 
 			operation_end(op_status, simulate);
@@ -1378,7 +1419,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 
 							root_path = DataManager::GetSettingsStoragePath();
 							if (PartitionManager.Mount_By_Path(root_path.c_str(), 1) < 0) {
-								LOGE("Unable to mount %s during reload function startup.\n", root_path.c_str());
+								LOGERR("Unable to mount %s during reload function startup.\n", root_path.c_str());
 								check = 1;
 							}
 
@@ -1390,10 +1431,10 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 								if (PageManager::ReloadPackage("TWRP", theme_path) != 0)
 								{
 									// Loading the custom theme failed - try loading the stock theme
-									LOGI("Attempting to reload stock theme...\n");
+									LOGINFO("Attempting to reload stock theme...\n");
 									if (PageManager::ReloadPackage("TWRP", "/res/ui.xml"))
 									{
-										LOGE("Failed to load base packages.\n");
+										LOGERR("Failed to load base packages.\n");
 									}
 								}
 							}
@@ -1425,9 +1466,9 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				if (TWFunc::Path_Exists(Sideload_File)) {
 					unlink(Sideload_File.c_str());
 				}
-				ui_print("Starting ADB sideload feature...\n");
+				gui_print("Starting ADB sideload feature...\n");
 				DataManager::GetValue("tw_wipe_dalvik", wipe_dalvik);
-				ret = apply_from_adb(ui, &wipe_cache, Sideload_File.c_str());
+				ret = apply_from_adb(Sideload_File.c_str());
 				if (ret != 0) {
 					ret = 1; // failure
 				} else {
@@ -1438,7 +1479,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				}
 				if (DataManager::GetIntValue(TW_HAS_INJECTTWRP) == 1 && DataManager::GetIntValue(TW_INJECT_AFTER_ZIP) == 1) {
 					operation_start("ReinjectTWRP");
-					ui_print("Injecting TWRP into boot image...\n");
+					gui_print("Injecting TWRP into boot image...\n");
 					if (simulate) {
 						simulate_progress_bar();
 					} else {
@@ -1449,7 +1490,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 							string injectcmd = "injecttwrp --dump /tmp/backup_recovery_ramdisk.img /tmp/injected_boot.img --flash bd=" + Boot->Actual_Block_Device;
 							TWFunc::Exec_Cmd(injectcmd, result);
 						}
-						ui_print("TWRP injection complete.\n");
+						gui_print("TWRP injection complete.\n");
 					}
 				}
 			}
@@ -1463,7 +1504,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			Sideload_File = DataManager::GetCurrentStoragePath() + "/sideload.zip";
 			unlink(Sideload_File.c_str());
 			DataManager::GetValue("tw_child_pid", child_pid);
-			ui_print("Cancelling ADB sideload...\n");
+			gui_print("Cancelling ADB sideload...\n");
 			kill(child_pid, SIGTERM);
 			DataManager::SetValue("tw_page_done", "1"); // For OpenRecoveryScript support
 			return 0;
@@ -1478,14 +1519,14 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				// Run those first.
 				int reboot = 0;
 				if (TWFunc::Path_Exists(SCRIPT_FILE_TMP)) {
-					ui_print("Processing AOSP recovery commands...\n");
+					gui_print("Processing AOSP recovery commands...\n");
 					if (OpenRecoveryScript::run_script_file() == 0) {
 						reboot = 1;
 					}
 				}
 				// Check for the ORS file in /cache and attempt to run those commands.
 				if (OpenRecoveryScript::check_for_script_file()) {
-					ui_print("Processing OpenRecoveryScript file...\n");
+					gui_print("Processing OpenRecoveryScript file...\n");
 					if (OpenRecoveryScript::run_script_file() == 0) {
 						reboot = 1;
 					}
@@ -1563,7 +1604,7 @@ void* GUIAction::command_thread(void *cookie)
 	DataManager::GetValue("tw_terminal_command_thread", command);
 	fp = popen(command.c_str(), "r");
 	if (fp == NULL) {
-		LOGE("Error opening command to run.\n");
+		LOGERR("Error opening command to run.\n");
 	} else {
 		int fd = fileno(fp), has_data = 0, check = 0, keep_going = -1, bytes_read = 0;
 		struct timeval timeout;
@@ -1589,7 +1630,7 @@ void* GUIAction::command_thread(void *cookie)
 				memset(line, 0, sizeof(line));
 				bytes_read = read(fd, line, sizeof(line));
 				if (bytes_read > 0)
-					ui_print("%s", line); // Display output
+					gui_print("%s", line); // Display output
 				else
 					keep_going = 0; // Done executing
 			}

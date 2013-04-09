@@ -27,41 +27,6 @@ extern "C" {
 #include <unistd.h>
 #include "partitions.hpp"
 
-static int get_bootloader_message_mtd(struct bootloader_message *out, const TWPartition* Partition);
-static int set_bootloader_message_mtd(const struct bootloader_message *in, const TWPartition* Partition);
-static int get_bootloader_message_block(struct bootloader_message *out, const TWPartition* Partition);
-static int set_bootloader_message_block(const struct bootloader_message *in, const TWPartition* Partition);
-
-int get_bootloader_message(struct bootloader_message *out) {
-    TWPartition* Part = PartitionManager.Find_Partition_By_Path("/misc");
-    if (Part == NULL) {
-      LOGE("Cannot load volume /misc!\n");
-      return -1;
-    }
-    if (Part->Current_File_System == "mtd") {
-        return get_bootloader_message_mtd(out, Part);
-    } else if (Part->Current_File_System == "emmc") {
-        return get_bootloader_message_block(out, Part);
-    }
-    LOGE("unknown misc partition fs_type \"%s\"\n", Part->Current_File_System.c_str());
-    return -1;
-}
-
-int set_bootloader_message(const struct bootloader_message *in) {
-    TWPartition* Part = PartitionManager.Find_Partition_By_Path("/misc");
-    if (Part == NULL) {
-      LOGE("Cannot load volume /misc!\n");
-      return -1;
-    }
-    if (Part->Current_File_System == "mtd") {
-        return set_bootloader_message_mtd(in, Part);
-    } else if (Part->Current_File_System == "emmc") {
-        return set_bootloader_message_block(in, Part);
-    }
-    LOGE("unknown misc partition fs_type \"%s\"\n", Part->Current_File_System.c_str());
-    return -1;
-}
-
 // ------------------------------
 // for misc partitions on MTD
 // ------------------------------
@@ -201,4 +166,104 @@ static int set_bootloader_message_block(const struct bootloader_message *in,
         return -1;
     }
     return 0;
+}
+
+int tw_get_bootloader_message(struct bootloader_message *out) {
+    TWPartition* Part = PartitionManager.Find_Partition_By_Path("/misc");
+    if (Part == NULL) {
+      LOGE("Cannot load volume /misc!\n");
+      return -1;
+    }
+    if (Part->Current_File_System == "mtd") {
+        return get_bootloader_message_mtd(out, Part);
+    } else if (Part->Current_File_System == "emmc") {
+        return get_bootloader_message_block(out, Part);
+    }
+    LOGE("unknown misc partition fs_type \"%s\"\n", Part->Current_File_System.c_str());
+    return -1;
+}
+
+int tw_set_bootloader_message(const struct bootloader_message *in) {
+    TWPartition* Part = PartitionManager.Find_Partition_By_Path("/misc");
+    if (Part == NULL) {
+      LOGE("Cannot load volume /misc!\n");
+      return -1;
+    }
+    if (Part->Current_File_System == "mtd") {
+        return set_bootloader_message_mtd(in, Part);
+    } else if (Part->Current_File_System == "emmc") {
+        return set_bootloader_message_block(in, Part);
+    }
+    LOGE("unknown misc partition fs_type \"%s\"\n", Part->Current_File_System.c_str());
+    return -1;
+}
+
+// command line args come from, in decreasing precedence:
+//   - the actual command line
+//   - the bootloader control block (one per line, after "recovery")
+//   - the contents of COMMAND_FILE (one per line)
+static const char *COMMAND_FILE = "/cache/recovery/command";
+static const int MAX_ARG_LENGTH = 4096;
+static const int MAX_ARGS = 100;
+void tw_get_args(int *argc, char ***argv) {
+    struct bootloader_message boot;
+    memset(&boot, 0, sizeof(boot));
+    tw_get_bootloader_message(&boot);  // this may fail, leaving a zeroed structure
+
+    if (boot.command[0] != 0 && boot.command[0] != 255) {
+        LOGI("Boot command: %.*s\n", sizeof(boot.command), boot.command);
+    }
+
+    if (boot.status[0] != 0 && boot.status[0] != 255) {
+        LOGI("Boot status: %.*s\n", sizeof(boot.status), boot.status);
+    }
+
+    // --- if arguments weren't supplied, look in the bootloader control block
+    if (*argc <= 1) {
+        boot.recovery[sizeof(boot.recovery) - 1] = '\0';  // Ensure termination
+        const char *arg = strtok(boot.recovery, "\n");
+        if (arg != NULL && !strcmp(arg, "recovery")) {
+            *argv = (char **) malloc(sizeof(char *) * MAX_ARGS);
+            (*argv)[0] = strdup(arg);
+            for (*argc = 1; *argc < MAX_ARGS; ++*argc) {
+                if ((arg = strtok(NULL, "\n")) == NULL) break;
+                (*argv)[*argc] = strdup(arg);
+            }
+            LOGI("Got arguments from boot message\n");
+        } else if (boot.recovery[0] != 0 && boot.recovery[0] != 255) {
+            LOGE("Bad boot message\n\"%.20s\"\n", boot.recovery);
+        }
+    }
+
+    // --- if that doesn't work, try the command file
+    if (*argc <= 1) {
+        FILE *fp = fopen(COMMAND_FILE, "r");
+        if (fp != NULL) {
+            char *argv0 = (*argv)[0];
+            *argv = (char **) malloc(sizeof(char *) * MAX_ARGS);
+            (*argv)[0] = argv0;  // use the same program name
+
+            char buf[MAX_ARG_LENGTH];
+            for (*argc = 1; *argc < MAX_ARGS; ++*argc) {
+                if (!fgets(buf, sizeof(buf), fp)) break;
+                (*argv)[*argc] = strdup(strtok(buf, "\r\n"));  // Strip newline.
+            }
+
+            fflush(fp);
+		    if (ferror(fp)) LOGE("Error in %s\n(%s)\n", COMMAND_FILE, strerror(errno));
+		    fclose(fp);
+            LOGI("Got arguments from %s\n", COMMAND_FILE);
+        }
+    }
+
+    // --> write the arguments we have back into the bootloader control block
+    // always boot into recovery after this (until finish_recovery() is called)
+    strlcpy(boot.command, "boot-recovery", sizeof(boot.command));
+    strlcpy(boot.recovery, "recovery\n", sizeof(boot.recovery));
+    int i;
+    for (i = 1; i < *argc; ++i) {
+        strlcat(boot.recovery, (*argv)[i], sizeof(boot.recovery));
+        strlcat(boot.recovery, "\n", sizeof(boot.recovery));
+    }
+    tw_set_bootloader_message(&boot);
 }

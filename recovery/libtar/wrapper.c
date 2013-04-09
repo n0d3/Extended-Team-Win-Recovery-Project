@@ -118,9 +118,7 @@ tar_append_tree(TAR *t, char *realdir, char *savedir, char *exclude)
 		excluded[n_spaces] = 0;
 		for (i = 0; i < (n_spaces+1); i++) {
 			if (realdir == excluded[i]) {
-#ifdef DEBUG
 				printf("    excluding '%s'\n", excluded[i]);
-#endif
 				skip = 1;
 				break;
 			}
@@ -152,9 +150,7 @@ tar_append_tree(TAR *t, char *realdir, char *savedir, char *exclude)
 			int omit = 0;
 			for (i = 0; i < (n_spaces+1); i++) {
 				if (dent->d_name == excluded[i]) {
-#ifdef DEBUG
 					printf("    excluding '%s'\n", excluded[i]);
-#endif
 					omit = 1;
 					break;
 				}
@@ -202,16 +198,13 @@ tar_find(TAR *t, char *searchstr)
 		filename = th_get_pathname(t);
 		if (fnmatch(searchstr, filename, FNM_FILE_NAME | FNM_PERIOD) == 0) {
 			entryfound++;
-#ifdef DEBUG
 			printf("    found matching entry: %s\n", filename);
-#endif
 			break;
 		}
 	}
-#ifdef DEBUG
+
 	if (!entryfound)
 		printf("    no matching entry found.\n");
-#endif
 
 	return entryfound;
 }

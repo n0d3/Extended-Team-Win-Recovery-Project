@@ -22,8 +22,7 @@ using namespace rapidxml;
 extern "C" {
 	#include "../minzip/Zip.h"
 	#include "../minuitwrp/minui.h"
-	#include "../common.h"
-	#include "../recovery_ui.h"
+	#include "../twcommon.h"
 }
 #include <string>
 #include <vector>
@@ -52,7 +51,7 @@ blanktimer::blanktimer(void) {
 
 void blanktimer::setTime(int newtime) {
 	if (sleepTimer != newtime) {
-		LOGI("Screen timeout set to %i sec.\n", newtime);
+		LOGINFO("Screen timeout set to %i sec.\n", newtime);
 		sleepTimer = newtime;
 	}
 }
@@ -91,7 +90,7 @@ timespec blanktimer::getTimer(void) {
 }
 
 int blanktimer::setClockTimer(void) {
-	//LOGI("Screen-off timer enabled.\n");
+	//LOGINFO("Screen-off timer enabled.\n");
 	timespec curTime, diff;
 	while (conblank) {
 		usleep(980000);
@@ -113,7 +112,7 @@ int blanktimer::setClockTimer(void) {
 			PageManager::ChangeOverlay("lock");
 		}
 	}	
-	//LOGI("Screen-off timer disabled.\n");
+	//LOGINFO("Screen-off timer disabled.\n");
 	dimmed = 0;
 	blanked = 0;
 	pthread_mutex_destroy(&timermutex);

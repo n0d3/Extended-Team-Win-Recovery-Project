@@ -25,12 +25,11 @@ extern "C" {
 
 static long tmplog_offset = 0;
 
-#define ui_print(...) gui_print(__VA_ARGS__)
-#define ui_print_overwrite(...) gui_print_overwrite(__VA_ARGS__)
+#define ui_print(...) printf(__VA_ARGS__)
+#define ui_print_overwrite(...) printf(__VA_ARGS__)
 
-#include "gui/gui.h"
 // TODO: restore ui_print for LOGE
-#define LOGE(...) gui_print("E:" __VA_ARGS__)
+#define LOGE(...) printf("E:" __VA_ARGS__)
 #define LOGW(...) fprintf(stdout, "W:" __VA_ARGS__)
 #define LOGI(...) fprintf(stdout, "I:" __VA_ARGS__)
 
@@ -44,13 +43,6 @@ static long tmplog_offset = 0;
 
 #define STRINGIFY(x) #x
 #define EXPAND(x) STRINGIFY(x)
-
-#ifndef RAMFS_MAGIC
-    #define RAMFS_MAGIC 0x858458f6
-#endif
-#ifndef YAFFS_MAGIC
-    #define YAFFS_MAGIC 0x5941ff53
-#endif
 
 typedef struct {
     const char* mount_point;  // eg. "/cache".  must live in the root directory.

@@ -28,8 +28,9 @@ extern "C" {
 }
 #include "roots.h"
 #include "common.h"
-#include "make_ext4fs.h"
-#include "partitions.hpp"
+#ifdef USE_EXT4
+    #include "make_ext4fs.h"
+#endif
 
 static int num_volumes = 0;
 static Volume* device_volumes = NULL;
@@ -143,10 +144,6 @@ Volume* volume_for_path(const char* path) {
 }
 
 int ensure_path_mounted(const char* path) {
-	if (PartitionManager.Mount_By_Path(path, true))
-		return 0;
-	else
-		return -1;
     Volume* v = volume_for_path(path);
     if (v == NULL) {
         LOGE("unknown volume for path [%s]\n", path);
@@ -184,7 +181,8 @@ int ensure_path_mounted(const char* path) {
             return -1;
         }
         return mtd_mount_partition(partition, v->mount_point, v->fs_type, 0);
-    } else if (strcmp(v->fs_type, "ext4") == 0 ||
+    } else if (strcmp(v->fs_type, "ext3") == 0 ||
+               strcmp(v->fs_type, "ext4") == 0 ||
                strcmp(v->fs_type, "nilfs2") == 0 ||
                strcmp(v->fs_type, "vfat") == 0) {
         result = mount(v->device, v->mount_point, v->fs_type,
@@ -208,10 +206,6 @@ int ensure_path_mounted(const char* path) {
 }
 
 int ensure_path_unmounted(const char* path) {
-	if (PartitionManager.UnMount_By_Path(path, true))
-		return 0;
-	else
-		return -1;
     Volume* v = volume_for_path(path);
     if (v == NULL) {
         LOGE("unknown volume for path [%s]\n", path);
@@ -240,10 +234,6 @@ int ensure_path_unmounted(const char* path) {
 }
 
 int format_volume(const char* volume) {
-	if (PartitionManager.Wipe_By_Path(volume))
-		return 0;
-	else
-		return -1;
     Volume* v = volume_for_path(volume);
     if (v == NULL) {
         LOGE("unknown volume \"%s\"\n", volume);

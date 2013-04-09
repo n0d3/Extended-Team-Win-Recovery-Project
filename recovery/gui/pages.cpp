@@ -1,4 +1,21 @@
-// base_objects.cpp - Source to manage GUI base objects
+/*
+	Copyright 2013 bigbiff/Dees_Troy TeamWin
+	This file is part of TWRP/TeamWin Recovery Project.
+
+	TWRP is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	TWRP is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with TWRP.  If not, see <http://www.gnu.org/licenses/>.
+*/
+// pages.cpp - Source to manage GUI base objects
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -18,9 +35,8 @@
 #include <string>
 
 extern "C" {
-#include "../common.h"
+#include "../twcommon.h"
 #include "../minuitwrp/minui.h"
-#include "../recovery_ui.h"
 }
 
 #include "rapidxml.hpp"
@@ -154,11 +170,11 @@ Page::Page(xml_node<>* page, xml_node<>* templates /* = NULL */)
         mName = page->first_attribute("name")->value();
     else
     {
-        LOGE("No page name attribute found!\n");
+        LOGERR("No page name attribute found!\n");
         return;
     }
 
-    LOGI("Loading page %s\n", mName.c_str());
+    LOGINFO("Loading page %s\n", mName.c_str());
 
     // This is a recursive routine for template handling
     ProcessNode(page, templates);
@@ -170,7 +186,7 @@ bool Page::ProcessNode(xml_node<>* page, xml_node<>* templates /* = NULL */, int
 {
     if (depth == 10)
     {
-        LOGE("Page processing depth has exceeded 10. Failing out. This is likely a recursive template.\n");
+        LOGERR("Page processing depth has exceeded 10. Failing out. This is likely a recursive template.\n");
         return false;
     }
 
@@ -251,36 +267,42 @@ bool Page::ProcessNode(xml_node<>* page, xml_node<>* templates /* = NULL */, int
             mRenders.push_back(element);
             mActions.push_back(element);
         }
-		else if (type == "slider")
+	else if (type == "slider")
         {
             GUISlider* element = new GUISlider(child);
             mRenders.push_back(element);
             mActions.push_back(element);
         }
-		else if (type == "listbox")
-		{
-			GUIListBox* element = new GUIListBox(child);
-			mRenders.push_back(element);
-			mActions.push_back(element);
-		}
-		else if (type == "keyboard")
-		{
-			GUIKeyboard* element = new GUIKeyboard(child);
-			mRenders.push_back(element);
-			mActions.push_back(element);
-		}
-		else if (type == "input")
-		{
-			GUIInput* element = new GUIInput(child);
-			mRenders.push_back(element);
-			mActions.push_back(element);
-			mInputs.push_back(element);
-		}
+	else if (type == "slidervalue")
+	{
+	    GUISliderValue *element = new GUISliderValue(child);
+	    mRenders.push_back(element);
+	    mActions.push_back(element);
+	}
+	else if (type == "listbox")
+	{
+	    GUIListBox* element = new GUIListBox(child);
+	    mRenders.push_back(element);
+	    mActions.push_back(element);
+	}
+	else if (type == "keyboard")
+	{
+	    GUIKeyboard* element = new GUIKeyboard(child);
+	    mRenders.push_back(element);
+	    mActions.push_back(element);
+	}
+	else if (type == "input")
+	{
+	    GUIInput* element = new GUIInput(child);
+	    mRenders.push_back(element);
+	    mActions.push_back(element);
+	    mInputs.push_back(element);
+	}
         else if (type == "template")
         {
             if (!templates || !child->first_attribute("name"))
             {
-                LOGE("Invalid template request.\n");
+                LOGERR("Invalid template request.\n");
             }
             else
             {
@@ -308,7 +330,7 @@ bool Page::ProcessNode(xml_node<>* page, xml_node<>* templates /* = NULL */, int
         }
         else
         {
-            LOGE("Unknown object type.\n");
+            LOGERR("Unknown object type.\n");
         }
         child = child->next_sibling("object");
     }
@@ -326,7 +348,7 @@ int Page::Render(void)
     for (iter = mRenders.begin(); iter != mRenders.end(); iter++)
     {
         if ((*iter)->Render())
-            LOGE("A render request has failed.\n");
+            LOGERR("A render request has failed.\n");
     }
     return 0;
 }
@@ -340,7 +362,7 @@ int Page::Update(void)
     {
         int ret = (*iter)->Update();
         if (ret < 0)
-            LOGE("An update request has failed.\n");
+            LOGERR("An update request has failed.\n");
         else if (ret > retCode)
             retCode = ret;
     }
@@ -398,7 +420,7 @@ int Page::NotifyKey(int key)
         if (ret == 0)
             return 0;
         else if (ret < 0)
-            LOGE("An action handler has returned an error");
+            LOGERR("An action handler has returned an error");
     }
     return 1;
 }
@@ -417,7 +439,7 @@ int Page::NotifyKeyboard(int key)
         if (ret == 0)
             return 0;
         else if (ret < 0)
-            LOGE("A keyboard handler has returned an error");
+            LOGERR("A keyboard handler has returned an error");
     }
     return 1;
 }
@@ -436,7 +458,7 @@ int Page::SetKeyBoardFocus(int inFocus)
         if (ret == 0)
             return 0;
         else if (ret < 0)
-            LOGE("An input focus handler has returned an error");
+            LOGERR("An input focus handler has returned an error");
     }
     return 1;
 }
@@ -462,7 +484,7 @@ int Page::NotifyVarChange(std::string varName, std::string value)
     for (iter = mActions.begin(); iter != mActions.end(); ++iter)
     {
         if ((*iter)->NotifyVarChange(varName, value))
-            LOGE("An action handler errored on NotifyVarChange.\n");
+            LOGERR("An action handler errored on NotifyVarChange.\n");
     }
     return 0;
 }
@@ -497,17 +519,17 @@ int PageSet::Load(ZipArchive* package)
         parent = mDoc.first_node("install");
 
     // Now, let's parse the XML
-    LOGI("Loading resources...\n");
+    LOGINFO("Loading resources...\n");
     child = parent->first_node("resources");
     if (child)
         mResources = new ResourceManager(child, package);
 
-    LOGI("Loading variables...\n");
+    LOGINFO("Loading variables...\n");
     child = parent->first_node("variables");
     if (child)
         LoadVariables(child);
 
-    LOGI("Loading pages...\n");
+    LOGINFO("Loading pages...\n");
     // This may be NULL if no templates are present
     templates = parent->first_node("templates");
 
@@ -531,7 +553,7 @@ int PageSet::SetPage(std::string page)
     }
     else
     {
-        LOGE("Unable to locate page (%s)\n", page.c_str());
+        LOGERR("Unable to locate page (%s)\n", page.c_str());
     }
     return -1;
 }
@@ -595,7 +617,7 @@ int PageSet::LoadPages(xml_node<>* pages, xml_node<>* templates /* = NULL */)
         Page* page = new Page(child, templates);
         if (page->GetName().empty())
         {
-            LOGE("Unable to process load page\n");
+            LOGERR("Unable to process load page\n");
             delete page;
         }
         else
@@ -674,7 +696,7 @@ int PageManager::LoadPackage(std::string name, std::string package, std::string 
     int ret;
 
     // Open the XML file
-    LOGI("Loading package: %s (%s)\n", name.c_str(), package.c_str());
+    LOGINFO("Loading package: %s (%s)\n", name.c_str(), package.c_str());
     if (mzOpenZipArchive(package.c_str(), &zip))
     {
         // We can try to load the XML directly...
@@ -698,7 +720,7 @@ int PageManager::LoadPackage(std::string name, std::string package, std::string 
         const ZipEntry* ui_xml = mzFindZipEntry(&zip, "ui.xml");
         if (ui_xml == NULL)
         {
-            LOGE("Unable to locate ui.xml in zip file\n");
+            LOGERR("Unable to locate ui.xml in zip file\n");
             goto error;
         }
     
@@ -709,7 +731,7 @@ int PageManager::LoadPackage(std::string name, std::string package, std::string 
     
         if (!mzExtractZipEntryToBuffer(&zip, ui_xml, (unsigned char*) xmlFile))
         {
-            LOGE("Unable to extract ui.xml\n");
+            LOGERR("Unable to extract ui.xml\n");
             goto error;
         }
     }
@@ -729,7 +751,7 @@ int PageManager::LoadPackage(std::string name, std::string package, std::string 
     }
     else
     {
-        LOGE("Package %s failed to load.\n", name.c_str());
+        LOGERR("Package %s failed to load.\n", name.c_str());
     }
 	
     // The first successful package we loaded is the base
@@ -742,7 +764,7 @@ int PageManager::LoadPackage(std::string name, std::string package, std::string 
     return ret;
 
 error:
-    LOGE("An internal error has occurred.\n");
+    LOGERR("An internal error has occurred.\n");
     if (pZip)       mzCloseZipArchive(pZip);
     if (xmlFile)    free(xmlFile);
     return -1;
@@ -757,20 +779,20 @@ PageSet* PageManager::FindPackage(std::string name)
     {
         return (*iter).second;
     }
-    LOGE("Unable to locate package %s\n", name.c_str());
+    LOGERR("Unable to locate package %s\n", name.c_str());
     return NULL;
 }
 
 PageSet* PageManager::SelectPackage(std::string name)
 {
-    LOGI("Switching packages (%s)\n", name.c_str());
+    LOGINFO("Switching packages (%s)\n", name.c_str());
     PageSet* tmp;
 
     tmp = FindPackage(name);
     if (tmp)
         mCurrentSet = tmp;
     else
-        LOGE("Unable to find package.\n");
+        LOGERR("Unable to find package.\n");
 
     return mCurrentSet;
 }
@@ -789,7 +811,7 @@ int PageManager::ReloadPackage(std::string name, std::string package)
 
     if (LoadPackage(name, package, "main") != 0)
     {
-        LOGI("Failed to load package.\n");
+        LOGERR("Failed to load package.\n");
         mPageSets.insert(std::pair<std::string, PageSet*>(name, set));
         return -1;
     }
