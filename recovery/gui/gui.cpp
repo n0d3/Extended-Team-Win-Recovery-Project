@@ -633,9 +633,10 @@ static void *time_update_thread(void *cookie)
 static void *battery_thread(void *cookie)
 {
 	char tmp[16], cap_s[4];
-	int blink = 0, bat_capacity = -1;
-	string battery, battery_status, usb_cable_connected = "1";
-	string usb_cable_connect = "/sys/devices/platform/msm_hsusb/usb_cable_connect";
+	int blink = 0, bat_capacity = -1, usb_cable_connected = 1;
+	string battery, battery_status, ac_connected, usb_connected;
+	string ac_online = "/sys/class/power_supply/ac/online";
+	string usb_online = "/sys/class/power_supply/usb/online";
 	string status = "/sys/class/power_supply/battery/status";
 	string solid_amber = "/sys/class/leds/amber/brightness";
 	string solid_green = "/sys/class/leds/green/brightness";
@@ -643,7 +644,7 @@ static void *battery_thread(void *cookie)
 	string off = "0\n";
 
 	FILE *capacity = NULL;
-	while ( (offmode_charge && !key_pressed && usb_cable_connected == "1")
+	while ( (offmode_charge && !key_pressed && usb_cable_connected == 1)
 	     || (!offmode_charge)) {
 		capacity = fopen("/sys/class/power_supply/battery/capacity","rt");
 		if (capacity){
@@ -658,33 +659,38 @@ static void *battery_thread(void *cookie)
 		DataManager::SetValue("tw_battery", battery);
 		usleep(800000);
 
-		if (TWFunc::read_file(usb_cable_connect, usb_cable_connected) == 0) {
-			if (usb_cable_connected == "1") {
-				TWFunc::power_restore(offmode_charge);
-				if (TWFunc::read_file(status, battery_status) == 0) {
-					if (battery_status == "Full") {
-						TWFunc::write_file(solid_amber, off);
-						TWFunc::write_file(solid_green, on);	
-					} else {
-						TWFunc::write_file(solid_amber, on);
-						TWFunc::write_file(solid_green, off);
-					}
-				}
-			} else {
-				TWFunc::write_file(solid_green, off);
-				if (bat_capacity > 10) {
-					TWFunc::power_restore(offmode_charge);
+		TWFunc::read_file(ac_online, ac_connected);
+		TWFunc::read_file(usb_online, usb_connected);
+		if (ac_connected == "0" && usb_connected == "0")
+			usb_cable_connected = 0;
+		else
+			usb_cable_connected = 1;
+
+		if (usb_cable_connected == 1) {
+			TWFunc::power_restore(offmode_charge);
+			if (TWFunc::read_file(status, battery_status) == 0) {
+				if (battery_status == "Full") {
 					TWFunc::write_file(solid_amber, off);
+					TWFunc::write_file(solid_green, on);	
 				} else {
-					TWFunc::power_save();
-					if (blink)
-						TWFunc::write_file(solid_amber, on);
-					else
-						TWFunc::write_file(solid_amber, off);
-					blink ^= 1;
+					TWFunc::write_file(solid_amber, on);
+					TWFunc::write_file(solid_green, off);
 				}
 			}
-		}
+		} else {
+			TWFunc::write_file(solid_green, off);
+			if (bat_capacity > 10) {
+				TWFunc::power_restore(offmode_charge);
+				TWFunc::write_file(solid_amber, off);
+			} else {
+				TWFunc::power_save();
+				if (blink)
+					TWFunc::write_file(solid_amber, on);
+				else
+					TWFunc::write_file(solid_amber, off);
+				blink ^= 1;
+			}
+		}		
 		usleep(1200000);
 	}
 	if (offmode_charge) {
@@ -692,7 +698,7 @@ static void *battery_thread(void *cookie)
 		TWFunc::write_file(solid_green, off);
 		if (key_pressed)
 			TWFunc::tw_reboot(rb_system);
-		else if (usb_cable_connected != "1")
+		else if (usb_cable_connected != 1)
 			TWFunc::tw_reboot(rb_poweroff);
 	}
 	return NULL;
