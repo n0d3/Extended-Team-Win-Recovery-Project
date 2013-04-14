@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include "bootloader.h"
 
 using namespace std;
 
@@ -94,6 +95,8 @@ class TWFunc {
 		static void Update_Intent_File(string Intent);
 		static void Copy_Log(string Source, string Destination);
 		static void Update_Log_File(void);
+		static int get_bootloader_msg(struct bootloader_message *out);
+		static int set_bootloader_msg(const struct bootloader_message *in);
 
 		// Extended functions
 		static unsigned long RoundUpSize(unsigned long sz, unsigned long multiple);

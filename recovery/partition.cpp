@@ -648,7 +648,7 @@ void TWPartition::Find_Real_Block_Device(string& Block, bool Display_Error) {
 		return;
 	} else {
 		Block = device;
-		LOGINFO("Block: '%s'\n", Block.c_str());
+		//LOGINFO("Block: '%s'\n", Block.c_str());
 		return;
 	}
 }
@@ -657,15 +657,15 @@ void TWPartition::Find_Actual_Block_Device(void) {
 	if (TWFunc::Path_Exists(Primary_Block_Device)) {		
 		Actual_Block_Device = (Is_Decrypted ? Decrypted_Block_Device : Primary_Block_Device);
 		Is_Present = true;
-		LOGINFO("Actual_Block_Device: '%s'\n", Actual_Block_Device.c_str());
+		//LOGINFO("Actual_Block_Device: '%s'\n", Actual_Block_Device.c_str());
 		return;
 	} else if (!Alternate_Block_Device.empty() && TWFunc::Path_Exists(Alternate_Block_Device)) {
 		Actual_Block_Device = Alternate_Block_Device;
 		Is_Present = true;
-		LOGINFO("Actual_Block_Device: '%s'\n", Actual_Block_Device.c_str());
+		//LOGINFO("Actual_Block_Device: '%s'\n", Actual_Block_Device.c_str());
 		return;
 	}
-	LOGINFO("Actual_Block_Device: 'null'\n");
+	//LOGINFO("Actual_Block_Device: 'null'\n");
 	Actual_Block_Device = "";
 	Is_Present = false;
 }
@@ -703,14 +703,14 @@ bool TWPartition::Find_MTD_Block_Device(string MTD_Name) {
 			if (sscanf(device,"mtd%d", &deviceId) == 1) {
 				sprintf(device, "/dev/block/mtdblock%d", deviceId);
 				Primary_Block_Device = device;
-				LOGINFO("Primary_Block_Device: '%s'\n", Primary_Block_Device.c_str());
+				//LOGINFO("Primary_Block_Device: '%s'\n", Primary_Block_Device.c_str());
 				fclose(fp);
 				return true;
 			}
 		}
 	}
 	fclose(fp);
-	LOGINFO("Primary_Block_Device: 'null'\n");
+	//LOGINFO("Primary_Block_Device: 'null'\n");
 	return false;
 }
 
@@ -1057,22 +1057,45 @@ bool TWPartition::Mount(bool Display_Error) {
 		return false;
 	if (Current_File_System == "yaffs2") {
 		// mount an MTD partition as a YAFFS2 filesystem.
-		mtd_scan_partitions();
-		const MtdPartition* partition;
-		partition = mtd_find_partition_by_name(MTD_Name.c_str());
-		if (partition == NULL) {
-			LOGERR("Failed to find '%s' partition to mount at '%s'\n",
-			MTD_Name.c_str(), Mount_Point.c_str());
-			return false;
+		const unsigned long flags = MS_NOATIME | MS_NODEV | MS_NODIRATIME;
+		int ret = mount(Actual_Block_Device.c_str(), Mount_Point.c_str(), Current_File_System.c_str(), flags, NULL);
+		if (ret < 0) {
+			ret = mount(Actual_Block_Device.c_str(), Mount_Point.c_str(), Current_File_System.c_str(), flags | MS_RDONLY, NULL);
+			if (ret < 0) {
+				if (Display_Error)
+					LOGERR("Failed to mount '%s' (MTD)\n", Mount_Point.c_str());
+				else
+					LOGINFO("Failed to mount '%s' (MTD)\n", Mount_Point.c_str());
+				return false;
+			} else {
+				LOGINFO("Mounted '%s' (MTD) as RO\n", Mount_Point.c_str());
+				return true;
+			}
+		} else {
+			struct stat st;
+			string test_path = Mount_Point;
+			ret = stat(test_path.c_str(), &st);
+			if (ret < 0) {
+				if (Display_Error)
+					LOGERR("Failed to mount '%s' (MTD)\n", Mount_Point.c_str());
+				else
+					LOGINFO("Failed to mount '%s' (MTD)\n", Mount_Point.c_str());
+				return false;
+			}
+			mode_t new_mode = st.st_mode | S_IXUSR | S_IXGRP | S_IXOTH;
+			if (new_mode != st.st_mode) {
+				LOGINFO("Fixing execute permissions for %s\n", Mount_Point.c_str());
+				ret = chmod(Mount_Point.c_str(), new_mode);
+				if (ret < 0) {
+					if (Display_Error)
+						LOGERR("Couldn't fix permissions for %s: %s\n", Mount_Point.c_str(), strerror(errno));
+					else
+						LOGINFO("Couldn't fix permissions for %s: %s\n", Mount_Point.c_str(), strerror(errno));
+					return false;
+				}
+			}
+			return true;			
 		}
-		if (mtd_mount_partition(partition, Mount_Point.c_str(), Current_File_System.c_str(), 0)) {
-			if (Display_Error)
-				LOGERR("Failed to mount '%s' (MTD)\n", Mount_Point.c_str());
-			else
-				LOGINFO("Failed to mount '%s' (MTD)\n", Mount_Point.c_str());
-			return false;
-		} else
-			return true;
 	}
 	string Command, result;
 	if (Current_File_System == "nilfs2" && TWFunc::Path_Exists("/sbin/mount.nilfs2")) {

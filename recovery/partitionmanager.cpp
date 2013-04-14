@@ -2979,7 +2979,7 @@ int TWPartitionManager::Partition_SDCard(void) {
 		struct bootloader_message boot;
 		memset(&boot, 0, sizeof(boot));
 		strcpy(boot.recovery, boot_recovery);
-		if (tw_set_bootloader_message(&boot) == 0)
+		if (TWFunc::set_bootloader_msg(&boot) == 0)
 			TWFunc::tw_reboot(rb_recovery); // reboot into recovery
 	}
 

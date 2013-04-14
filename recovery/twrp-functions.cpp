@@ -310,6 +310,36 @@ void TWFunc::Update_Intent_File(string Intent) {
 	}
 }
 
+int TWFunc::get_bootloader_msg(struct bootloader_message *out) {
+	TWPartition* Part = PartitionManager.Find_Partition_By_Path("/misc");
+	if (Part == NULL) {
+		LOGERR("Cannot load volume /misc!\n");
+		return -1;
+	}
+	if (Part->Current_File_System == "mtd") {
+		return get_bootloader_message_mtd_name(out, Part->MTD_Name.c_str());
+	} else if (Part->Current_File_System == "emmc") {
+		return get_bootloader_message_block_name(out, Part->Actual_Block_Device.c_str());
+	}
+	LOGERR("Unknown file system for /misc: '%s'\n", Part->Current_File_System.c_str());
+	return -1;
+}
+
+int TWFunc::set_bootloader_msg(const struct bootloader_message *in) {
+	TWPartition* Part = PartitionManager.Find_Partition_By_Path("/misc");
+	if (Part == NULL) {
+		LOGERR("Cannot load volume /misc!\n");
+		return -1;
+	}
+	if (Part->Current_File_System == "mtd") {
+		return set_bootloader_message_mtd_name(in, Part->MTD_Name.c_str());
+	} else if (Part->Current_File_System == "emmc") {
+		return set_bootloader_message_block_name(in, Part->Actual_Block_Device.c_str());
+	}
+	LOGERR("Unknown file system for /misc: '%s'\n", Part->Current_File_System.c_str());
+	return -1;
+}
+
 // reboot: Reboot the system. Return -1 on error, no return on success
 int TWFunc::tw_reboot(RebootCommand command) {
 	// Always force a sync before we reboot

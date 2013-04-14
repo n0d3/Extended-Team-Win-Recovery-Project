@@ -18,7 +18,6 @@ TARGET_RECOVERY_GUI := true
 
 LOCAL_SRC_FILES := \
     twrp.cpp \
-    twbootloader.cpp \
     fixPermissions.cpp \
     twrpTar.cpp \
     twrpDigest.cpp \
@@ -28,7 +27,6 @@ LOCAL_SRC_FILES += \
     data.cpp \
     partition.cpp \
     partitionmanager.cpp \
-    mtdutils/mtdutils.c \
     twinstall.cpp \
     twrp-functions.cpp \
     openrecoveryscript.cpp \
@@ -289,7 +287,7 @@ LOCAL_MODULE := libaosprecovery
 LOCAL_MODULE_TAGS := eng
 LOCAL_MODULES_TAGS = optional
 LOCAL_CFLAGS = 
-LOCAL_SRC_FILES = adb_install.cpp bootloader.cpp roots.cpp mtdutils/mtdutils.c verifier.cpp
+LOCAL_SRC_FILES = adb_install.cpp bootloader.cpp mtdutils/mtdutils.c verifier.cpp
 LOCAL_SHARED_LIBRARIES += libc liblog libcutils libmtdutils
 LOCAL_STATIC_LIBRARIES += libmincrypt
 

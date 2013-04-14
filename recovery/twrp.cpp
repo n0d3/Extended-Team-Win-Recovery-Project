@@ -16,6 +16,7 @@
         along with TWRP.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -54,6 +55,77 @@ static void Print_Prop(const char *key, const char *name, void *cookie) {
 	printf("%s=%s\n", key, name);
 }
 
+static const char *COMMAND_FILE = "/cache/recovery/command";
+static const int MAX_ARG_LENGTH = 4096;
+static const int MAX_ARGS = 100;
+
+// command line args come from, in decreasing precedence:
+//   - the actual command line
+//   - the bootloader control block (one per line, after "recovery")
+//   - the contents of COMMAND_FILE (one per line)
+void get_args(int *argc, char ***argv) {
+	struct bootloader_message boot;
+	memset(&boot, 0, sizeof(boot));
+	TWFunc::get_bootloader_msg(&boot);  // this may fail, leaving a zeroed structure
+
+	if (boot.command[0] != 0 && boot.command[0] != 255) {
+        	LOGINFO("Boot command: %.*s\n", sizeof(boot.command), boot.command);
+	}
+
+	if (boot.status[0] != 0 && boot.status[0] != 255) {
+        	LOGINFO("Boot status: %.*s\n", sizeof(boot.status), boot.status);
+	}
+
+	// --- if arguments weren't supplied, look in the bootloader control block
+	if (*argc <= 1) {
+        	boot.recovery[sizeof(boot.recovery) - 1] = '\0';  // Ensure termination
+        	const char *arg = strtok(boot.recovery, "\n");
+        	if (arg != NULL && !strcmp(arg, "recovery")) {
+			*argv = (char **) malloc(sizeof(char *) * MAX_ARGS);
+			(*argv)[0] = strdup(arg);
+			for (*argc = 1; *argc < MAX_ARGS; ++*argc) {
+				if ((arg = strtok(NULL, "\n")) == NULL) break;
+				(*argv)[*argc] = strdup(arg);
+			}
+			LOGINFO("Got arguments from boot message\n");
+        	} else if (boot.recovery[0] != 0 && boot.recovery[0] != 255) {
+			LOGERR("Bad boot message\n\"%.20s\"\n", boot.recovery);
+        	}
+	}
+
+	// --- if that doesn't work, try the command file
+	if (*argc <= 1) {
+		FILE *fp = fopen(COMMAND_FILE, "r");
+		if (fp != NULL) {
+			char *argv0 = (*argv)[0];
+			*argv = (char **) malloc(sizeof(char *) * MAX_ARGS);
+			(*argv)[0] = argv0;  // use the same program name
+
+			char buf[MAX_ARG_LENGTH];
+			for (*argc = 1; *argc < MAX_ARGS; ++*argc) {
+				if (!fgets(buf, sizeof(buf), fp)) break;
+				(*argv)[*argc] = strdup(strtok(buf, "\r\n"));  // Strip newline.
+			}
+
+			fflush(fp);
+			if (ferror(fp)) LOGERR("Error in %s\n(%s)\n", COMMAND_FILE, strerror(errno));
+				fclose(fp);
+			LOGINFO("Got arguments from %s\n", COMMAND_FILE);
+		}
+	}
+
+	// --> write the arguments we have back into the bootloader control block
+	// always boot into recovery after this (until finish_recovery() is called)
+	strlcpy(boot.command, "boot-recovery", sizeof(boot.command));
+	strlcpy(boot.recovery, "recovery\n", sizeof(boot.recovery));
+	int i;
+	for (i = 1; i < *argc; ++i) {
+        	strlcat(boot.recovery, (*argv)[i], sizeof(boot.recovery));
+        	strlcat(boot.recovery, "\n", sizeof(boot.recovery));
+	}
+    	TWFunc::set_bootloader_msg(&boot);
+}
+
 int main(int argc, char **argv) {
 	// Recovery needs to install world-readable files, so clear umask
 	// set by init
@@ -88,7 +160,7 @@ int main(int argc, char **argv) {
 
 	// Load default values to set DataManager constants and handle ifdefs
 	DataManager::SetDefaultValues();
-	printf("Starting the UI...");
+	printf("Starting the UI...\n");
 	gui_init();
 	printf("=> Linking mtab\n");
 	symlink("/proc/mounts", "/etc/mtab");
@@ -105,7 +177,7 @@ int main(int argc, char **argv) {
 	bool Keep_Going = true, Cache_Wipe = false, Factory_Reset = false, Perform_Backup = false, Perform_Restore = false, Finish_SDCard_Partitioning = false;
 
 	{
-		tw_get_args(&argc, &argv);
+		get_args(&argc, &argv);
 
 		int index, index2, len;
 		char* argptr;

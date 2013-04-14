@@ -33,7 +33,7 @@ static int get_bootloader_message_block(struct bootloader_message *out, const Vo
 static int set_bootloader_message_block(const struct bootloader_message *in, const Volume* v);
 
 int get_bootloader_message(struct bootloader_message *out) {
-    Volume* v = volume_for_path("/misc");
+    Volume* v = NULL;//volume_for_path("/misc");
     if (v == NULL) {
       LOGE("Cannot load volume /misc!\n");
       return -1;
@@ -48,7 +48,7 @@ int get_bootloader_message(struct bootloader_message *out) {
 }
 
 int set_bootloader_message(const struct bootloader_message *in) {
-    Volume* v = volume_for_path("/misc");
+    Volume* v = NULL;//volume_for_path("/misc");
     if (v == NULL) {
       LOGE("Cannot load volume /misc!\n");
       return -1;
@@ -183,6 +183,33 @@ int set_bootloader_message_mtd_name(const struct bootloader_message *in,
     return 0;
 }
 
+int get_bootloader_message_mtd_name(struct bootloader_message *out,
+                                      const char* mtd_name) {
+    size_t write_size;
+    mtd_scan_partitions();
+    const MtdPartition *part = mtd_find_partition_by_name(mtd_name);
+    if (part == NULL || mtd_partition_info(part, NULL, NULL, &write_size)) {
+        printf("Can't find %s\n", mtd_name);
+        return -1;
+    }
+
+    MtdReadContext *read = mtd_read_partition(part);
+    if (read == NULL) {
+        printf("Can't open %s\n(%s)\n", mtd_name, strerror(errno));
+        return -1;
+    }
+
+    const ssize_t size = write_size * MISC_PAGES;
+    char data[size];
+    ssize_t r = mtd_read_data(read, data, size);
+    if (r != size) printf("Can't read %s\n(%s)\n", mtd_name, strerror(errno));
+    mtd_read_close(read);
+    if (r != size) return -1;
+
+    memcpy(out, &data[write_size * MISC_COMMAND_PAGE], sizeof(*out));
+    return 0;
+}
+
 // ------------------------------------
 // for misc partitions on block devices
 // ------------------------------------
@@ -266,3 +293,24 @@ int set_bootloader_message_block_name(const struct bootloader_message *in,
     return 0;
 }
 
+int get_bootloader_message_block_name(struct bootloader_message *out,
+                                        const char* block_name) {
+    wait_for_device(block_name);
+    FILE* f = fopen(block_name, "rb");
+    if (f == NULL) {
+        printf("Can't open %s\n(%s)\n", block_name, strerror(errno));
+        return -1;
+    }
+    struct bootloader_message temp;
+    int count = fread(&temp, sizeof(temp), 1, f);
+    if (count != 1) {
+        printf("Failed reading %s\n(%s)\n", block_name, strerror(errno));
+        return -1;
+    }
+    if (fclose(f) != 0) {
+        printf("Failed closing %s\n(%s)\n", block_name, strerror(errno));
+        return -1;
+    }
+    memcpy(out, &temp, sizeof(temp));
+    return 0;
+}

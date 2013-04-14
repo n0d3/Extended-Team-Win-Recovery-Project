@@ -35,6 +35,7 @@
 #include <map>
 #include <fstream>
 #include <sstream>
+#include <vector>
 
 #include "variables.h"
 #include "data.hpp"
@@ -257,50 +258,43 @@ int DataManager::Detect_BLDR() {
 }
 
 void DataManager::get_boot_partitions(void) {
-	int mtd_num = mtd_scan_partitions();
-	LOGINFO("=> Scanned mtd partitions : %i\n", mtd_num);
-	if (mtd_num > 7) {
-		const MtdPartition* mtd1 = mtd_find_partition_by_name("sboot");
-		if (mtd1 != NULL)
-			SetValue("tw_has_sboot_ptn", 1);
-
-		if (mtd_num > 8) {
-			const MtdPartition* mtd2 = mtd_find_partition_by_name("tboot");
-			if (mtd2 != NULL)
-				SetValue("tw_has_tboot_ptn", 1);
-
-			if (mtd_num > 9) {
-				const MtdPartition* mtd3 = mtd_find_partition_by_name("vboot");
-				if (mtd3 != NULL)
+	int lines_read, total_mtd = 0;
+	vector<string> lines;
+	lines_read = TWFunc::read_file_line_by_line("/proc/mtd", lines, true);
+	if (lines_read && lines.size() > 0) {
+		int i;
+		vector<string> line_parts;
+		for (i = 1; i < (int)lines.size(); i++) {
+			line_parts = TWFunc::split_string(lines[i], ' ', true);
+			if (line_parts.size() > 0) {
+				total_mtd++;
+				if (line_parts[3] == "\"sboot\"") {
+					SetValue("tw_has_sboot_ptn", 1);
+					continue;
+				} else if (line_parts[3] == "\"tboot\"") {
+					SetValue("tw_has_tboot_ptn", 1);
+					continue;
+				} else if (line_parts[3] == "\"vboot\"") {
 					SetValue("tw_has_vboot_ptn", 1);
-
-				if (mtd_num > 10) {
-					const MtdPartition* mtd4 = mtd_find_partition_by_name("wboot");
-					if (mtd4 != NULL)
-						SetValue("tw_has_wboot_ptn", 1);
-
-					if (mtd_num > 11) {
-						const MtdPartition* mtd5 = mtd_find_partition_by_name("xboot");
-						if (mtd5 != NULL)
-							SetValue("tw_has_xboot_ptn", 1);
-
-						if (mtd_num > 12) {
-							const MtdPartition* mtd6 = mtd_find_partition_by_name("yboot");
-							if (mtd6 != NULL)
-								SetValue("tw_has_yboot_ptn", 1);
-
-							if (mtd_num > 13) {
-								const MtdPartition* mtd7 = mtd_find_partition_by_name("zboot");
-								if (mtd7 != NULL)
-									SetValue("tw_has_zboot_ptn", 1);
-							}
-						}
-					}
+					continue;
+				} else if (line_parts[3] == "\"wboot\"") {
+					SetValue("tw_has_wboot_ptn", 1);
+					continue;
+				} else if (line_parts[3] == "\"xboot\"") {
+					SetValue("tw_has_xboot_ptn", 1);
+					continue;
+				} else if (line_parts[3] == "\"yboot\"") {
+					SetValue("tw_has_yboot_ptn", 1);
+					continue;
+				} else if (line_parts[3] == "\"zboot\"") {
+					SetValue("tw_has_zboot_ptn", 1);
+					continue;
 				}
 			}
 		}
-	}
-	return;
+		LOGINFO("=> Scanned mtd partitions : %i\n", total_mtd);
+	} else
+		LOGINFO("=> Failed parsing /proc/mtd.\n");
 }
 
 int DataManager::ResetDefaults() {
