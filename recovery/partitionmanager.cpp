@@ -61,6 +61,7 @@ int TWPartitionManager::SD_Partitioning_Done_Once = 0;
 int TWPartitionManager::Process_Fstab(string Fstab_Filename, bool Display_Error) {
 	FILE *fstabFile;
 	char fstab_line[MAX_FSTAB_LINE_LENGTH];
+	bool Found_Settings_Storage = false;
 
 	fstabFile = fopen(Fstab_Filename.c_str(), "rt");
 	if (fstabFile == NULL) {
@@ -81,12 +82,8 @@ int TWPartitionManager::Process_Fstab(string Fstab_Filename, bool Display_Error)
 
 		if (partition->Process_Fstab_Line(line, Display_Error)) {
 			Partitions.push_back(partition);
-#ifdef TW_EXTERNAL_STORAGE_PATH
-			if (partition->Mount_Point == EXPAND(TW_EXTERNAL_STORAGE_PATH))
-#else
-			if (partition->Mount_Point == "/sdcard")
-#endif
-			{
+			if (partition->Is_Settings_Storage) {
+				Found_Settings_Storage = true;
 				// Why not try to read SettingsFile as soon as storage can be accessible!
 				DataManager::ReadSettingsFile();
 			}
@@ -95,6 +92,19 @@ int TWPartitionManager::Process_Fstab(string Fstab_Filename, bool Display_Error)
 		}
 	}
 	fclose(fstabFile);
+	if (!Found_Settings_Storage) {
+		std::vector<TWPartition*>::iterator iter;
+		for (iter = Partitions.begin(); iter != Partitions.end(); iter++) {
+			if ((*iter)->Is_Storage) {
+				(*iter)->Is_Settings_Storage = true;
+				Found_Settings_Storage = true;
+				LOGINFO("Settings storage is '%s'\n", (*iter)->Storage_Path.c_str());
+				break;
+			}
+		}
+		if (!Found_Settings_Storage)
+			LOGERR("Unable to locate storage partition for storing settings file.\n");
+	} 
 	if (!Write_Fstab()) {
 		if (Display_Error)
 			LOGERR("Error creating fstab\n");
@@ -174,6 +184,8 @@ void TWPartitionManager::Output_Partition(TWPartition* Part) {
 		printf("Swap ");
 	if (Part->Can_Be_Wiped)
 		printf("Can_Be_Wiped ");
+	if (Part->Can_Be_Backed_Up)
+		printf("Can_Be_Backed_Up ");
 	if (Part->Wipe_During_Factory_Reset)
 		printf("Wipe_During_Factory_Reset ");
 	if (Part->Wipe_Available_in_GUI)
@@ -198,6 +210,8 @@ void TWPartitionManager::Output_Partition(TWPartition* Part) {
 		printf("Has_Android_Secure ");
 	if (Part->Is_Storage)
 		printf("Is_Storage ");
+	if (Part->Is_Settings_Storage)
+		printf("Is_Settings_Storage "); 
 	printf("\n");
 	if (!Part->Primary_Block_Device.empty())
 		printf("   Primary_Block_Device: %s\n", Part->Primary_Block_Device.c_str());
@@ -232,8 +246,12 @@ void TWPartitionManager::Output_Partition(TWPartition* Part) {
 			printf("   Backup_FileName: %s\n", Part->Backup_FileName.c_str());
 		if (!Part->Display_Name.empty())
 			printf("   Display_Name: %s\n", Part->Display_Name.c_str());
+		if (!Part->Storage_Name.empty())
+			printf("   Storage_Name: %s\n", Part->Storage_Name.c_str());
 		if (!Part->Backup_Name.empty())
 			printf("   Backup_Name: %s\n", Part->Backup_Name.c_str());
+		if (!Part->Backup_Display_Name.empty())
+			printf("   Backup_Display_Name: %s\n", Part->Backup_Display_Name.c_str());
 		if (!Part->MTD_Name.empty())
 			printf("   MTD_Name: %s\n", Part->MTD_Name.c_str());
 		string back_meth = Part->Backup_Method_By_Name();
@@ -628,7 +646,7 @@ bool TWPartitionManager::Backup_Partition(TWPartition* Part,
 			std::vector<TWPartition*>::iterator subpart;
 
 			for (subpart = Partitions.begin(); subpart != Partitions.end(); subpart++) {
-				if ((*subpart)->Is_SubPartition && (*subpart)->SubPartition_Of == Part->Mount_Point) {
+				if ((*subpart)->Can_Be_Backed_Up && (*subpart)->Is_SubPartition && (*subpart)->SubPartition_Of == Part->Mount_Point) {
 					if (!(*subpart)->Backup(Backup_Folder))
 						return false;
 					if (!Make_MD5(generate_md5, Backup_Folder, (*subpart)->Backup_FileName))
@@ -670,9 +688,6 @@ int TWPartitionManager::Run_Backup(void) {
 	TWPartition* backup_andsec = NULL;
 	TWPartition* backup_sdext = NULL;
 	TWPartition* backup_sdext2 = NULL;
-	TWPartition* backup_sp1 = NULL;
-	TWPartition* backup_sp2 = NULL;
-	TWPartition* backup_sp3 = NULL;
 	TWPartition* storage = NULL;
 	std::vector<TWPartition*>::iterator subpart;
 	struct tm *t;
@@ -686,6 +701,47 @@ int TWPartitionManager::Run_Backup(void) {
 
 	if (!Mount_Current_Storage(true))
 		return false;
+
+	// Get which partitions to backup from PartitionList
+	int tw_backup_boot = -1;
+	int tw_backup_system = -1;
+	int tw_backup_data = -1;
+	int tw_backup_recovery = -1;
+	int tw_backup_cache = -1;
+	int tw_backup_andsec = -1;
+	int tw_backup_sdext = -1;
+	int tw_backup_sdext2 = -1;
+
+	string Backup_List;
+	DataManager::GetValue("tw_backup_list", Backup_List);
+	if (!Backup_List.empty()) {
+		string backup_path;
+		size_t start_pos = 0, end_pos;
+		end_pos = Backup_List.find(";", start_pos);
+		while (end_pos != string::npos && start_pos < Backup_List.size()) {
+			backup_path = Backup_List.substr(start_pos, end_pos - start_pos);
+
+			if (backup_path == "/system")
+				tw_backup_system = 1;
+			else if (backup_path == "/data")
+				tw_backup_data = 1;
+			else if (backup_path == "/recovery")
+				tw_backup_recovery = 1;
+			else if (backup_path == "/cache")
+				tw_backup_cache = 1;
+			else if (backup_path == "/boot")
+				tw_backup_boot = 1;
+			else if (backup_path == "/and-sec")
+				tw_backup_andsec = 1;
+			else if (backup_path == "/sd-ext")
+				tw_backup_sdext = 1;
+			else if (backup_path == "/sdext2")
+				tw_backup_sdext2 = 1;
+
+			start_pos = end_pos + 1;
+			end_pos = Backup_List.find(";", start_pos);
+		}
+	}
 
 	DataManager::GetValue(TW_SKIP_MD5_GENERATE_VAR, skip_md5_gen);
 	if (skip_md5_gen > 0)
@@ -709,8 +765,7 @@ int TWPartitionManager::Run_Backup(void) {
 	gui_print("\n[BACKUP STARTED]\n");
     	
 	LOGINFO("Calculating backup details...\n");
-	DataManager::GetValue(TW_BACKUP_SYSTEM_VAR, check);
-	if (check) {
+	if (tw_backup_system > 0) {
 		backup_sys = Find_Partition_By_Path("/system");
 		if (backup_sys != NULL) {
 			partition_count++;
@@ -723,11 +778,7 @@ int TWPartitionManager::Run_Backup(void) {
 			DataManager::SetValue(TW_BACKUP_SYSTEM_VAR, 0);
 		}
 	}
-	if (!dataonext)
-		DataManager::GetValue(TW_BACKUP_DATA_VAR, check);
-	else
-		DataManager::GetValue(TW_BACKUP_NAND_DATA, check);
-	if (check) {
+	if (tw_backup_data > 0) {
 		backup_data = Find_Partition_By_Path("/data");
 		if (backup_data != NULL) {
 			partition_count++;
@@ -747,8 +798,7 @@ int TWPartitionManager::Run_Backup(void) {
 			DataManager::SetValue(TW_BACKUP_DATA_VAR, 0);
 		}
 	}
-	DataManager::GetValue(TW_BACKUP_CACHE_VAR, check);
-	if (check) {
+	if (tw_backup_cache > 0) {
 		backup_cache = Find_Partition_By_Path("/cache");
 		if (backup_cache != NULL) {
 			partition_count++;
@@ -761,8 +811,7 @@ int TWPartitionManager::Run_Backup(void) {
 			DataManager::SetValue(TW_BACKUP_CACHE_VAR, 0);
 		}
 	}
-	DataManager::GetValue(TW_BACKUP_RECOVERY_VAR, check);
-	if (check) {
+	if (tw_backup_recovery > 0) {
 		backup_recovery = Find_Partition_By_Path("/recovery");
 		if (backup_recovery != NULL) {
 			partition_count++;
@@ -776,8 +825,7 @@ int TWPartitionManager::Run_Backup(void) {
 		}
 	}
 #ifndef TW_HAS_NO_BOOT_PARTITION
-	DataManager::GetValue(TW_BACKUP_BOOT_VAR, check);
-	if (check) {
+	if (tw_backup_boot > 0) {
 		backup_boot = Find_Partition_By_Path("/boot");
 		if (backup_boot != NULL) {
 			partition_count++;
@@ -791,8 +839,7 @@ int TWPartitionManager::Run_Backup(void) {
 		}
 	}
 #endif
-	DataManager::GetValue(TW_BACKUP_ANDSEC_VAR, check);
-	if (check) {
+	if (tw_backup_andsec > 0) {
 		backup_andsec = Find_Partition_By_Path("/and-sec");
 		if (backup_andsec != NULL) {
 			partition_count++;
@@ -805,8 +852,7 @@ int TWPartitionManager::Run_Backup(void) {
 			DataManager::SetValue(TW_BACKUP_ANDSEC_VAR, 0);
 		}
 	}
-	DataManager::GetValue(TW_BACKUP_SDEXT_VAR, check);
-	if (check) {
+	if (tw_backup_sdext > 0) {
 		backup_sdext = Find_Partition_By_Path("/sd-ext");
 		if (backup_sdext != NULL) {
 			partition_count++;
@@ -819,8 +865,7 @@ int TWPartitionManager::Run_Backup(void) {
 			DataManager::SetValue(TW_BACKUP_SDEXT_VAR, 0);
 		}
 	}
-	DataManager::GetValue(TW_BACKUP_SDEXT2_VAR, check);
-	if (check) {
+	if (tw_backup_sdext2 > 0) {
 		backup_sdext2 = Find_Partition_By_Path("/sdext2");
 		if (backup_sdext2 != NULL) {
 			partition_count++;
@@ -833,54 +878,6 @@ int TWPartitionManager::Run_Backup(void) {
 			DataManager::SetValue(TW_BACKUP_SDEXT2_VAR, 0);
 		}
 	}
-#ifdef SP1_NAME
-	DataManager::GetValue(TW_BACKUP_SP1_VAR, check);
-	if (check) {
-		backup_sp1 = Find_Partition_By_Path(EXPAND(SP1_NAME));
-		if (backup_sp1 != NULL) {
-			partition_count++;
-			if (backup_sp1->Backup_Method == 1)
-				file_bytes += backup_sp1->Backup_Size;
-			else
-				img_bytes += backup_sp1->Backup_Size;
-		} else {
-			LOGERR("Unable to locate %s partition.\n", EXPAND(SP1_NAME));
-			DataManager::SetValue(TW_BACKUP_SP1_VAR, 0);
-		}
-	}
-#endif
-#ifdef SP2_NAME
-	DataManager::GetValue(TW_BACKUP_SP2_VAR, check);
-	if (check) {
-		backup_sp2 = Find_Partition_By_Path(EXPAND(SP2_NAME));
-		if (backup_sp2 != NULL) {
-			partition_count++;
-			if (backup_sp2->Backup_Method == 1)
-				file_bytes += backup_sp2->Backup_Size;
-			else
-				img_bytes += backup_sp2->Backup_Size;
-		} else {
-			LOGERR("Unable to locate %s partition.\n", EXPAND(SP2_NAME));
-			DataManager::SetValue(TW_BACKUP_SP2_VAR, 0);
-		}
-	}
-#endif
-#ifdef SP3_NAME
-	DataManager::GetValue(TW_BACKUP_SP3_VAR, check);
-	if (check) {
-		backup_sp3 = Find_Partition_By_Path(EXPAND(SP3_NAME));
-		if (backup_sp3 != NULL) {
-			partition_count++;
-			if (backup_sp3->Backup_Method == 1)
-				file_bytes += backup_sp3->Backup_Size;
-			else
-				img_bytes += backup_sp3->Backup_Size;
-		} else {
-			LOGERR("Unable to locate %s partition.\n", EXPAND(SP3_NAME));
-			DataManager::SetValue(TW_BACKUP_SP3_VAR, 0);
-		}
-	}
-#endif
 
 	if (partition_count == 0) {
 		gui_print("No partitions selected for backup.\n");
@@ -932,12 +929,6 @@ int TWPartitionManager::Run_Backup(void) {
 	if (!Backup_Partition(backup_sdext, Full_Backup_Path, do_md5, &img_bytes_remaining, &file_bytes_remaining, &img_time, &file_time, &img_bytes, &file_bytes))
 		return false;
 	if (!Backup_Partition(backup_sdext2, Full_Backup_Path, do_md5, &img_bytes_remaining, &file_bytes_remaining, &img_time, &file_time, &img_bytes, &file_bytes))
-		return false;
-	if (!Backup_Partition(backup_sp1, Full_Backup_Path, do_md5, &img_bytes_remaining, &file_bytes_remaining, &img_time, &file_time, &img_bytes, &file_bytes))
-		return false;
-	if (!Backup_Partition(backup_sp2, Full_Backup_Path, do_md5, &img_bytes_remaining, &file_bytes_remaining, &img_time, &file_time, &img_bytes, &file_bytes))
-		return false;
-	if (!Backup_Partition(backup_sp3, Full_Backup_Path, do_md5, &img_bytes_remaining, &file_bytes_remaining, &img_time, &file_time, &img_bytes, &file_bytes))
 		return false;
 
 	// Average BPS
@@ -1020,6 +1011,45 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 	TWPartition* restore_sp3 = NULL;
 	time_t rStart, rStop;
 	time(&rStart);
+
+	// Get which partitions to restore from PartitionList
+	int tw_restore_boot = -1;
+	int tw_restore_system = -1;
+	int tw_restore_data = -1;
+	int tw_restore_cache = -1;
+	int tw_restore_andsec = -1;
+	int tw_restore_sdext = -1;
+	int tw_restore_sdext2 = -1;
+
+	string Restore_List;
+	DataManager::GetValue("tw_restore_selected", Restore_List);
+	if (!Restore_List.empty()) {
+		string restore_path;
+		size_t start_pos = 0, end_pos;
+		end_pos = Restore_List.find(";", start_pos);
+		while (end_pos != string::npos && start_pos < Restore_List.size()) {
+			restore_path = Restore_List.substr(start_pos, end_pos - start_pos);
+
+			if (restore_path == "/system")
+				tw_restore_system = 1;
+			else if (restore_path == "/data")
+				tw_restore_data = 1;
+			else if (restore_path == "/cache")
+				tw_restore_cache = 1;
+			else if (restore_path == "/boot")
+				tw_restore_boot = 1;
+			else if (restore_path == "/and-sec")
+				tw_restore_andsec = 1;
+			else if (restore_path == "/sd-ext")
+				tw_restore_sdext = 1;
+			else if (restore_path == "/sdext2")
+				tw_restore_sdext2 = 1;
+
+			start_pos = end_pos + 1;
+			end_pos = Restore_List.find(";", start_pos);
+		}
+	}
+
 	// Needed for any size checks
 	string Full_FileName, part_size, parts, Command, data_size, dalvik_nfo, dalvik_host;
 	int dataonext, dalvik_found_on_data = 1, dalvik_found_on_sdext = 1, dalvik_found_on_sdext2 = 1, nodalvikcache = 0;
@@ -1052,8 +1082,7 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 	}
 	DataManager::GetValue(TW_RESTORE_IS_DATAONEXT, dataonext);
 	DataManager::GetValue(TW_SKIP_MD5_CHECK_VAR, skip_md5_check);
-	DataManager::GetValue(TW_RESTORE_SYSTEM_VAR, check);
-	if (check > 0) {
+	if (tw_restore_system > 0) {
 		restore_sys = Find_Partition_By_Path("/system");
 		if (restore_sys == NULL)
 			LOGERR("Unable to locate system partition.\n");
@@ -1096,8 +1125,7 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 				partition_count++;
 		}
 	}
-	DataManager::GetValue(TW_RESTORE_DATA_VAR, check);
-	if (check > 0) {
+	if (tw_restore_data > 0) {
 		restore_data = Find_Partition_By_Path("/data");
 		if (restore_data == NULL)
 			LOGERR("Unable to locate data partition.\n");
@@ -1147,8 +1175,7 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 				partition_count++;
 		}
 	}
-	DataManager::GetValue(TW_RESTORE_CACHE_VAR, check);
-	if (check > 0) {
+	if (tw_restore_cache > 0) {
 		restore_cache = Find_Partition_By_Path("/cache");
 		if (restore_cache == NULL)
 			LOGERR("Unable to locate cache partition.\n");
@@ -1158,12 +1185,12 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 		}
 	}
 #ifndef TW_HAS_NO_BOOT_PARTITION
-	DataManager::GetValue(TW_RESTORE_BOOT_VAR, check);
-	if (check > 0) {
+	if (tw_restore_boot > 0) {
 		restore_boot = Find_Partition_By_Path("/boot");
 		if (restore_boot == NULL)
 			LOGERR("Unable to locate boot partition.\n");
 		else {
+			DataManager::GetValue(TW_RESTORE_BOOT_VAR, check);
 			LOGINFO("TW_RESTORE_BOOT_VAR = %i\n", check);
 			if (check == 2) {
 				if (!TWFunc::Path_Exists(Restore_Name + "/boot.mtd.win")) {
@@ -1267,8 +1294,7 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 		}
 	}
 #endif
-	DataManager::GetValue(TW_RESTORE_ANDSEC_VAR, check);
-	if (check > 0) {
+	if (tw_restore_andsec > 0) {
 		restore_andsec = Find_Partition_By_Path("/and-sec");
 		if (restore_andsec == NULL)
 			LOGERR("Unable to locate android secure partition.\n");
@@ -1277,8 +1303,7 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 			parts += "A";
 		}
 	}
-	DataManager::GetValue(TW_RESTORE_SDEXT_VAR, check);
-	if (check > 0) {
+	if (tw_restore_sdext > 0) {
 		restore_sdext = Find_Partition_By_Path("/sd-ext");
 		if (restore_sdext == NULL)
 			LOGERR("Unable to locate sd-ext partition.\n");
@@ -1332,8 +1357,7 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 				partition_count++;
 		}
 	}
-	DataManager::GetValue(TW_RESTORE_SDEXT2_VAR, check);
-	if (check > 0) {
+	if (tw_restore_sdext2 > 0) {
 		restore_sdext2 = Find_Partition_By_Path("/sdext2");
 		if (restore_sdext2 == NULL)
 			LOGERR("Unable to locate sdext2 partition.\n");
@@ -1387,45 +1411,6 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 				partition_count++;
 		}
 	}
-#ifdef SP1_NAME
-	DataManager::GetValue(TW_RESTORE_SP1_VAR, check);
-	if (check > 0) {
-		restore_sp1 = Find_Partition_By_Path(EXPAND(SP1_NAME));
-		if (restore_sp1 == NULL)
-			LOGERR("Unable to locate %s partition.\n", EXPAND(SP1_NAME));
-		else {
-			// TODO: Size check for SP1
-			partition_count++;
-			parts += "1";
-		}
-	}
-#endif
-#ifdef SP2_NAME
-	DataManager::GetValue(TW_RESTORE_SP2_VAR, check);
-	if (check > 0) {
-		restore_sp2 = Find_Partition_By_Path(EXPAND(SP2_NAME));
-		if (restore_sp2 == NULL)
-			LOGERR("Unable to locate %s partition.\n", EXPAND(SP2_NAME));
-		else {
-			// TODO: Size check for SP2
-			partition_count++;
-			parts += "2";
-		}
-	}
-#endif
-#ifdef SP3_NAME
-	DataManager::GetValue(TW_RESTORE_SP3_VAR, check);
-	if (check > 0) {
-		restore_sp3 = Find_Partition_By_Path(EXPAND(SP3_NAME));
-		if (restore_sp3 == NULL)
-			LOGERR("Unable to locate %s partition.\n", EXPAND(SP3_NAME));
-		else {
-			// TODO: Size check for SP3
-			partition_count++;
-			parts += "3";
-		}
-	}
-#endif
 	
 	if (hserr > 0 && DataManager::Detect_BLDR() == 1) {
 		if (!data_size.empty()) {
@@ -1507,12 +1492,6 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 			return false;
 		if (restore_sdext2 != NULL && !restore_sdext2->Check_MD5(Restore_Name))
 			return false;
-		if (restore_sp1 != NULL && !restore_sp1->Check_MD5(Restore_Name))
-			return false;
-		if (restore_sp2 != NULL && !restore_sp2->Check_MD5(Restore_Name))
-			return false;
-		if (restore_sp3 != NULL && !restore_sp3->Check_MD5(Restore_Name))
-			return false;
 		gui_print("Done verifying MD5.\n");
 	}
 
@@ -1532,12 +1511,6 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 		return false;
 	if (restore_sdext2 != NULL && !Restore_Partition(restore_sdext2, Restore_Name, partition_count))
 		return false;
-	if (restore_sp1 != NULL && !Restore_Partition(restore_sp1, Restore_Name, partition_count))
-		return false;
-	if (restore_sp2 != NULL && !Restore_Partition(restore_sp2, Restore_Name, partition_count))
-		return false;
-	if (restore_sp3 != NULL && !Restore_Partition(restore_sp3, Restore_Name, partition_count))
-		return false;
 
 	sleep(3);
 	TWFunc::GUI_Operation_Text(TW_UPDATE_SYSTEM_DETAILS_TEXT, "Updating System Details");
@@ -1554,17 +1527,12 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 
 void TWPartitionManager::Set_Restore_Files(string Restore_Name) {
 	// Start with the default values
+	string Restore_List;
+	int tw_restore_boot = -1;
 	int tw_restore_system = -1;
 	int tw_restore_data = -1;
-	int tw_restore_cache = -1;
-	int tw_restore_recovery = -1;
-	int tw_restore_boot = -1;
-	int tw_restore_andsec = -1;
 	int tw_restore_sdext = -1;
 	int tw_restore_sdext2 = -1;
-	int tw_restore_sp1 = -1;
-	int tw_restore_sp2 = -1;
-	int tw_restore_sp3 = -1;
 	int tw_restore_is_dataonext = 0;
 	bool get_date = true;
 	bool split_archive = false;
@@ -1688,8 +1656,7 @@ void TWPartitionManager::Set_Restore_Files(string Restore_Name) {
 					if (fstype == "mtd")
 						tw_restore_boot = 1;
 					else if (fstype == "yaffs2") {
-						tw_restore_boot = -1;
-						tw_restore_system = 0;
+						tw_restore_boot = 0;
 						continue;
 					}
 				// MAGLDR installed
@@ -1705,52 +1672,27 @@ void TWPartitionManager::Set_Restore_Files(string Restore_Name) {
 					tw_restore_boot = 1;
 			}
 			else if (Part->Backup_Path == "/system") {
-				if (tw_restore_system == 0)
+				if (tw_restore_boot == 0)
 					continue;
 				else
 					tw_restore_system = 1;
 			} else if (Part->Backup_Path == "/data")
 				tw_restore_data = 1;
-			else if (Part->Backup_Path == "/cache")
-				tw_restore_cache = 1;
-			else if (Part->Backup_Path == "/recovery")
-				tw_restore_recovery = 1;
-			else if (Part->Backup_Path == "/and-sec" || Part->Backup_Path == Part->Mount_Point + "/.android_secure")
-				tw_restore_andsec = 1;
 			else if (Part->Backup_Path == "/sd-ext")
 				tw_restore_sdext = 1;
 			else if (Part->Backup_Path == "/sdext2")
 				tw_restore_sdext2 = 1;
-#ifdef SP1_NAME
-			if (Part->Backup_Path == TWFunc::Get_Root_Path(EXPAND(SP1_NAME)))
-				tw_restore_sp1 = 1;
-#endif
-#ifdef SP2_NAME
-			if (Part->Backup_Path == TWFunc::Get_Root_Path(EXPAND(SP2_NAME)))
-				tw_restore_sp2 = 1;
-#endif
-#ifdef SP3_NAME
-			if (Part->Backup_Path == TWFunc::Get_Root_Path(EXPAND(SP3_NAME)))
-				tw_restore_sp3 = 1;
-#endif
+
+			Restore_List += Part->Backup_Path + ";";
 		}
 	}
 	closedir(d);
 
 	// Set the final values
-	DataManager::SetValue(TW_RESTORE_SYSTEM_VAR, tw_restore_system);
-	DataManager::SetValue(TW_RESTORE_DATA_VAR, tw_restore_data);
-	DataManager::SetValue(TW_RESTORE_CACHE_VAR, tw_restore_cache);
-	DataManager::SetValue(TW_RESTORE_RECOVERY_VAR, tw_restore_recovery);
 	DataManager::SetValue(TW_RESTORE_BOOT_VAR, tw_restore_boot);
-	DataManager::SetValue(TW_RESTORE_ANDSEC_VAR, tw_restore_andsec);
-	DataManager::SetValue(TW_RESTORE_SDEXT_VAR, tw_restore_sdext);
-	DataManager::SetValue(TW_RESTORE_SDEXT2_VAR, tw_restore_sdext2);
-	DataManager::SetValue(TW_RESTORE_SP1_VAR, tw_restore_sp1);
-	DataManager::SetValue(TW_RESTORE_SP2_VAR, tw_restore_sp2);
-	DataManager::SetValue(TW_RESTORE_SP3_VAR, tw_restore_sp3);
 	DataManager::SetValue(TW_RESTORE_IS_DATAONEXT, tw_restore_is_dataonext);
-
+	DataManager::SetValue("tw_restore_list", Restore_List);
+	DataManager::SetValue("tw_restore_selected", Restore_List);
 	return;
 }
 
@@ -1820,9 +1762,8 @@ int TWPartitionManager::Wipe_By_Name(string Name) {
 bool TWPartitionManager::Wipe_MTD_By_Name(string ptnName) {
 	gui_print("MTD Formatting \"%s\"\n", ptnName.c_str());
 
-    	mtd_scan_partitions();
-    	const MtdPartition* mtd = mtd_find_partition_by_name(ptnName.c_str());
-    	if (mtd == NULL) {
+    	TWPartition* Part = Find_Partition_By_Name(ptnName);
+    	if (Part == NULL) {
         	LOGERR("No mtd partition named '%s'", ptnName.c_str());
         	return false;
     	}
@@ -3162,4 +3103,111 @@ int TWPartitionManager::FSConvert_SDEXT(string extpath) {
 		Update_System_Details(true);
 	}
 	return true;
+}
+
+void TWPartitionManager::Get_Partition_List(string ListType, std::vector<PartitionList> *Partition_List) {
+	std::vector<TWPartition*>::iterator iter;
+	if (ListType == "mount") {
+		for (iter = Partitions.begin(); iter != Partitions.end(); iter++) {
+			if ((*iter)->Can_Be_Mounted && !(*iter)->Is_SubPartition) {
+				struct PartitionList part;
+				part.Display_Name = (*iter)->Display_Name;
+				part.Mount_Point = (*iter)->Mount_Point;
+				part.selected = (*iter)->Is_Mounted();
+				Partition_List->push_back(part);
+			}
+		}
+	} else if (ListType == "storage") {
+		char free_space[255];
+		string Current_Storage = DataManager::GetCurrentStoragePath();
+		for (iter = Partitions.begin(); iter != Partitions.end(); iter++) {
+			if ((*iter)->Is_Storage) {
+				struct PartitionList part;
+				sprintf(free_space, "%llu", (*iter)->Free / 1024 / 1024);
+				part.Display_Name = (*iter)->Storage_Name + " (";
+				part.Display_Name += free_space;
+				part.Display_Name += "MB)";
+				part.Mount_Point = (*iter)->Storage_Path;
+				if ((*iter)->Storage_Path == Current_Storage)
+					part.selected = 1;
+				else
+					part.selected = 0;
+				Partition_List->push_back(part);
+			}
+		}
+	} else if (ListType == "backup") {
+		char backup_size[255];
+		unsigned long long Backup_Size;
+		for (iter = Partitions.begin(); iter != Partitions.end(); iter++) {
+			if ((*iter)->Can_Be_Backed_Up && !(*iter)->Is_SubPartition && (*iter)->Is_Present) {
+				struct PartitionList part;
+				Backup_Size = (*iter)->Backup_Size;
+				if ((*iter)->Has_SubPartition) {
+					std::vector<TWPartition*>::iterator subpart;
+
+					for (subpart = Partitions.begin(); subpart != Partitions.end(); subpart++) {
+						if ((*subpart)->Is_SubPartition && (*subpart)->Can_Be_Backed_Up && (*subpart)->Is_Present && (*subpart)->SubPartition_Of == (*iter)->Mount_Point)
+							Backup_Size += (*subpart)->Backup_Size;
+					}
+				}
+				sprintf(backup_size, "%llu", Backup_Size / 1024 / 1024);
+				part.Display_Name = (*iter)->Backup_Display_Name + " (";
+				part.Display_Name += backup_size;
+				part.Display_Name += "MB)";
+				part.Mount_Point = (*iter)->Backup_Path;
+				part.selected = 0;
+				Partition_List->push_back(part);
+			}
+		}
+	} else if (ListType == "restore") {
+		string Restore_List, restore_path;
+		TWPartition* restore_part = NULL;
+
+		DataManager::GetValue("tw_restore_list", Restore_List);
+		if (!Restore_List.empty()) {
+			size_t start_pos = 0, end_pos = Restore_List.find(";", start_pos);
+			while (end_pos != string::npos && start_pos < Restore_List.size()) {
+				restore_path = Restore_List.substr(start_pos, end_pos - start_pos);
+				if ((restore_part = Find_Partition_By_Path(restore_path)) != NULL && !restore_part->Is_SubPartition) {
+					if (restore_part->Backup_Name == "recovery") {
+						// Don't allow restore of recovery (causes problems on some devices)
+					} else {
+						struct PartitionList part;
+						part.Display_Name = restore_part->Backup_Display_Name;
+						part.Mount_Point = restore_part->Backup_Path;
+						part.selected = 1;
+						Partition_List->push_back(part);
+					}
+				} else {
+					LOGERR("Unable to locate '%s' partition for restore.\n", restore_path.c_str());
+				}
+				start_pos = end_pos + 1;
+				end_pos = Restore_List.find(";", start_pos);
+			}
+		}
+	} else if (ListType == "wipe") {
+		struct PartitionList dalvik;
+		dalvik.Display_Name = "Dalvik Cache";
+		dalvik.Mount_Point = "DALVIK";
+		dalvik.selected = 0;
+		Partition_List->push_back(dalvik);
+		for (iter = Partitions.begin(); iter != Partitions.end(); iter++) {
+			if ((*iter)->Wipe_Available_in_GUI && !(*iter)->Is_SubPartition) {
+				struct PartitionList part;
+				part.Display_Name = (*iter)->Display_Name;
+				part.Mount_Point = (*iter)->Mount_Point;
+				part.selected = 0;
+				Partition_List->push_back(part);
+			}
+			if ((*iter)->Has_Android_Secure) {
+				struct PartitionList part;
+				part.Display_Name = (*iter)->Backup_Display_Name;
+				part.Mount_Point = (*iter)->Backup_Path;
+				part.selected = 0;
+				Partition_List->push_back(part);
+			}
+		}
+	} else {
+		LOGERR("Unknown list type '%s' requested for TWPartitionManager::Get_Partition_List\n", ListType.c_str());
+	}
 }

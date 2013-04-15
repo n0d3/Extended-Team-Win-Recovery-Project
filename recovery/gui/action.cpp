@@ -470,7 +470,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			string dst;
 			PartitionManager.Mount_Current_Storage(true);
 			dst = DataManager::GetCurrentStoragePath() + "/recovery.log";
-			TWFunc::Copy_Log("/tmp/recovery.log", dst.c_str());
+			TWFunc::copy_file("/tmp/recovery.log", dst.c_str(), 0755);
 			sync();
 			gui_print("Copied recovery log to %s.\n", DataManager::GetCurrentStoragePath().c_str());
 		} else
@@ -784,6 +784,51 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 					ret_val = PartitionManager.Wipe_Android_Secure();
 				} else if (arg == "boot" || arg == "sboot") {
 					ret_val = PartitionManager.Wipe_MTD_By_Name(arg);
+				} else if (arg == "LIST") {
+					string Wipe_List, wipe_path;
+					bool skip = false;
+					ret_val = true;
+					TWPartition* wipe_part = NULL;
+
+					DataManager::GetValue("tw_wipe_list", Wipe_List);
+					LOGINFO("wipe list '%s'\n", Wipe_List.c_str());
+					if (!Wipe_List.empty()) {
+						size_t start_pos = 0, end_pos = Wipe_List.find(";", start_pos);
+						while (end_pos != string::npos && start_pos < Wipe_List.size()) {
+							wipe_path = Wipe_List.substr(start_pos, end_pos - start_pos);
+							LOGINFO("wipe_path '%s'\n", wipe_path.c_str());
+							if (wipe_path == "/and-sec") {
+								if (!PartitionManager.Wipe_Android_Secure()) {
+									LOGERR("Unable to wipe android secure\n");
+									ret_val = false;
+									break;
+								} else {
+									skip = true;
+								}
+							} else if (wipe_path == "DALVIK") {
+								if (!PartitionManager.Wipe_Dalvik_Cache()) {
+									LOGERR("Failed to wipe dalvik\n");
+									ret_val = false;
+									break;
+								} else {
+									skip = true;
+								}
+							}
+							if (!skip) {
+								if (!PartitionManager.Wipe_By_Path(wipe_path)) {
+									LOGERR("Unable to wipe '%s'\n", wipe_path.c_str());
+									ret_val = false;
+									break;
+								} else if (wipe_path == DataManager::GetSettingsStoragePath()) {
+									arg = wipe_path;
+								}
+							} else {
+								skip = false;
+							}
+							start_pos = end_pos + 1;
+							end_pos = Wipe_List.find(";", start_pos);
+						}
+					}
 				} else
 					ret_val = PartitionManager.Wipe_By_Path(arg);
 
@@ -1469,13 +1514,16 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				gui_print("Starting ADB sideload feature...\n");
 				DataManager::GetValue("tw_wipe_dalvik", wipe_dalvik);
 				ret = apply_from_adb(Sideload_File.c_str());
+				DataManager::SetValue("tw_has_cancel", 0); // Remove cancel button from gui now that the zip install is going to start
 				if (ret != 0) {
 					ret = 1; // failure
-				} else {
+				} else if (TWinstall_zip(Sideload_File.c_str(), &wipe_cache) == 0) {
 					if (wipe_cache || DataManager::GetIntValue("tw_wipe_cache"))
 						PartitionManager.Wipe_By_Path("/cache");
 					if (wipe_dalvik)
 						PartitionManager.Wipe_Dalvik_Cache();
+				} else {
+					ret = 1; // failure
 				}
 				if (DataManager::GetIntValue(TW_HAS_INJECTTWRP) == 1 && DataManager::GetIntValue(TW_INJECT_AFTER_ZIP) == 1) {
 					operation_start("ReinjectTWRP");
@@ -1500,10 +1548,16 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 		if (function == "adbsideloadcancel")
 		{
 			int child_pid;
+			char child_prop[PROPERTY_VALUE_MAX];
 			string Sideload_File;
 			Sideload_File = DataManager::GetCurrentStoragePath() + "/sideload.zip";
 			unlink(Sideload_File.c_str());
-			DataManager::GetValue("tw_child_pid", child_pid);
+			property_get("tw_child_pid", child_prop, "error");
+			if (strcmp(child_prop, "error") == 0) {
+				LOGERR("Unable to get child ID from prop\n");
+				return 0;
+			}
+			child_pid = atoi(child_prop);
 			gui_print("Cancelling ADB sideload...\n");
 			kill(child_pid, SIGTERM);
 			DataManager::SetValue("tw_page_done", "1"); // For OpenRecoveryScript support

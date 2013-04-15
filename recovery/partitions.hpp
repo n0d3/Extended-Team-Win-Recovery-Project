@@ -30,6 +30,12 @@
 
 using namespace std;
 
+struct PartitionList {
+	std::string Display_Name;
+	std::string Mount_Point;
+	unsigned int selected;
+};
+
 // Partition class
 class TWPartition {
 	public:
@@ -126,6 +132,8 @@ class TWPartition {
 		bool Can_Be_Mounted;                                                      
 		// Indicates that the partition can be wiped
 		bool Can_Be_Wiped;                                                        
+		// Indicates that the partition will show up in the backup list
+		bool Can_Be_Backed_Up;
 		// Indicates that this partition is wiped during a factory reset
 		bool Wipe_During_Factory_Reset;                                           
 		// Indicates that the wipe can be user initiated in the GUI system
@@ -168,6 +176,10 @@ class TWPartition {
 		string Display_Name;                                                      
 		// Backup name -- used for backup filenames
 		string Backup_Name;                                                       
+		// Name displayed in the partition list for backup selection
+		string Backup_Display_Name;
+		// Name displayed in the partition list for storage selection
+		string Storage_Name;
 		// Actual backup filename
 		string Backup_FileName;                                                   
 		// Method used for backup
@@ -178,6 +190,8 @@ class TWPartition {
 		bool Has_Android_Secure;                                                  
 		// Indicates if this partition is used for storage for backup, restore, and installing zips
 		bool Is_Storage;                                                          
+		// Indicates that this storage partition is the location of the .twrps settings file and the location that is used for custom themes
+		bool Is_Settings_Storage;
 		// Indicates the path to the storage -- root indicates mount point, media/ indicates e.g. /data/media
 		string Storage_Path;                                                      
 		// File system from the recovery.fstab	
@@ -275,6 +289,8 @@ class TWPartition {
 		void Recreate_DataOnExt_Folder(void);
 
 	friend class TWPartitionManager;
+	friend class DataManager;
+	friend class GUIPartitionList;
 };
 
 class TWPartitionManager {
@@ -367,6 +383,7 @@ class TWPartitionManager {
 		virtual int Fix_Permissions(); 
 		// Generates an MD5 after a backup is made
 		virtual bool Make_MD5(bool generate_md5, string Backup_Folder, string Backup_Filename); 
+		virtual void Get_Partition_List(string ListType, std::vector<PartitionList> *Partition_List);
 		
 	// Extended functions
 		static int Fstab_Proc_Done;
