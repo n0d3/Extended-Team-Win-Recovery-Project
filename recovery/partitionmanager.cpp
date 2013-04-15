@@ -55,10 +55,6 @@
 	#include "cutils/properties.h"
 #endif
 
-extern "C"
-{
-	#include "mtdutils/mtdutils.h"
-}
 extern RecoveryUI* ui;
 int TWPartitionManager::Fstab_Proc_Done = 0;
 int TWPartitionManager::SD_Partitioning_Done_Once = 0;
@@ -484,7 +480,7 @@ int TWPartitionManager::Check_Backup_Name(bool Display_Error) {
 
 	// Check each character
 	strncpy(backup_name, Backup_Name.c_str(), copy_size);
-	if (strcmp(backup_name, "0") == 0)
+	if (copy_size == 1 && strcmp(backup_name, "0") == 0)
 		return 0; // A "0" (zero) means to use the current timestamp for the backup name
 	for (index=0; index<copy_size; index++) {
 		cur_char = (int)backup_name[index];
@@ -513,7 +509,7 @@ int TWPartitionManager::Check_Backup_Name(bool Display_Error) {
 	// Check to make sure that a backup with this name doesn't already exist
 	DataManager::GetValue(TW_BACKUPS_FOLDER_VAR, Backup_Loc);
 	strcpy(backup_loc, Backup_Loc.c_str());
-	sprintf(tw_image_dir,"%s/%s/.", backup_loc, backup_name);
+	sprintf(tw_image_dir,"%s/%s", backup_loc, Backup_Name.c_str());
 	if (TWFunc::Path_Exists(tw_image_dir)) {
 		if (Display_Error)
 			LOGERR("A backup with this name already exists.\n");
@@ -1069,13 +1065,13 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 				if (restore_sys->Use_unyaffs_To_Restore) {
 					// This is a yaffs2.img
 					file_size = TWFunc::Get_File_Size(Full_FileName);
-					min_size += TWFunc::RoundUpSize(file_size, multiple);
+					min_size = TWFunc::RoundUpSize(file_size, multiple);
 				} else {
 					// This is an archive
 					twrpTar tar;
 					tar.setfn(Full_FileName);
 					tar_size = tar.uncompressedSize();
-					min_size += TWFunc::RoundUpSize(tar_size, multiple);
+					min_size = TWFunc::RoundUpSize(tar_size, multiple);
 				}
 				// Now compare the size of the partition and the minimum required size
 				LOGINFO("'system': size=%llub / min-req-size=%llub\n", restore_sys->Size, min_size);
@@ -1113,7 +1109,7 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 				if (restore_data->Use_unyaffs_To_Restore) {
 					// This is a yaffs2.img
 					file_size = TWFunc::Get_File_Size(Full_FileName);
-					min_size += TWFunc::RoundUpSize(file_size, multiple);
+					min_size = TWFunc::RoundUpSize(file_size, multiple);
 				} else {
 					// This is an archive
 					twrpTar tar;
@@ -1123,7 +1119,7 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 					// If not we must add enough space for it
 					if (!dataonext && !tar.entryExists("data/dalvik-cache/"))
 						dalvik_found_on_data = 0;
-					min_size += TWFunc::RoundUpSize(tar_size, multiple);
+					min_size = TWFunc::RoundUpSize(tar_size, multiple);
 				}
 				if (nodalvikcache && dalvik_host == "/data")
 					min_size += dc_size;
@@ -1239,13 +1235,13 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 				if (restore_boot->Backup_FileName.find("mtd") != string::npos || restore_boot->Backup_FileName == "boot.img") {
 					// This is a dumped img
 					file_size = TWFunc::Get_File_Size(Full_FileName);
-					min_size += TWFunc::RoundUpSize(file_size, multiple);
+					min_size = TWFunc::RoundUpSize(file_size, multiple);
 				} else {
 					// This is an archive
 					twrpTar tar;
 					tar.setfn(Full_FileName);
 					tar_size = tar.uncompressedSize();
-					min_size += TWFunc::RoundUpSize(tar_size, multiple);
+					min_size = TWFunc::RoundUpSize(tar_size, multiple);
 				}
 				// Now compare the size of the partition and the minimum required size
 				LOGINFO("'boot': size=%llub / min-req-size=%llub\n", restore_boot->Size, min_size);
@@ -1310,7 +1306,7 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 				} else {
 					twrpTar tar;
 					tar.setfn(Full_FileName);
-					min_size += tar.uncompressedSize();
+					min_size = tar.uncompressedSize();
 					// check if the archive contains dalvik-cache.
 					// If not we must add enough space for it
 					if (!tar.entryExists("sd-ext/dalvik-cache/"))
@@ -1358,20 +1354,20 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 						min_size += tar.uncompressedSize();
 						index++;		
 						sprintf(split_index, "%03i", index);
-						Full_FileName = Restore_Name + "/" + restore_sys->Backup_FileName + split_index;
+						Full_FileName = Restore_Name + "/" + restore_sdext2->Backup_FileName + split_index;
 					}
 					if (index == 0)
 						LOGERR("Error locating restore file: '%s'\n", Full_FileName.c_str());
 				} else {
 					twrpTar tar;
 					tar.setfn(Full_FileName);
-					min_size += tar.uncompressedSize();
+					min_size = tar.uncompressedSize();
 					// check if the archive contains dalvik-cache.
 					// If not we must add enough space for it
 					if (!tar.entryExists("sdext2/dalvik-cache/"))
 						dalvik_found_on_sdext2 = 0;
 				}
-				if (nodalvikcache && dalvik_host == "/sd-ext")
+				if (nodalvikcache && dalvik_host == "/sdext2")
 					min_size += dc_size;
 				// Now compare the size of the partition and the minimum required size
 				LOGINFO("'sdext2': size=%llub / min-req-size=%llub\n", restore_sdext2->Size, min_size);
@@ -1382,7 +1378,7 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 					LOGINFO("Size mismatch for %s.\n", restore_sdext2->Backup_Name.c_str());
 					// TODO: TWRP could repartition card in this case
 					//	 but better just inform that sdext2 partition is too small for this backup to be restored
-					restore_sdext = NULL;
+					restore_sdext2 = NULL;
 					LOGERR("Size of 'sdext2' partition is less than needed.\n");
 					LOGERR("Skipping 'sdext2' from restoring process.\n");
 				}
@@ -1582,7 +1578,7 @@ void TWPartitionManager::Set_Restore_Files(string Restore_Name) {
 
 	struct dirent* de;
 	while ((de = readdir(d)) != NULL) {
-		if (!strcmp(de->d_name, ".") || !strcmp(de->d_name, ".."))
+		if (!strcmp(de->d_name, ".") || !strcmp(de->d_name, "..") || !strcmp(de->d_name, "recovery.log"))
 			continue;
 
 		string dname = de->d_name;
@@ -1686,7 +1682,6 @@ void TWPartitionManager::Set_Restore_Files(string Restore_Name) {
 			LOGINFO("*Backup_Path = %s\n", Part->Backup_Path.c_str());
 
 			// HD2's boot partition depends on which bootloader we have
-			// *** TODO: What if MAGLDR's boot partition is created as rboot? ***
 			if (Part->Backup_Path == "/boot") {
 				// cLK installed
 				if (DataManager::Detect_BLDR() == 1) {
@@ -1694,8 +1689,8 @@ void TWPartitionManager::Set_Restore_Files(string Restore_Name) {
 						tw_restore_boot = 1;
 					else if (fstype == "yaffs2") {
 						tw_restore_boot = -1;
-						tw_restore_system = -1;
-						break;
+						tw_restore_system = 0;
+						continue;
 					}
 				// MAGLDR installed
 				} else if (DataManager::Detect_BLDR() == 2) {
@@ -1709,9 +1704,12 @@ void TWPartitionManager::Set_Restore_Files(string Restore_Name) {
 				} else
 					tw_restore_boot = 1;
 			}
-			else if (Part->Backup_Path == "/system")
-				tw_restore_system = 1;
-			else if (Part->Backup_Path == "/data")
+			else if (Part->Backup_Path == "/system") {
+				if (tw_restore_system == 0)
+					continue;
+				else
+					tw_restore_system = 1;
+			} else if (Part->Backup_Path == "/data")
 				tw_restore_data = 1;
 			else if (Part->Backup_Path == "/cache")
 				tw_restore_cache = 1;

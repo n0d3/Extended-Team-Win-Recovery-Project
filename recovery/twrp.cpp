@@ -169,6 +169,7 @@ int main(int argc, char **argv) {
 		LOGERR("Failing out of recovery due to problem with recovery.fstab.\n");
 		return -1;
 	}
+	DataManager::SetupTwrpFolder();
 	// Load up all the resources
 	gui_loadResources();
 	PartitionManager.Mount_By_Path("/cache", true);

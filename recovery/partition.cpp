@@ -1023,7 +1023,7 @@ done:
 	fclose(fp);
 	if (primary_blk_sz > 0)
 		return primary_blk_sz;
-	else if (alternate_blk_sz > 0)
+	if (alternate_blk_sz > 0)
 		return alternate_blk_sz;
 
 	return 0;

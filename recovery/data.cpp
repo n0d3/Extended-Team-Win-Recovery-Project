@@ -52,7 +52,6 @@ extern "C"
     #include "twcommon.h"
     #include "data.h"
 	#include "gui/pages.h"
-	#include "mtdutils/mtdutils.h"
 
 	void gui_notifyVarChange(const char *name, const char* value);
 }
@@ -317,13 +316,17 @@ int DataManager::LoadValues(const string filename) {
 		SetDefaultValues();
 
 	// Save off the backing file for set operations
-	mBackingFile = filename;
+	if (mBackingFile.empty())
+		mBackingFile = filename;
 
 	// Read in the file, if possible
 	FILE* in = fopen(filename.c_str(), "rb");
-	if (in == NULL)					return -1;
+	if (in == NULL)
+		return -1;
+	else
+		LOGINFO("Loading settings from '%s'.\n", filename.c_str());
 
-	int add, position, file_size, file_version, err;
+	int add, position, file_size, file_version, ret = 1;
 	int a, b, c, d;
 	fseek(in, 0 , SEEK_END);
 	file_size = ftell(in);
@@ -360,15 +363,11 @@ int DataManager::LoadValues(const string filename) {
 			mValues.insert(TNameValuePair(Name, TStrIntPair(Value, 1)));
 		position += (a + b + c + d);
 	}
-	fclose(in);
-	SetBackupFolder(GetCurrentStoragePath());
-	return 0;
-
+	ret = 0;
 error:
-	// File version mismatch. Use defaults.
 	fclose(in);
 	SetBackupFolder(GetCurrentStoragePath());
-	return 1;
+	return ret;
 }
 
 int DataManager::Flush()
@@ -1173,6 +1172,7 @@ void DataManager::ReadSettingsFile(void)
 	memset(alter_settings_file, 0, sizeof(alter_settings_file));
 	sprintf(mkdir_path, "%s/TWRP", DataManager_GetSettingsStoragePath());
 	sprintf(settings_file, "%s/.twrps", mkdir_path);
+	mBackingFile = settings_file;
 	sprintf(alter_settings_file, "%s/.twrps", "/cache/recovery");
 	rm += alter_settings_file;
 
