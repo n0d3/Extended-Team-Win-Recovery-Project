@@ -1949,6 +1949,9 @@ int TWPartitionManager::Wipe_Media_From_Data(void) {
 			return -1;
 		if (dat->Has_Data_Media) {
 			dat->Recreate_Media_Folder();
+			// Unmount and remount - slightly hackish way to ensure that the "/sdcard" folder is still mounted properly after wiping
+			dat->UnMount(false);
+			dat->Mount(false);
 		}
 		return true;
 	} else {
@@ -1958,17 +1961,10 @@ int TWPartitionManager::Wipe_Media_From_Data(void) {
 	return false;
 }
 
-void TWPartitionManager::Refresh_Sizes(void) {
-	Update_System_Details(true);
-	return;
-}
-
-void TWPartitionManager::Update_System_Details(bool Display_Msg) {
+void TWPartitionManager::Refresh_Sizes(bool Display_Msg) {
 	std::vector<TWPartition*>::iterator iter;
 	int data_size = 0;
 
-	if (Display_Msg)
-		gui_print("Updating partition details...\n");
 	for (iter = Partitions.begin(); iter != Partitions.end(); iter++) {
 		if ((*iter)->Can_Be_Mounted) {
 			(*iter)->Update_Size(Display_Msg);
@@ -1983,27 +1979,23 @@ void TWPartitionManager::Update_System_Details(bool Display_Msg) {
 			} else if ((*iter)->Mount_Point == "/sd-ext") {
 				int backup_display_size = (int)((*iter)->Backup_Size / 1048576LLU);
 				DataManager::SetValue(TW_BACKUP_SDEXT_SIZE, backup_display_size);
-				if ((*iter)->Backup_Size == 0) {
-					//DataManager::SetValue(TW_HAS_SDEXT_PARTITION, 0);
+				if ((*iter)->Backup_Size == 0)
 					DataManager::SetValue(TW_BACKUP_SDEXT_VAR, 0);
-				} else
+				else
 					DataManager::SetValue(TW_HAS_SDEXT_PARTITION, 1);
 			} else if ((*iter)->Mount_Point == "/sdext2") {
 				int backup_display_size = (int)((*iter)->Backup_Size / 1048576LLU);
 				DataManager::SetValue(TW_BACKUP_SDEXT2_SIZE, backup_display_size);
-				if ((*iter)->Backup_Size == 0) {
-					//DataManager::SetValue(TW_HAS_SDEXT2_PARTITION, 0);
+				if ((*iter)->Backup_Size == 0)
 					DataManager::SetValue(TW_BACKUP_SDEXT2_VAR, 0);
-				} else {
+				else
 					DataManager::SetValue(TW_HAS_SDEXT2_PARTITION, 1);
-				}
 			} else if ((*iter)->Has_Android_Secure) {
 				int backup_display_size = (int)((*iter)->Backup_Size / 1048576LLU);
 				DataManager::SetValue(TW_BACKUP_ANDSEC_SIZE, backup_display_size);
-				if ((*iter)->Backup_Size == 0) {
-					//DataManager::SetValue(TW_HAS_ANDROID_SECURE, 0);
+				if ((*iter)->Backup_Size == 0)
 					DataManager::SetValue(TW_BACKUP_ANDSEC_VAR, 0);
-				} else
+				else
 					DataManager::SetValue(TW_HAS_ANDROID_SECURE, 1);
 			} else if ((*iter)->Mount_Point == "/boot") {
 				int backup_display_size = (int)((*iter)->Backup_Size / 1048576LLU);
@@ -2014,72 +2006,32 @@ void TWPartitionManager::Update_System_Details(bool Display_Msg) {
 				} else
 					DataManager::SetValue("tw_has_boot_partition", 1);
 			}
-#ifdef SP1_NAME
-			if ((*iter)->Backup_Name == EXPAND(SP1_NAME)) {
-				int backup_display_size = (int)((*iter)->Backup_Size / 1048576LLU);
-				DataManager::SetValue(TW_BACKUP_SP1_SIZE, backup_display_size);
-			}
-#endif
-#ifdef SP2_NAME
-			if ((*iter)->Backup_Name == EXPAND(SP2_NAME)) {
-				int backup_display_size = (int)((*iter)->Backup_Size / 1048576LLU);
-				DataManager::SetValue(TW_BACKUP_SP2_SIZE, backup_display_size);
-			}
-#endif
-#ifdef SP3_NAME
-			if ((*iter)->Backup_Name == EXPAND(SP3_NAME)) {
-				int backup_display_size = (int)((*iter)->Backup_Size / 1048576LLU);
-				DataManager::SetValue(TW_BACKUP_SP3_SIZE, backup_display_size);
-			}
-#endif
 		} else {
 			// Handle unmountable partitions in case we reset defaults
 			if ((*iter)->Mount_Point == "/boot") {
 				int backup_display_size = (int)((*iter)->Backup_Size / 1048576LLU);
 				DataManager::SetValue(TW_BACKUP_BOOT_SIZE, backup_display_size);
-				if ((*iter)->Backup_Size == 0) {
-					//DataManager::SetValue(TW_HAS_BOOT_PARTITION, 0);
+				if ((*iter)->Backup_Size == 0)
 					DataManager::SetValue(TW_BACKUP_BOOT_VAR, 0);
-				} else
+				else
 					DataManager::SetValue(TW_HAS_BOOT_PARTITION, 1);
 			} else if ((*iter)->Mount_Point == "/recovery") {
 				int backup_display_size = (int)((*iter)->Backup_Size / 1048576LLU);
 				DataManager::SetValue(TW_BACKUP_RECOVERY_SIZE, backup_display_size);
-				if ((*iter)->Backup_Size == 0) {
-					//DataManager::SetValue(TW_HAS_RECOVERY_PARTITION, 0);
+				if ((*iter)->Backup_Size == 0)
 					DataManager::SetValue(TW_BACKUP_RECOVERY_VAR, 0);
-				} else
+				else
 					DataManager::SetValue(TW_HAS_RECOVERY_PARTITION, 1);
-			} else if ((*iter)->Mount_Point == "/data") {
+			} else if ((*iter)->Mount_Point == "/data")
 				data_size += (int)((*iter)->Backup_Size / 1048576LLU);
-			} else if ((*iter)->Mount_Point == "/sd-ext") {
-				//DataManager::SetValue(TW_HAS_SDEXT_PARTITION, 0);
+			else if ((*iter)->Mount_Point == "/sd-ext")
 				DataManager::SetValue(TW_BACKUP_SDEXT_VAR, 0);
-			} else if ((*iter)->Mount_Point == "/sdext2") {
-				//DataManager::SetValue(TW_HAS_SDEXT2_PARTITION, 0);
+			else if ((*iter)->Mount_Point == "/sdext2")
 				DataManager::SetValue(TW_BACKUP_SDEXT2_VAR, 0);
-			}
-#ifdef SP1_NAME
-			if ((*iter)->Backup_Name == EXPAND(SP1_NAME)) {
-				int backup_display_size = (int)((*iter)->Backup_Size / 1048576LLU);
-				DataManager::SetValue(TW_BACKUP_SP1_SIZE, backup_display_size);
-			}
-#endif
-#ifdef SP2_NAME
-			if ((*iter)->Backup_Name == EXPAND(SP2_NAME)) {
-				int backup_display_size = (int)((*iter)->Backup_Size / 1048576LLU);
-				DataManager::SetValue(TW_BACKUP_SP2_SIZE, backup_display_size);
-			}
-#endif
-#ifdef SP3_NAME
-			if ((*iter)->Backup_Name == EXPAND(SP3_NAME)) {
-				int backup_display_size = (int)((*iter)->Backup_Size / 1048576LLU);
-				DataManager::SetValue(TW_BACKUP_SP3_SIZE, backup_display_size);
-			}
-#endif
 		}
 	}
 	DataManager::SetValue(TW_BACKUP_DATA_SIZE, data_size);
+
 	string current_storage_path = DataManager::GetCurrentStoragePath();
 	TWPartition* FreeStorage = Find_Partition_By_Path(current_storage_path);
 	if (FreeStorage != NULL) {
@@ -2113,18 +2065,20 @@ void TWPartitionManager::Update_System_Details(bool Display_Msg) {
 				LOGERR("Unable to mount storage.\n");
 				DataManager::SetValue(TW_STORAGE_FREE_SIZE, 0);
 			}
-		} else {
+		} else
 			DataManager::SetValue(TW_STORAGE_FREE_SIZE, (int)(FreeStorage->Free / 1048576LLU));
-		}
-	} else {
+	} else
 		LOGINFO("Unable to find storage partition '%s'.\n", current_storage_path.c_str());
-	}
+}
+
+void TWPartitionManager::Update_System_Details(bool Display_Msg) {
+	if (Display_Msg)
+		gui_print("Updating partition details...\n");
+	Refresh_Sizes(Display_Msg);
 	if (!Write_Fstab())
 		LOGERR("Error creating fstab\n");
-
 	if (Display_Msg)
 		gui_print("Partition details updated.\n");
-	return;
 }
 
 int TWPartitionManager::Decrypt_Device(string Password) {
@@ -2191,6 +2145,7 @@ int TWPartitionManager::Decrypt_Device(string Password) {
 			dat->Is_Decrypted = true;
 			dat->Decrypted_Block_Device = crypto_blkdev;
 			dat->Setup_File_System(false);
+			dat->Current_File_System = dat->Fstab_File_System; // Needed if we're ignoring blkid because encrypted devices start out as emmc
 			gui_print("Data successfully decrypted, new block device: '%s'\n", crypto_blkdev);
 
 	#ifdef CRYPTO_SD_FS_TYPE
@@ -3202,6 +3157,13 @@ void TWPartitionManager::Get_Partition_List(string ListType, std::vector<Partiti
 				part.Mount_Point = (*iter)->Backup_Path;
 				part.selected = 0;
 				Partition_List->push_back(part);
+			}
+			if ((*iter)->Has_Data_Media) {
+				struct PartitionList datamedia;
+				datamedia.Display_Name = (*iter)->Storage_Name;
+				datamedia.Mount_Point = "INTERNAL";
+				datamedia.selected = 0;
+				Partition_List->push_back(datamedia);
 			}
 		}
 	} else {

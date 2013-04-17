@@ -364,7 +364,7 @@ class TWPartitionManager {
 		// Removes and recreates the media folder on /data/media devices
 		virtual int Wipe_Media_From_Data();                                       
 		// Refreshes size data of partitions
-		virtual void Refresh_Sizes();                                             
+		virtual void Refresh_Sizes(bool Display_Msg);
 		// Updates fstab, file systems, sizes, etc.
 		virtual void Update_System_Details(bool Display_Msg);
 		// Attempt to decrypt any encrypted partitions

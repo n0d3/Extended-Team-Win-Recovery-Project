@@ -415,7 +415,6 @@ int twrpTar::tarDirs(bool include_root) {
 	DIR* d;
 	string mainfolder = tardir + "/", subfolder;
 	char buf[PATH_MAX];
-	char* charTarFile = (char*) tarfn.c_str();
 
 	char excl[1024];
 	vector<string> split;

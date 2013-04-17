@@ -813,6 +813,14 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 								} else {
 									skip = true;
 								}
+							} else if (wipe_path == "INTERNAL") {
+								if (!PartitionManager.Wipe_Media_From_Data()) {
+									LOGERR("Failed to wipe internal media\n");
+									ret_val = false;
+									break;
+								} else {
+									skip = true;
+								}
 							}
 							if (!skip) {
 								if (!PartitionManager.Wipe_By_Path(wipe_path)) {
