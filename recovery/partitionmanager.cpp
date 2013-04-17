@@ -2134,25 +2134,22 @@ int TWPartitionManager::Decrypt_Device(string Password) {
 	size_t result;
 
 	property_set("ro.crypto.state", "encrypted");
-#ifdef TW_INCLUDE_JB_CRYPTO
-	// No extra flags needed
-#else
-	property_set("ro.crypto.fs_type", CRYPTO_FS_TYPE);
-	property_set("ro.crypto.fs_real_blkdev", CRYPTO_REAL_BLKDEV);
-	property_set("ro.crypto.fs_mnt_point", CRYPTO_MNT_POINT);
-	property_set("ro.crypto.fs_options", CRYPTO_FS_OPTIONS);
-	property_set("ro.crypto.fs_flags", CRYPTO_FS_FLAGS);
-	property_set("ro.crypto.keyfile.userdata", CRYPTO_KEY_LOC);
-
-#ifdef CRYPTO_SD_FS_TYPE
-    property_set("ro.crypto.sd_fs_type", CRYPTO_SD_FS_TYPE);
-    property_set("ro.crypto.sd_fs_real_blkdev", CRYPTO_SD_REAL_BLKDEV);
-    property_set("ro.crypto.sd_fs_mnt_point", EXPAND(TW_INTERNAL_STORAGE_PATH));
-#endif
-
-    property_set("rw.km_fips_status", "ready");
-
-#endif
+	#ifdef TW_INCLUDE_JB_CRYPTO
+		// No extra flags needed
+	#else
+		property_set("ro.crypto.fs_type", CRYPTO_FS_TYPE);
+		property_set("ro.crypto.fs_real_blkdev", CRYPTO_REAL_BLKDEV);
+		property_set("ro.crypto.fs_mnt_point", CRYPTO_MNT_POINT);
+		property_set("ro.crypto.fs_options", CRYPTO_FS_OPTIONS);
+		property_set("ro.crypto.fs_flags", CRYPTO_FS_FLAGS);
+		property_set("ro.crypto.keyfile.userdata", CRYPTO_KEY_LOC);
+		#ifdef CRYPTO_SD_FS_TYPE
+			property_set("ro.crypto.sd_fs_type", CRYPTO_SD_FS_TYPE);
+			property_set("ro.crypto.sd_fs_real_blkdev", CRYPTO_SD_REAL_BLKDEV);
+			property_set("ro.crypto.sd_fs_mnt_point", EXPAND(TW_INTERNAL_STORAGE_PATH));
+		#endif
+		property_set("rw.km_fips_status", "ready");
+	#endif
 
 	// some samsung devices store "footer" on efs partition
 	TWPartition *efs = Find_Partition_By_Path("/efs");
@@ -2160,17 +2157,17 @@ int TWPartitionManager::Decrypt_Device(string Password) {
 		efs->Mount(false);
 	else
 		efs = 0;
-#ifdef TW_EXTERNAL_STORAGE_PATH
-#ifdef TW_INCLUDE_CRYPTO_SAMSUNG
-	TWPartition* sdcard = Find_Partition_By_Path(EXPAND(TW_EXTERNAL_STORAGE_PATH));
-	if (sdcard && sdcard->Mount(false)) {
-		property_set("ro.crypto.external_encrypted", "1");
-		property_set("ro.crypto.external_blkdev", sdcard->Actual_Block_Device.c_str());
-	} else {
-		property_set("ro.crypto.external_encrypted", "0");
-	}
-#endif
-#endif
+	#ifdef TW_EXTERNAL_STORAGE_PATH
+		#ifdef TW_INCLUDE_CRYPTO_SAMSUNG
+			TWPartition* sdcard = Find_Partition_By_Path(EXPAND(TW_EXTERNAL_STORAGE_PATH));
+			if (sdcard && sdcard->Mount(false)) {
+				property_set("ro.crypto.external_encrypted", "1");
+				property_set("ro.crypto.external_blkdev", sdcard->Actual_Block_Device.c_str());
+			} else {
+				property_set("ro.crypto.external_encrypted", "0");
+			}
+		#endif
+	#endif
 
 	strcpy(cPassword, Password.c_str());
 	int pwret = cryptfs_check_passwd(cPassword);
@@ -2196,7 +2193,7 @@ int TWPartitionManager::Decrypt_Device(string Password) {
 			dat->Setup_File_System(false);
 			gui_print("Data successfully decrypted, new block device: '%s'\n", crypto_blkdev);
 
-#ifdef CRYPTO_SD_FS_TYPE
+	#ifdef CRYPTO_SD_FS_TYPE
 			char crypto_blkdev_sd[255];
 			property_get("ro.crypto.sd_fs_crypto_blkdev", crypto_blkdev_sd, "error");
 			if (strcmp(crypto_blkdev_sd, "error") == 0) {
@@ -2207,9 +2204,9 @@ int TWPartitionManager::Decrypt_Device(string Password) {
 				emmc->Setup_File_System(false);
 				gui_print("Internal SD successfully decrypted, new block device: '%s'\n", crypto_blkdev_sd);
 			}
-#endif //ifdef CRYPTO_SD_FS_TYPE
-#ifdef TW_EXTERNAL_STORAGE_PATH
-#ifdef TW_INCLUDE_CRYPTO_SAMSUNG
+	#endif //ifdef CRYPTO_SD_FS_TYPE
+	#ifdef TW_EXTERNAL_STORAGE_PATH
+		#ifdef TW_INCLUDE_CRYPTO_SAMSUNG
 			char is_external_decrypted[255];
 			property_get("ro.crypto.external_use_ecryptfs", is_external_decrypted, "0");
 			if (strcmp(is_external_decrypted, "1") == 0) {
@@ -2227,12 +2224,12 @@ int TWPartitionManager::Decrypt_Device(string Password) {
 				sdcard->Is_Decrypted = false;
 				sdcard->Decrypted_Block_Device = "";
 			}
-#endif
-#endif //ifdef TW_EXTERNAL_STORAGE_PATH
+		#endif
+	#endif //ifdef TW_EXTERNAL_STORAGE_PATH
 
 			// Sleep for a bit so that the device will be ready
 			sleep(1);
-#ifdef RECOVERY_SDCARD_ON_DATA
+	#ifdef RECOVERY_SDCARD_ON_DATA
 			if (dat->Mount(false) && TWFunc::Path_Exists("/data/media/0")) {
 				dat->Storage_Path = "/data/media/0";
 				dat->Symlink_Path = dat->Storage_Path;
@@ -2241,8 +2238,8 @@ int TWPartitionManager::Decrypt_Device(string Password) {
 				DataManager::SetBackupFolder("/data/media/0");
 				Output_Partition(dat);
 			}
-#endif
-			Update_System_Details(true);
+	#endif
+			Update_System_Details(false);
 			UnMount_Main_Partitions();
 		} else
 			LOGERR("Unable to locate data partition.\n");

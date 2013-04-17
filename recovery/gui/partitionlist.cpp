@@ -83,29 +83,25 @@ GUIPartitionList::GUIPartitionList(xml_node<>* node)
 
 	// Load header text
 	child = node->first_node("header");
-	if (child)
-	{
+	if (child) {
 		attr = child->first_attribute("icon");
 		if (attr)
 			mHeaderIcon = PageManager::FindResource(attr->value());
 
 		attr = child->first_attribute("background");
-		if (attr)
-		{
+		if (attr) {
 			std::string color = attr->value();
 			ConvertStrToColor(color, &mHeaderBackgroundColor);
 			header_background_color_specified = -1;
 		}
 		attr = child->first_attribute("textcolor");
-		if (attr)
-		{
+		if (attr) {
 			std::string color = attr->value();
 			ConvertStrToColor(color, &mHeaderFontColor);
 			header_text_color_specified = -1;
 		}
 		attr = child->first_attribute("separatorcolor");
-		if (attr)
-		{
+		if (attr) {
 			std::string color = attr->value();
 			ConvertStrToColor(color, &mHeaderSeparatorColor);
 			header_separator_color_specified = -1;
@@ -139,8 +135,7 @@ GUIPartitionList::GUIPartitionList(xml_node<>* node)
 		mHeaderIsStatic = -1;
 
 	child = node->first_node("icon");
-	if (child)
-	{
+	if (child) {
 		attr = child->first_attribute("selected");
 		if (attr)
 			mIconSelected = PageManager::FindResource(attr->value());
@@ -149,14 +144,12 @@ GUIPartitionList::GUIPartitionList(xml_node<>* node)
 			mIconUnselected = PageManager::FindResource(attr->value());
 	}
 	child = node->first_node("background");
-	if (child)
-	{
+	if (child) {
 		attr = child->first_attribute("resource");
 		if (attr)
 			mBackground = PageManager::FindResource(attr->value());
 		attr = child->first_attribute("color");
-		if (attr)
-		{
+		if (attr) {
 			std::string color = attr->value();
 			ConvertStrToColor(color, &mBackgroundColor);
 			if (!header_background_color_specified)
@@ -170,15 +163,13 @@ GUIPartitionList::GUIPartitionList(xml_node<>* node)
 
 	// Load the font, and possibly override the color
 	child = node->first_node("font");
-	if (child)
-	{
+	if (child) {
 		attr = child->first_attribute("resource");
 		if (attr)
 			mFont = PageManager::FindResource(attr->value());
 
 		attr = child->first_attribute("color");
-		if (attr)
-		{
+		if (attr) {
 			std::string color = attr->value();
 			ConvertStrToColor(color, &mFontColor);
 			if (!header_text_color_specified)
@@ -193,21 +184,18 @@ GUIPartitionList::GUIPartitionList(xml_node<>* node)
 
 		attr = child->first_attribute("highlightcolor");
 		memset(&mFontHighlightColor, 0, sizeof(COLOR));
-        if (attr)
-        {
-            std::string color = attr->value();
+		if (attr) {
+           		std::string color = attr->value();
 			ConvertStrToColor(color, &mFontHighlightColor);
 			hasFontHighlightColor = true;
-        }
+        	}
 	}
 
 	// Load the separator if it exists
 	child = node->first_node("separator");
-	if (child)
-	{
+	if (child) {
 		attr = child->first_attribute("color");
-		if (attr)
-		{
+		if (attr) {
 			std::string color = attr->value();
 			ConvertStrToColor(color, &mSeparatorColor);
 			if (!header_separator_color_specified)
@@ -225,8 +213,7 @@ GUIPartitionList::GUIPartitionList(xml_node<>* node)
 
 	// Handle the result variable
 	child = node->first_node("data");
-	if (child)
-	{
+	if (child) {
 		attr = child->first_attribute("name");
 		if (attr)
 			mVariable = attr->value();
@@ -237,8 +224,7 @@ GUIPartitionList::GUIPartitionList(xml_node<>* node)
 
 	// Fast scroll colors
 	child = node->first_node("fastscroll");
-	if (child)
-	{
+	if (child) {
 		attr = child->first_attribute("linecolor");
 		if(attr)
 			ConvertStrToColor(attr->value(), &mFastScrollLineColor);
@@ -277,8 +263,7 @@ GUIPartitionList::GUIPartitionList(xml_node<>* node)
 	mLineHeight = mFontHeight;
 	mHeaderH = mFontHeight;
 
-	if (mIconSelected && mIconSelected->GetResource())
-	{
+	if (mIconSelected && mIconSelected->GetResource()) {
 		mSelectedIconWidth = gr_get_width(mIconSelected->GetResource());
 		mSelectedIconHeight = gr_get_height(mIconSelected->GetResource());
 		if (mSelectedIconHeight > (int)mLineHeight)
@@ -286,8 +271,7 @@ GUIPartitionList::GUIPartitionList(xml_node<>* node)
 		mIconWidth = mSelectedIconWidth;
 	}
 
-	if (mIconUnselected && mIconUnselected->GetResource())
-	{
+	if (mIconUnselected && mIconUnselected->GetResource()) {
 		mUnselectedIconWidth = gr_get_width(mIconUnselected->GetResource());
 		mUnselectedIconHeight = gr_get_height(mIconUnselected->GetResource());
 		if (mUnselectedIconHeight > (int)mLineHeight)
@@ -296,8 +280,7 @@ GUIPartitionList::GUIPartitionList(xml_node<>* node)
 			mIconWidth = mUnselectedIconWidth;
 	}
 
-	if (mHeaderIcon && mHeaderIcon->GetResource())
-	{
+	if (mHeaderIcon && mHeaderIcon->GetResource()) {
 		mHeaderIconWidth = gr_get_width(mHeaderIcon->GetResource());
 		mHeaderIconHeight = gr_get_height(mHeaderIcon->GetResource());
 		if (mHeaderIconHeight > mHeaderH)
@@ -314,8 +297,7 @@ GUIPartitionList::GUIPartitionList(xml_node<>* node)
 	if (actualLineHeight / 3 > 6)
 		touchDebounce = actualLineHeight / 3;
 
-	if (mBackground && mBackground->GetResource())
-	{
+	if (mBackground && mBackground->GetResource()) {
 		mBackgroundW = gr_get_width(mBackground->GetResource());
 		mBackgroundH = gr_get_height(mBackground->GetResource());
 	}
@@ -349,8 +331,7 @@ int GUIPartitionList::Render(void)
 	gr_fill(mRenderX, mRenderY + mHeaderH, mRenderW, mRenderH - mHeaderH);
 
 	// Next, render the background resource (if it exists)
-	if (mBackground && mBackground->GetResource())
-	{
+	if (mBackground && mBackground->GetResource()) {
 		mBackgroundX = mRenderX + ((mRenderW - mBackgroundW) / 2);
 		mBackgroundY = mRenderY + ((mRenderH - mBackgroundH) / 2);
 		gr_blit(mBackground->GetResource(), 0, 0, mBackgroundW, mBackgroundH, mBackgroundX, mBackgroundY);
@@ -415,8 +396,7 @@ int GUIPartitionList::Render(void)
 		}
 	}
 
-	for (line = 0; line < lines; line++)
-	{
+	for (line = 0; line < lines; line++) {
 		Resource* icon;
 		std::string label;
 
@@ -432,25 +412,21 @@ int GUIPartitionList::Render(void)
 			gr_color(mFontColor.red, mFontColor.green, mFontColor.blue, 255);
 		}
 
-		if (mList.at(line + mStart).selected != 0)
-        {
-            icon = mIconSelected;
+		if (mList.at(line + mStart).selected != 0) {
+            		icon = mIconSelected;
 			currentIconHeight = mSelectedIconHeight;
 			currentIconWidth = mSelectedIconWidth;
 			currentIconOffsetY = SelectedIconOffsetY;
 			currentIconOffsetX = SelectedIconOffsetX;
-        }
-        else
-        {
-            icon = mIconUnselected;
+        	} else {
+            		icon = mIconUnselected;
 			currentIconHeight = mSelectedIconHeight;
 			currentIconWidth = mSelectedIconWidth;
 			currentIconOffsetY = SelectedIconOffsetY;
 			currentIconOffsetX = SelectedIconOffsetX;
-        }
+        	}
 
-		if (icon && icon->GetResource())
-		{
+		if (icon && icon->GetResource()) {
 			int rect_y = 0, image_y = (yPos + currentIconOffsetY);
 			if (image_y + currentIconHeight > mRenderY + mRenderH)
 				rect_y = mRenderY + mRenderH - image_y;
@@ -500,8 +476,7 @@ int GUIPartitionList::Render(void)
 
 	// render fast scroll
 	lines = (mRenderH - mHeaderH) / (actualLineHeight);
-	if(mFastScrollW > 0 && listSize > lines)
-	{
+	if(mFastScrollW > 0 && listSize > lines) {
 		int startX = listW + mRenderX;
 		int fWidth = mRenderW - listW;
 		int fHeight = mRenderH - mHeaderH;
@@ -547,8 +522,7 @@ int GUIPartitionList::Update(void)
 		}
 	}
 
-	if (mUpdate)
-	{
+	if (mUpdate) {
 		mUpdate = 0;
 		if (Render() == 0)
 			return 2;
@@ -622,194 +596,192 @@ int GUIPartitionList::NotifyTouch(TOUCH_STATE state, int x, int y)
 	static int lastY = 0, last2Y = 0;
 	int selection = 0;
 
-	switch (state)
-	{
-	case TOUCH_START:
-		if (scrollingSpeed != 0)
-			startSelection = -1;
-		else
-			startSelection = GetSelection(x,y);
-		isHighlighted = (startSelection > -1);
-		if (isHighlighted)
-			mUpdate = 1;
-		startY = lastY = last2Y = y;
-		scrollingSpeed = 0;
-		break;
-
-	case TOUCH_DRAG:
-		// Check if we dragged out of the selection window
-		if (GetSelection(x, y) == -1) {
-			last2Y = lastY = 0;
-			if (isHighlighted) {
-				isHighlighted = false;
-				mUpdate = 1;
-			}
-			break;
-		}
-
-		// Fast scroll
-		if(mFastScrollRectX != -1 && x >= mRenderX + mRenderW - mFastScrollW)
-		{
-			int pct = ((y-mRenderY-mHeaderH)*100)/(mRenderH-mHeaderH);
-			int totalSize = mList.size();
-			int lines = (mRenderH - mHeaderH) / (actualLineHeight);
-
-			float l = float((totalSize-lines)*pct)/100;
-			if(l + lines >= totalSize)
-			{
-				mStart = totalSize - lines;
-				scrollingY = 0;
-			}
+	switch (state) {
+		case TOUCH_START:
+			if (scrollingSpeed != 0)
+				startSelection = -1;
 			else
-			{
-				mStart = l;
-				scrollingY = -(l - int(l))*actualLineHeight;
+				startSelection = GetSelection(x,y);
+			isHighlighted = (startSelection > -1);
+			if (isHighlighted)
+				mUpdate = 1;
+			startY = lastY = last2Y = y;
+			scrollingSpeed = 0;
+			break;
+
+		case TOUCH_DRAG:
+			// Check if we dragged out of the selection window
+			if (GetSelection(x, y) == -1) {
+				last2Y = lastY = 0;
+				if (isHighlighted) {
+					isHighlighted = false;
+					mUpdate = 1;
+				}
+				break;
 			}
 
-			startSelection = -1;
-			mUpdate = 1;
-			scrollingSpeed = 0;
-			isHighlighted = false;
-			break;
-		}
+			// Fast scroll
+			if(mFastScrollRectX != -1 && x >= mRenderX + mRenderW - mFastScrollW)
+			{
+				int pct = ((y-mRenderY-mHeaderH)*100)/(mRenderH-mHeaderH);
+				int totalSize = mList.size();
+				int lines = (mRenderH - mHeaderH) / (actualLineHeight);
 
-		// Provide some debounce on initial touches
-		if (startSelection != -1 && abs(y - startY) < touchDebounce) {
-			isHighlighted = true;
-			mUpdate = 1;
-			break;
-		}
-
-		isHighlighted = false;
-		last2Y = lastY;
-		lastY = y;	
-		startSelection = -1;
-
-		// Handle scrolling
-		scrollingY += y - startY;
-		startY = y;
-		while(mStart && scrollingY > 0) {
-			mStart--;
-			scrollingY -= actualLineHeight;
-		}
-		if (mStart == 0 && scrollingY > 0)
-			scrollingY = 0;
-		{
-			int totalSize = mList.size();
-			int lines = (mRenderH - mHeaderH) / (actualLineHeight);
-
-			if (totalSize > lines) {
-				int bottom_offset = ((int)(mRenderH) - mHeaderH) - (lines * actualLineHeight);
-
-				bottom_offset -= actualLineHeight;
-
-				while (mStart + lines + (bottom_offset ? 1 : 0) < totalSize && abs(scrollingY) > actualLineHeight) {
-					mStart++;
-					scrollingY += actualLineHeight;
-				}
-				if (bottom_offset != 0 && mStart + lines + 1 >= totalSize && scrollingY <= bottom_offset) {
-					mStart = totalSize - lines - 1;
-					scrollingY = bottom_offset;
-				} else if (mStart + lines >= totalSize && scrollingY < 0) {
+				float l = float((totalSize-lines)*pct)/100;
+				if(l + lines >= totalSize)
+				{
 					mStart = totalSize - lines;
 					scrollingY = 0;
 				}
-			} else
-				scrollingY = 0;
-		}
-		mUpdate = 1;
-		break;
-
-	case TOUCH_RELEASE:
-		isHighlighted = false;
-		if (startSelection >= 0)
-		{
-			// We've selected an item!
-			int listSize = mList.size();
-			int selectY = scrollingY, actualSelection = mStart;
-
-			// Move the selection to the proper place in the array
-			while (selectY + actualLineHeight < startSelection) {
-				selectY += actualLineHeight;
-				actualSelection++;
-			}
-
-			if (actualSelection < listSize && ListType == "mount") {
-				if (!mList.at(actualSelection).selected) {
-					if (PartitionManager.Mount_By_Path(mList.at(actualSelection).Mount_Point, true)) {
-						mList.at(actualSelection).selected = 1;
-						mUpdate = 1;
-					}
-				} else {
-					if (PartitionManager.UnMount_By_Path(mList.at(actualSelection).Mount_Point, true)) {
-						mList.at(actualSelection).selected = 0;
-						mUpdate = 1;
-					}
+				else
+				{
+					mStart = l;
+					scrollingY = -(l - int(l))*actualLineHeight;
 				}
-			} else if (actualSelection < listSize && !mVariable.empty()) {
-				if (ListType == "storage") {
-					int i;
-					std::string str = mList.at(actualSelection).Mount_Point;
-					bool update_size = false;
-					TWPartition* Part = PartitionManager.Find_Partition_By_Path(str);
-					if (Part == NULL) {
-						LOGERR("Unable to locate partition for '%s'\n", str.c_str());
-						return 0;
-					}
-					if (!Part->Is_Mounted() && Part->Removable)
-						update_size = true;
-					if (!Part->Mount(true)) {
-						// Do Nothing
-					} else if (update_size && !Part->Update_Size(true)) {
-						// Do Nothing
-					} else {
-						for (i=0; i<listSize; i++)
-							mList.at(i).selected = 0;
 
-						if (update_size) {
-							char free_space[255];
-							sprintf(free_space, "%llu", Part->Free / 1024 / 1024);
-							mList.at(actualSelection).Display_Name = Part->Storage_Name + " (";
-							mList.at(actualSelection).Display_Name += free_space;
-							mList.at(actualSelection).Display_Name += "MB)";
-						}
-						mList.at(actualSelection).selected = 1;
-						mUpdate = 1;
-						
-						DataManager::SetValue(mVariable, str);
-					}
-				} else {
-					if (mList.at(actualSelection).selected)
-						mList.at(actualSelection).selected = 0;
-					else
-						mList.at(actualSelection).selected = 1;
-
-					int i;
-					string variablelist;
-					for (i=0; i<listSize; i++) {
-						if (mList.at(i).selected) {
-							variablelist += mList.at(i).Mount_Point + ";";
-						}
-					}
-
-					mUpdate = 1;
-					if (selectedList.empty())
-						DataManager::SetValue(mVariable, variablelist);
-					else
-						DataManager::SetValue(selectedList, variablelist);
-				}
-			}
-		} else {
-			// This is for kinetic scrolling
-			scrollingSpeed = lastY - last2Y;
-			if (abs(scrollingSpeed) > SCROLLING_FLOOR)
-				scrollingSpeed *= SCROLLING_MULTIPLIER;
-			else
+				startSelection = -1;
+				mUpdate = 1;
 				scrollingSpeed = 0;
-		}
-	case TOUCH_REPEAT:
-	case TOUCH_HOLD:
-		break;
+				isHighlighted = false;
+				break;
+			}
+
+			// Provide some debounce on initial touches
+			if (startSelection != -1 && abs(y - startY) < touchDebounce) {
+				isHighlighted = true;
+				mUpdate = 1;
+				break;
+			}
+
+			isHighlighted = false;
+			last2Y = lastY;
+			lastY = y;	
+			startSelection = -1;
+
+			// Handle scrolling
+			scrollingY += y - startY;
+			startY = y;
+			while(mStart && scrollingY > 0) {
+				mStart--;
+				scrollingY -= actualLineHeight;
+			}
+			if (mStart == 0 && scrollingY > 0)
+				scrollingY = 0;
+			{
+				int totalSize = mList.size();
+				int lines = (mRenderH - mHeaderH) / (actualLineHeight);
+
+				if (totalSize > lines) {
+					int bottom_offset = ((int)(mRenderH) - mHeaderH) - (lines * actualLineHeight);
+
+					bottom_offset -= actualLineHeight;
+
+					while (mStart + lines + (bottom_offset ? 1 : 0) < totalSize && abs(scrollingY) > actualLineHeight) {
+						mStart++;
+						scrollingY += actualLineHeight;
+					}
+					if (bottom_offset != 0 && mStart + lines + 1 >= totalSize && scrollingY <= bottom_offset) {
+						mStart = totalSize - lines - 1;
+						scrollingY = bottom_offset;
+					} else if (mStart + lines >= totalSize && scrollingY < 0) {
+						mStart = totalSize - lines;
+						scrollingY = 0;
+					}
+				} else
+					scrollingY = 0;
+			}
+			mUpdate = 1;
+			break;
+
+		case TOUCH_RELEASE:
+			isHighlighted = false;
+			if (startSelection >= 0) {
+				// We've selected an item!
+				int listSize = mList.size();
+				int selectY = scrollingY, actualSelection = mStart;
+
+				// Move the selection to the proper place in the array
+				while (selectY + actualLineHeight < startSelection) {
+					selectY += actualLineHeight;
+					actualSelection++;
+				}
+
+				if (actualSelection < listSize && ListType == "mount") {
+					if (!mList.at(actualSelection).selected) {
+						if (PartitionManager.Mount_By_Path(mList.at(actualSelection).Mount_Point, true)) {
+							mList.at(actualSelection).selected = 1;
+							mUpdate = 1;
+						}
+					} else {
+						if (PartitionManager.UnMount_By_Path(mList.at(actualSelection).Mount_Point, true)) {
+							mList.at(actualSelection).selected = 0;
+							mUpdate = 1;
+						}
+					}
+				} else if (actualSelection < listSize && !mVariable.empty()) {
+					if (ListType == "storage") {
+						int i;
+						std::string str = mList.at(actualSelection).Mount_Point;
+						bool update_size = false;
+						TWPartition* Part = PartitionManager.Find_Partition_By_Path(str);
+						if (Part == NULL) {
+							LOGERR("Unable to locate partition for '%s'\n", str.c_str());
+							return 0;
+						}
+						if (!Part->Is_Mounted() && Part->Removable)
+							update_size = true;
+						if (!Part->Mount(true)) {
+							// Do Nothing
+						} else if (update_size && !Part->Update_Size(true)) {
+							// Do Nothing
+						} else {
+							for (i=0; i<listSize; i++)
+								mList.at(i).selected = 0;
+
+							if (update_size) {
+								char free_space[255];
+								sprintf(free_space, "%llu", Part->Free / 1024 / 1024);
+								mList.at(actualSelection).Display_Name = Part->Storage_Name + " (";
+								mList.at(actualSelection).Display_Name += free_space;
+								mList.at(actualSelection).Display_Name += "MB)";
+							}
+							mList.at(actualSelection).selected = 1;
+							mUpdate = 1;
+						
+							DataManager::SetValue(mVariable, str);
+						}
+					} else {
+						if (mList.at(actualSelection).selected)
+							mList.at(actualSelection).selected = 0;
+						else
+							mList.at(actualSelection).selected = 1;
+
+						int i;
+						string variablelist;
+						for (i=0; i<listSize; i++) {
+							if (mList.at(i).selected) {
+								variablelist += mList.at(i).Mount_Point + ";";
+							}
+						}
+
+						mUpdate = 1;
+						if (selectedList.empty())
+							DataManager::SetValue(mVariable, variablelist);
+						else
+							DataManager::SetValue(selectedList, variablelist);
+					}
+				}
+			} else {
+				// This is for kinetic scrolling
+				scrollingSpeed = lastY - last2Y;
+				if (abs(scrollingSpeed) > SCROLLING_FLOOR)
+					scrollingSpeed *= SCROLLING_MULTIPLIER;
+				else
+					scrollingSpeed = 0;
+			}
+		case TOUCH_REPEAT:
+		case TOUCH_HOLD:
+			break;
 	}
 	return 0;
 }
@@ -826,9 +798,8 @@ int GUIPartitionList::NotifyVarChange(std::string varName, std::string value)
 			mUpdate = 1;
 		}
 	}
-	if (varName == mVariable && !mUpdate)
-    {
-        if (ListType == "storage") {
+	if (varName == mVariable && !mUpdate) {
+        	if (ListType == "storage") {
 			int i, listSize = mList.size(), selected_index = 0;
 
 			currentValue = value;
@@ -856,8 +827,8 @@ int GUIPartitionList::NotifyVarChange(std::string varName, std::string value)
 		}
 
 		mUpdate = 1;
-        return 0;
-    }
+        	return 0;
+    	}
 	return 0;
 }
 
@@ -865,8 +836,7 @@ int GUIPartitionList::SetRenderPos(int x, int y, int w /* = 0 */, int h /* = 0 *
 {
 	mRenderX = x;
 	mRenderY = y;
-	if (w || h)
-	{
+	if (w || h) {
 		mRenderW = w;
 		mRenderH = h;
 	}

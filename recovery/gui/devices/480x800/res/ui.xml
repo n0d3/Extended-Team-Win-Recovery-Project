@@ -1212,18 +1212,6 @@
 			<object type="text" color="%text_color%">
 				<font resource="font" />
 				<placement x="%center_x%" y="%row15_text_y%" placement="5" />
-				<text>Most of the time this is</text>
-			</object>
-
-			<object type="text" color="%text_color%">
-				<font resource="font" />
-				<placement x="%center_x%" y="%row16_text_y%" placement="5" />
-				<text>the only wipe that you need.</text>
-			</object>
-
-			<object type="text" color="%text_color%">
-				<font resource="font" />
-				<placement x="%center_x%" y="%row18_text_y%" placement="5" />
 				<text>Press back button to cancel.</text>
 			</object>
 

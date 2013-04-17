@@ -298,12 +298,12 @@ bool Page::ProcessNode(xml_node<>* page, xml_node<>* templates /* = NULL */, int
 	    mActions.push_back(element);
 	    mInputs.push_back(element);
 	}
-		else if (type == "partitionlist")
-		{
-			GUIPartitionList* element = new GUIPartitionList(child);
-			mRenders.push_back(element);
-			mActions.push_back(element);
-		}
+	else if (type == "partitionlist")
+	{
+	    GUIPartitionList* element = new GUIPartitionList(child);
+	    mRenders.push_back(element);
+	    mActions.push_back(element);
+	}
         else if (type == "template")
         {
             if (!templates || !child->first_attribute("name"))

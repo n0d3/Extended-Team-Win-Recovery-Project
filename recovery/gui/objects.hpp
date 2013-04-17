@@ -636,60 +636,58 @@ public:
     virtual void SetPageFocus(int inFocus);
 
 protected:
-
-protected:
     virtual int GetSelection(int x, int y);
-	virtual void MatchList(void);
+    virtual void MatchList(void);
 
 protected:
     std::vector<PartitionList> mList;
-	std::string ListType;
+    std::string ListType;
     std::string mVariable;
-	std::string selectedList;
-	std::string currentValue;
-	std::string mHeaderText;
-	std::string mLastValue;
-	int actualLineHeight;
+    std::string selectedList;
+    std::string currentValue;
+    std::string mHeaderText;
+    std::string mLastValue;
+    int actualLineHeight;
     int mStart;
-	int startY;
-	int mSeparatorH, mHeaderSeparatorH;
+    int startY;
+    int mSeparatorH, mHeaderSeparatorH;
     int mLineSpacing;
     int mUpdate;
     int mBackgroundX, mBackgroundY, mBackgroundW, mBackgroundH, mHeaderH;
-	int mFastScrollW;
-	int mFastScrollLineW;
-	int mFastScrollRectW;
-	int mFastScrollRectH;
-	int mFastScrollRectX;
-	int mFastScrollRectY;
-	int mIconWidth, mIconHeight, mSelectedIconWidth, mSelectedIconHeight, mUnselectedIconWidth, mUnselectedIconHeight, mHeaderIconHeight, mHeaderIconWidth;
-	int scrollingSpeed;
-	int scrollingY;
-	static int mSortOrder;
+    int mFastScrollW;
+    int mFastScrollLineW;
+    int mFastScrollRectW;
+    int mFastScrollRectH;
+    int mFastScrollRectX;
+    int mFastScrollRectY;
+    int mIconWidth, mIconHeight, mSelectedIconWidth, mSelectedIconHeight, mUnselectedIconWidth, mUnselectedIconHeight, mHeaderIconHeight, mHeaderIconWidth;
+    int scrollingSpeed;
+    int scrollingY;
+    static int mSortOrder;
     unsigned mFontHeight;
     unsigned mLineHeight;
-	Resource* mHeaderIcon;
+    Resource* mHeaderIcon;
     Resource* mIconSelected;
     Resource* mIconUnselected;
     Resource* mBackground;
     Resource* mFont;
     COLOR mBackgroundColor;
     COLOR mFontColor;
-	COLOR mHeaderBackgroundColor;
-	COLOR mHeaderFontColor;
-	COLOR mSeparatorColor;
-	COLOR mHeaderSeparatorColor;
-	COLOR mFastScrollLineColor;
-	COLOR mFastScrollRectColor;
-	bool hasHighlightColor;
-	bool hasFontHighlightColor;
-	bool isHighlighted;
-	COLOR mHighlightColor;
-	COLOR mFontHighlightColor;
-	int mHeaderIsStatic;
-	int startSelection;
-	int touchDebounce;
-	bool updateList;
+    COLOR mHeaderBackgroundColor;
+    COLOR mHeaderFontColor;
+    COLOR mSeparatorColor;
+    COLOR mHeaderSeparatorColor;
+    COLOR mFastScrollLineColor;
+    COLOR mFastScrollRectColor;
+    bool hasHighlightColor;
+    bool hasFontHighlightColor;
+    bool isHighlighted;
+    COLOR mHighlightColor;
+    COLOR mFontHighlightColor;
+    int mHeaderIsStatic;
+    int startSelection;
+    int touchDebounce;
+    bool updateList;
 };
 
 // GUIAnimation - Used for animations
