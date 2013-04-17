@@ -868,8 +868,10 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			operation_start("Refreshing Sizes");
 			if (simulate) {
 				simulate_progress_bar();
-			} else
+			} else {
 				PartitionManager.Update_System_Details(true);
+				gui_forceRender(); // update sizes in partitionlist
+			}
 			operation_end(0, simulate);
 		}
 		if (function == "nandroid") {

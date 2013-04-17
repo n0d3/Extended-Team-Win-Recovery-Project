@@ -520,7 +520,8 @@ int GUIPartitionList::Update(void)
 				mUpdate = 1;
 			}
 		}
-	}
+	} else if (ListType == "backup")
+		MatchList();
 
 	if (mUpdate) {
 		mUpdate = 0;
@@ -883,7 +884,16 @@ void GUIPartitionList::MatchList(void) {
 	DataManager::GetValue(mVariable, variablelist);
 
 	for (i=0; i<listSize; i++) {
-		searchvalue = mList.at(i).Mount_Point + ";";
+		searchvalue = mList.at(i).Mount_Point;
+		TWPartition* Part = PartitionManager.Find_Partition_By_Path(searchvalue);
+		if (Part == NULL)
+			continue;
+		char backup_size[255];
+		sprintf(backup_size, "%llu", Part->Backup_Size / 1024 / 1024);
+		mList.at(i).Display_Name = Part->Backup_Display_Name + " (";
+		mList.at(i).Display_Name += backup_size;
+		mList.at(i).Display_Name += "MB)";
+		searchvalue += ";";
 		pos = variablelist.find(searchvalue);
 		if (pos != string::npos) {
 			mList.at(i).selected = 1;

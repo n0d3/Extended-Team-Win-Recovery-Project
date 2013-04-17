@@ -1,7 +1,7 @@
 #!/sbin/sh
 
 # Set the minimum required size of the recovery's partition
-min_size=0x007FFFFF;
+min_size=0x008FFFFF;
 # Get the real size of the existing recovery partition
 rec_size=0x$(sed -n '/recovery/p' /proc/mtd | cut -d ' ' -f 2);
 
