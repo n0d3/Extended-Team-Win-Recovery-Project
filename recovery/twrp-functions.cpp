@@ -33,7 +33,7 @@ extern "C" {
 #define TW_DEFAULT_POWER_MODE	0
 #define TW_POWER_SAVE_MODE	1
 unsigned cpu_settings = 0;
-#define TW_SCREEN_OFF		0
+#define TW_SCRN_OFF		0
 unsigned screen_state = 1;
 
 /* Execute a command */
@@ -557,8 +557,8 @@ int TWFunc::drop_caches(void) {
 
 // Screen off
 void TWFunc::screen_off(void) {
-	if (screen_state != TW_SCREEN_OFF) {
-		screen_state = TW_SCREEN_OFF;
+	if (screen_state != TW_SCRN_OFF) {
+		screen_state = TW_SCRN_OFF;
 		string lcd_brightness;
 		string off = "0\n";
 		string brightness_file = EXPAND(TW_BRIGHTNESS_PATH);

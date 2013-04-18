@@ -1023,7 +1023,7 @@ void DataManager::SetDefaultValues()
 #endif
 #ifdef TW_INCLUDE_CRYPTO
 	mConstValues.insert(make_pair(TW_HAS_CRYPTO, "1"));
-	LOGINFO("Device has crypto support compiled into recovery.\n");
+	LOGINFO("=> Device has crypto support compiled into recovery.\n");
 #endif
 #ifdef TW_SDEXT_NO_EXT4
 	mConstValues.insert(make_pair(TW_SDEXT_DISABLE_EXT4, "1"));

@@ -210,7 +210,7 @@
 			<object type="text" color="%text_color%">
 				<font resource="font" />
 				<placement x="90" y="10" />
-				<text>ExtendedTWRP v%tw_version%.r1</text>
+				<text>ExtendedTWRP v%tw_version%</text>
 			</object>
 
 			<object type="text" color="%text_success_color%">
@@ -3025,112 +3025,7 @@
 					<action function="cmd">echo %tw_brightness% > &quot;%tw_brightness_file%&quot;</action>
 				</actions>
 			</object>
-<!--
-			<object type="text" color="%text_color%">
-				<font resource="font" />
-				<placement x="%center_x%" y="%row3_text_y%" placement="5" />
-				<text>Screen Timeout: %tw_screen_timeout_secs% seconds</text>
-			</object>
 
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<placement x="%col1_medium_x%" y="%row2_y%" />
-				<font resource="font" color="%button_text_color%" />
-				<text>None</text>
-				<image resource="medium_button" />
-				<action function="set">tw_screen_timeout_secs=0</action>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<placement x="%col2_medium_x%" y="%row2_y%" />
-				<font resource="font" color="%button_text_color%" />
-				<text>60</text>
-				<image resource="medium_button" />
-				<action function="set">tw_screen_timeout_secs=60</action>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<placement x="%col3_medium_x%" y="%row2_y%" />
-				<font resource="font" color="%button_text_color%" />
-				<text>120</text>
-				<image resource="medium_button" />
-				<action function="set">tw_screen_timeout_secs=120</action>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<placement x="%col4_medium_x%" y="%row2_y%" />
-				<font resource="font" color="%button_text_color%" />
-				<text>180</text>
-				<image resource="medium_button" />
-				<action function="set">tw_screen_timeout_secs=180</action>
-			</object>
-
-			<object type="text" color="%text_color%">
-				<condition var1="tw_has_brightnesss_file" var2="1" />
-				<font resource="font" />
-				<placement x="%center_x%" y="%row12_text_y%" placement="5" />
-				<text>Brightness: %tw_brightness_display%</text>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<condition var1="tw_has_brightnesss_file" var2="1" />
-				<placement x="%col1_medium_x%" y="%row4_y%" />
-				<font resource="font" color="%button_text_color%" />
-				<text>25%</text>
-				<image resource="medium_button" />
-				<actions>
-					<action function="cmd">echo %tw_brightness_25% > &quot;%tw_brightness_file%&quot;</action>
-					<action function="set">tw_brightness_display=25%</action>
-					<action function="set">tw_brightness=%tw_brightness_25%</action>
-				</actions>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<condition var1="tw_has_brightnesss_file" var2="1" />
-				<placement x="%col2_medium_x%" y="%row4_y%" />
-				<font resource="font" color="%button_text_color%" />
-				<text>50%</text>
-				<image resource="medium_button" />
-				<actions>
-					<action function="cmd">echo %tw_brightness_50% > &quot;%tw_brightness_file%&quot;</action>
-					<action function="set">tw_brightness_display=50%</action>
-					<action function="set">tw_brightness=%tw_brightness_50%</action>
-				</actions>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<condition var1="tw_has_brightnesss_file" var2="1" />
-				<placement x="%col3_medium_x%" y="%row4_y%" />
-				<font resource="font" color="%button_text_color%" />
-				<text>75%</text>
-				<image resource="medium_button" />
-				<actions>
-					<action function="cmd">echo %tw_brightness_75% > &quot;%tw_brightness_file%&quot;</action>
-					<action function="set">tw_brightness_display=75%</action>
-					<action function="set">tw_brightness=%tw_brightness_75%</action>
-				</actions>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<condition var1="tw_has_brightnesss_file" var2="1" />
-				<placement x="%col4_medium_x%" y="%row4_y%" />
-				<font resource="font" color="%button_text_color%" />
-				<text>100%</text>
-				<image resource="medium_button" />
-				<actions>
-					<action function="cmd">echo %tw_brightness_100% > &quot;%tw_brightness_file%&quot;</action>
-					<action function="set">tw_brightness_display=100%</action>
-					<action function="set">tw_brightness=%tw_brightness_100%</action>
-				</actions>
-			</object>
--->
 			<object type="action">
 				<touch key="home" />
 				<action function="page">main</action>
@@ -3171,51 +3066,6 @@
 				<data variable="tw_button_feedback_duration_ms" min="25" max="150" />
 			</object>
 
-<!--
-			<object type="text" color="%text_color%">
-				<condition var1="tw_vibrate_after_button_press" var2="1" />
-				<font resource="font" />
-				<placement x="%col1_x%" y="%row2_text_y%" />
-				<text>Duration:</text>
-			</object>
-
-			<object type="text" color="%text_color%">
-				<condition var1="tw_vibrate_after_button_press" var2="1" />
-				<font resource="font" />
-				<placement x="%col1_x%" y="%row3_text_y%" />
-				<text>%tw_button_feedback_duration_ms% ms</text>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<condition var1="tw_vibrate_after_button_press" var2="1" />
-				<placement x="%col2_medium_x%" y="%row2_text_y%" />
-				<font resource="font" color="%button_text_color%" />
-				<text>25</text>
-				<image resource="medium_button" />
-				<action function="set">tw_button_feedback_duration_ms=25</action>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<placement x="%col3_medium_x%" y="%row2_text_y%" />
-				<condition var1="tw_vibrate_after_button_press" var2="1" />
-				<font resource="font" color="%button_text_color%" />
-				<text>75</text>
-				<image resource="medium_button" />
-				<action function="set">tw_button_feedback_duration_ms=75</action>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<condition var1="tw_vibrate_after_button_press" var2="1" />
-				<placement x="%col4_medium_x%" y="%row2_text_y%" />
-				<font resource="font" color="%button_text_color%" />
-				<text>125</text>
-				<image resource="medium_button" />
-				<action function="set">tw_button_feedback_duration_ms=125</action>
-			</object>
--->
 			<object type="checkbox">
 				<placement x="%col1_x%" y="%row5_text_y%" />
 				<font resource="font" color="%text_color%" />
@@ -3234,51 +3084,6 @@
 				<data variable="tw_backup_feedback_duration_ms" min="100" max="500" />
 			</object>
 
-<!--
-			<object type="text" color="%text_color%">
-				<condition var1="tw_vibrate_after_backup" var2="1" />
-				<font resource="font" />
-				<placement x="%col1_x%" y="%row6_text_y%" />
-				<text>Duration:</text>
-			</object>
-
-			<object type="text" color="%text_color%">
-				<condition var1="tw_vibrate_after_backup" var2="1" />
-				<font resource="font" />
-				<placement x="%col1_x%" y="%row7_text_y%" />
-				<text>%tw_backup_feedback_duration_ms% ms</text>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<condition var1="tw_vibrate_after_backup" var2="1" />
-				<placement x="%col2_medium_x%" y="%row6_text_y%" />
-				<font resource="font" color="%button_text_color%" />
-				<text>100</text>
-				<image resource="medium_button" />
-				<action function="set">tw_backup_feedback_duration_ms=100</action>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<placement x="%col3_medium_x%" y="%row6_text_y%" />
-				<condition var1="tw_vibrate_after_backup" var2="1" />
-				<font resource="font" color="%button_text_color%" />
-				<text>150</text>
-				<image resource="medium_button" />
-				<action function="set">tw_backup_feedback_duration_ms=150</action>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<condition var1="tw_vibrate_after_backup" var2="1" />
-				<placement x="%col4_medium_x%" y="%row6_text_y%" />
-				<font resource="font" color="%button_text_color%" />
-				<text>200</text>
-				<image resource="medium_button" />
-				<action function="set">tw_backup_feedback_duration_ms=200</action>
-			</object>
--->
 			<object type="checkbox">
 				<placement x="%col1_x%" y="%row9_text_y%" />
 				<font resource="font" color="%text_color%" />
@@ -3297,51 +3102,6 @@
 				<data variable="tw_restore_feedback_duration_ms" min="100" max="500" />
 			</object>
 
-<!--
-			<object type="text" color="%text_color%">
-				<condition var1="tw_vibrate_after_restore" var2="1" />
-				<font resource="font" />
-				<placement x="%col1_x%" y="%row10_text_y%" />
-				<text>Duration:</text>
-			</object>
-
-			<object type="text" color="%text_color%">
-				<condition var1="tw_vibrate_after_restore" var2="1" />
-				<font resource="font" />
-				<placement x="%col1_x%" y="%row11_text_y%" />
-				<text>%tw_restore_feedback_duration_ms% ms</text>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<condition var1="tw_vibrate_after_restore" var2="1" />
-				<placement x="%col2_medium_x%" y="%row10_text_y%" />
-				<font resource="font" color="%button_text_color%" />
-				<text>100</text>
-				<image resource="medium_button" />
-				<action function="set">tw_restore_feedback_duration_ms=100</action>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<placement x="%col3_medium_x%" y="%row10_text_y%" />
-				<condition var1="tw_vibrate_after_restore" var2="1" />
-				<font resource="font" color="%button_text_color%" />
-				<text>150</text>
-				<image resource="medium_button" />
-				<action function="set">tw_restore_feedback_duration_ms=150</action>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<condition var1="tw_vibrate_after_restore" var2="1" />
-				<placement x="%col4_medium_x%" y="%row10_text_y%" />
-				<font resource="font" color="%button_text_color%" />
-				<text>200</text>
-				<image resource="medium_button" />
-				<action function="set">tw_restore_feedback_duration_ms=200</action>
-			</object>
--->
 			<object type="checkbox">
 				<placement x="%col1_x%" y="%row13_text_y%" />
 				<font resource="font" color="%text_color%" />
@@ -3360,51 +3120,6 @@
 				<data variable="tw_install_feedback_duration_ms" min="100" max="500" />
 			</object>
 
-<!--
-			<object type="text" color="%text_color%">
-				<condition var1="tw_vibrate_after_install" var2="1" />
-				<font resource="font" />
-				<placement x="%col1_x%" y="%row14_text_y%" />
-				<text>Duration:</text>
-			</object>
-
-			<object type="text" color="%text_color%">
-				<condition var1="tw_vibrate_after_install" var2="1" />
-				<font resource="font" />
-				<placement x="%col1_x%" y="%row15_text_y%" />
-				<text>%tw_install_feedback_duration_ms% ms</text>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<condition var1="tw_vibrate_after_install" var2="1" />
-				<placement x="%col2_medium_x%" y="%row14_text_y%" />
-				<font resource="font" color="%button_text_color%" />
-				<text>100</text>
-				<image resource="medium_button" />
-				<action function="set">tw_install_feedback_duration_ms=100</action>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<placement x="%col3_medium_x%" y="%row14_text_y%" />
-				<condition var1="tw_vibrate_after_install" var2="1" />
-				<font resource="font" color="%button_text_color%" />
-				<text>150</text>
-				<image resource="medium_button" />
-				<action function="set">tw_install_feedback_duration_ms=150</action>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<condition var1="tw_vibrate_after_install" var2="1" />
-				<placement x="%col4_medium_x%" y="%row14_text_y%" />
-				<font resource="font" color="%button_text_color%" />
-				<text>200</text>
-				<image resource="medium_button" />
-				<action function="set">tw_install_feedback_duration_ms=200</action>
-			</object>
--->
 			<object type="checkbox">
 				<placement x="%col1_x%" y="%row17_text_y%" />
 				<font resource="font" color="%text_color%" />
@@ -3423,51 +3138,6 @@
 				<data variable="tw_parted_feedback_duration_ms" min="100" max="500" />
 			</object>
 
-<!--
-			<object type="text" color="%text_color%">
-				<condition var1="tw_vibrate_after_parted" var2="1" />
-				<font resource="font" />
-				<placement x="%col1_x%" y="%row18_text_y%" />
-				<text>Duration:</text>
-			</object>
-
-			<object type="text" color="%text_color%">
-				<condition var1="tw_vibrate_after_parted" var2="1" />
-				<font resource="font" />
-				<placement x="%col1_x%" y="%row19_text_y%" />
-				<text>%tw_parted_feedback_duration_ms% ms</text>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<condition var1="tw_vibrate_after_parted" var2="1" />
-				<placement x="%col2_medium_x%" y="%row18_text_y%" />
-				<font resource="font" color="%button_text_color%" />
-				<text>100</text>
-				<image resource="medium_button" />
-				<action function="set">tw_parted_feedback_duration_ms=100</action>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<placement x="%col3_medium_x%" y="%row18_text_y%" />
-				<condition var1="tw_vibrate_after_parted" var2="1" />
-				<font resource="font" color="%button_text_color%" />
-				<text>150</text>
-				<image resource="medium_button" />
-				<action function="set">tw_parted_feedback_duration_ms=150</action>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<condition var1="tw_vibrate_after_parted" var2="1" />
-				<placement x="%col4_medium_x%" y="%row18_text_y%" />
-				<font resource="font" color="%button_text_color%" />
-				<text>200</text>
-				<image resource="medium_button" />
-				<action function="set">tw_parted_feedback_duration_ms=200</action>
-			</object>
--->
 			<object type="action">
 				<touch key="home" />
 				<action function="page">main</action>
@@ -3892,51 +3562,6 @@
 				<data variable="tw_sdbackup_feedback_duration_ms" min="100" max="500" />
 			</object>
 
-<!--
-			<object type="text" color="%text_color%">
-				<condition var1="tw_vibrate_after_sdbackup" var2="1" />
-				<font resource="font" />
-				<placement x="%col1_x%" y="%row10_text_y%" />
-				<text>Duration:</text>
-			</object>
-
-			<object type="text" color="%text_color%">
-				<condition var1="tw_vibrate_after_sdbackup" var2="1" />
-				<font resource="font" />
-				<placement x="%col1_x%" y="%row11_text_y%" />
-				<text>%tw_sdbackup_feedback_duration_ms% ms</text>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<condition var1="tw_vibrate_after_sdbackup" var2="1" />
-				<placement x="%col2_medium_x%" y="%row10_text_y%" />
-				<font resource="font" color="%button_text_color%" />
-				<text>100</text>
-				<image resource="medium_button" />
-				<action function="set">tw_sdbackup_feedback_duration_ms=100</action>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<placement x="%col3_medium_x%" y="%row10_text_y%" />
-				<condition var1="tw_vibrate_after_sdbackup" var2="1" />
-				<font resource="font" color="%button_text_color%" />
-				<text>150</text>
-				<image resource="medium_button" />
-				<action function="set">tw_sdbackup_feedback_duration_ms=150</action>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<condition var1="tw_vibrate_after_sdbackup" var2="1" />
-				<placement x="%col4_medium_x%" y="%row10_text_y%" />
-				<font resource="font" color="%button_text_color%" />
-				<text>200</text>
-				<image resource="medium_button" />
-				<action function="set">tw_sdbackup_feedback_duration_ms=200</action>
-			</object>
--->
 			<object type="checkbox">
 				<placement x="%col1_x%" y="%row13_text_y%" />
 				<font resource="font" color="%text_color%" />
@@ -3955,51 +3580,6 @@
 				<data variable="tw_sdrestore_feedback_duration_ms" min="100" max="500" />
 			</object>
 
-<!--
-			<object type="text" color="%text_color%">
-				<condition var1="tw_vibrate_after_sdrestore" var2="1" />
-				<font resource="font" />
-				<placement x="%col1_x%" y="%row14_text_y%" />
-				<text>Duration:</text>
-			</object>
-
-			<object type="text" color="%text_color%">
-				<condition var1="tw_vibrate_after_sdrestore" var2="1" />
-				<font resource="font" />
-				<placement x="%col1_x%" y="%row15_text_y%" />
-				<text>%tw_sdrestore_feedback_duration_ms% ms</text>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<condition var1="tw_vibrate_after_sdrestore" var2="1" />
-				<placement x="%col2_medium_x%" y="%row14_text_y%" />
-				<font resource="font" color="%button_text_color%" />
-				<text>100</text>
-				<image resource="medium_button" />
-				<action function="set">tw_sdrestore_feedback_duration_ms=100</action>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<placement x="%col3_medium_x%" y="%row14_text_y%" />
-				<condition var1="tw_vibrate_after_sdrestore" var2="1" />
-				<font resource="font" color="%button_text_color%" />
-				<text>150</text>
-				<image resource="medium_button" />
-				<action function="set">tw_sdrestore_feedback_duration_ms=150</action>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<condition var1="tw_vibrate_after_sdrestore" var2="1" />
-				<placement x="%col4_medium_x%" y="%row14_text_y%" />
-				<font resource="font" color="%button_text_color%" />
-				<text>200</text>
-				<image resource="medium_button" />
-				<action function="set">tw_sdrestore_feedback_duration_ms=200</action>
-			</object>
--->
 			<object type="action">
 				<touch key="home" />
 				<action function="page">main</action>
