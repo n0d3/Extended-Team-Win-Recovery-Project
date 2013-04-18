@@ -870,7 +870,8 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				simulate_progress_bar();
 			} else {
 				PartitionManager.Update_System_Details(true);
-				gui_forceRender(); // update sizes in partitionlist
+				if (arg == "forcerender")
+					gui_forceRender();
 			}
 			operation_end(0, simulate);
 		}

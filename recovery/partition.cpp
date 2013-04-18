@@ -343,10 +343,6 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 			if (Is_Present) {
 				Wipe_During_Factory_Reset = true;
 				Display_Name = "SDExt2";
-				if (DataManager::GetIntValue(TW_DATA_ON_EXT))
-					Backup_Display_Name = "DataOnExt2";
-				else
-					Backup_Display_Name = Display_Name;
 				Backup_Display_Name = Display_Name;
 				Storage_Name = Display_Name;
 				Wipe_Available_in_GUI = true;
@@ -957,6 +953,7 @@ bool TWPartition::Get_Size_Via_statfs(bool Display_Error) {
 		}
 		if (dataonext) {
 			//LOGINFO("TW_DATA_PATH: '%s'\n", data_pth.c_str());
+			Backup_Display_Name = "DataOnExt";
 			if (!Is_Mounted())
 				system(("mount " + Primary_Block_Device + " " + Mount_Point).c_str());
 				//Mount(Display_Error);
@@ -968,12 +965,20 @@ bool TWPartition::Get_Size_Via_statfs(bool Display_Error) {
 				Backup_Size -= NativeSD_Size;
 		} else {
 			//LOGINFO("DataOnExt mode: OFF\n");
+			Backup_Display_Name = "SD-Ext";
 			Backup_Size = Used;
 			if (Backup_Size > 0 && skip_native)
 				Backup_Size -= NativeSD_Size;
 		}
-	} else
+	} else {
+		if (Mount_Point == "/data") {
+			if (DataManager::GetIntValue(TW_DATA_ON_EXT))
+				Backup_Display_Name = "DataOnNand";
+			else
+				Backup_Display_Name = "Data";
+		}
 		Backup_Size = Used;
+	}
 	if (Backup_Size > 0 && skip_dalvik)
 		Backup_Size -= Dalvik_Cache_Size;
 	
@@ -1051,6 +1056,7 @@ bool TWPartition::Get_Size_Via_df(bool Display_Error) {
 		}
 		if (dataonext) {
 			//LOGINFO("TW_DATA_PATH: '%s'\n", data_pth.c_str());
+			Backup_Display_Name = "DataOnExt";
 			if (!Is_Mounted())
 				system(("mount " + Primary_Block_Device + " " + Mount_Point).c_str());
 				//Mount(Display_Error);
@@ -1062,12 +1068,20 @@ bool TWPartition::Get_Size_Via_df(bool Display_Error) {
 				Backup_Size -= NativeSD_Size;
 		} else {
 			//LOGINFO("DataOnExt mode: OFF\n");
+			Backup_Display_Name = "SD-Ext";
 			Backup_Size = Used;
 			if (Backup_Size > 0 && skip_native)
 				Backup_Size -= NativeSD_Size;
 		}
-	} else
+	} else {
+		if (Mount_Point == "/data") {
+			if (DataManager::GetIntValue(TW_DATA_ON_EXT))
+				Backup_Display_Name = "DataOnNand";
+			else
+				Backup_Display_Name = "Data";
+		}
 		Backup_Size = Used;
+	}
 	if (Backup_Size > 0 && skip_dalvik)
 		Backup_Size -= Dalvik_Cache_Size;
 	fclose(fp);

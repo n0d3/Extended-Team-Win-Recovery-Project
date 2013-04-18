@@ -111,7 +111,7 @@ int TWPartitionManager::Process_Fstab(string Fstab_Filename, bool Display_Error)
 		else
 			LOGINFO("Error creating fstab\n");
 	}
-	Update_System_Details(true);
+	Update_System_Details(false);
 	UnMount_Main_Partitions();
 	Fstab_Proc_Done = 1;
 	return true;
@@ -1512,7 +1512,7 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 	if (restore_sdext2 != NULL && !Restore_Partition(restore_sdext2, Restore_Name, partition_count))
 		return false;
 
-	sleep(3);
+	//sleep(3);
 	TWFunc::GUI_Operation_Text(TW_UPDATE_SYSTEM_DETAILS_TEXT, "Updating System Details");
 	Update_System_Details(true);
 	UnMount_Main_Partitions();
