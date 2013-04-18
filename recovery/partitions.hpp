@@ -90,6 +90,7 @@ class TWPartition {
 		// Used in restoring tar
 		virtual int TarExtract(string tarfn, string tardir);
 		virtual int TarFindEntry(string tarfn, string entry);
+		virtual void Change_Restore_Display_Name(string name);
 
 	public:
 		// Indicates if the partition is a swap partition
@@ -177,7 +178,9 @@ class TWPartition {
 		// Backup name -- used for backup filenames
 		string Backup_Name;                                                       
 		// Name displayed in the partition list for backup selection
-		string Backup_Display_Name;
+		string Backup_Display_Name;                                             
+		// Name displayed in the partition list for restore selection
+		string Restore_Display_Name;
 		// Name displayed in the partition list for storage selection
 		string Storage_Name;
 		// Actual backup filename

@@ -1543,7 +1543,7 @@ void TWPartitionManager::Set_Restore_Files(string Restore_Name) {
 		LOGERR("Error opening '%s'\n", Restore_Name.c_str());
 		return;
 	}
-
+	tw_restore_is_dataonext = TWFunc::Path_Exists(Restore_Name + "/.dataonext");
 	struct dirent* de;
 	while ((de = readdir(d)) != NULL) {
 		if (!strcmp(de->d_name, ".") || !strcmp(de->d_name, "..") || !strcmp(de->d_name, "recovery.log"))
@@ -1554,8 +1554,10 @@ void TWPartitionManager::Set_Restore_Files(string Restore_Name) {
 		string search_str = ".", label, fstype, extn;
 		if (de->d_type == DT_REG) {
 			// Check if this is a backup featuring DataOnExt
-			if (dname == ".dataonext")
-				tw_restore_is_dataonext = 1;
+			if (dname == ".dataonext") {
+				LOGINFO("*Backup is marked as DataOnExt.\n");
+				continue;
+			}
 			// Find last occurrence of period to immediately check file's extension 
 			size_t last_occur = dname.rfind(search_str);
 			if (last_occur == string::npos) {
@@ -1644,11 +1646,6 @@ void TWPartitionManager::Set_Restore_Files(string Restore_Name) {
 			else
 				Part->Backup_FileName = filename;
 
-			LOGINFO("*Backup_FileName = %s\n", Part->Backup_FileName.c_str());
-			LOGINFO("*File System = %s\n", fstype.c_str());
-			LOGINFO("*extn = %s\n", extn.c_str());
-			LOGINFO("*Backup_Path = %s\n", Part->Backup_Path.c_str());
-
 			// HD2's boot partition depends on which bootloader we have
 			if (Part->Backup_Path == "/boot") {
 				// cLK installed
@@ -1670,20 +1667,32 @@ void TWPartitionManager::Set_Restore_Files(string Restore_Name) {
 						tw_restore_boot = 3;
 				} else
 					tw_restore_boot = 1;
-			}
-			else if (Part->Backup_Path == "/system") {
+			} else if (Part->Backup_Path == "/system") {
 				if (tw_restore_boot == 0)
 					continue;
 				else
 					tw_restore_system = 1;
-			} else if (Part->Backup_Path == "/data")
+			} else if (Part->Backup_Path == "/data") {
 				tw_restore_data = 1;
-			else if (Part->Backup_Path == "/sd-ext")
+				if (tw_restore_is_dataonext)
+					Part->Change_Restore_Display_Name("DataOnNand");
+				else
+					Part->Change_Restore_Display_Name("Data");
+			} else if (Part->Backup_Path == "/sd-ext") {
 				tw_restore_sdext = 1;
-			else if (Part->Backup_Path == "/sdext2")
+				if (tw_restore_is_dataonext)
+					Part->Change_Restore_Display_Name("DataOnExt");
+				else
+					Part->Change_Restore_Display_Name("SD-Ext");
+			} else if (Part->Backup_Path == "/sdext2") {
 				tw_restore_sdext2 = 1;
-
+			}
 			Restore_List += Part->Backup_Path + ";";
+
+			LOGINFO("*Backup_FileName = %s\n", Part->Backup_FileName.c_str());
+			LOGINFO("*File System = %s\n", fstype.c_str());
+			LOGINFO("*extn = %s\n", extn.c_str());
+			LOGINFO("*Backup_Path = %s\n", Part->Backup_Path.c_str());
 		}
 	}
 	closedir(d);
@@ -3125,7 +3134,7 @@ void TWPartitionManager::Get_Partition_List(string ListType, std::vector<Partiti
 						// Don't allow restore of recovery (causes problems on some devices)
 					} else {
 						struct PartitionList part;
-						part.Display_Name = restore_part->Backup_Display_Name;
+						part.Display_Name = restore_part->Restore_Display_Name;
 						part.Mount_Point = restore_part->Backup_Path;
 						part.selected = 1;
 						Partition_List->push_back(part);

@@ -89,6 +89,7 @@ TWPartition::TWPartition(void) {
 	Decrypted_Block_Device = "";
 	Display_Name = "";
 	Backup_Display_Name = "";
+	Restore_Display_Name = "";
 	Storage_Name = "";
 	Backup_Name = "";
 	Backup_FileName = "";
@@ -137,6 +138,7 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 	Storage_Path = Mount_Point;
 	Display_Name = full_line + 1;
 	Backup_Display_Name = Display_Name;
+	Restore_Display_Name = Display_Name;
 	Storage_Name = Display_Name;
 	index = Mount_Point.size();
 	while (index < line_len) {
@@ -216,6 +218,7 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 			if (Is_Present) {
 				Display_Name = "System";
 				Backup_Display_Name = Display_Name;
+				Restore_Display_Name = Display_Name;
 				Storage_Name = Display_Name;
 				Wipe_Available_in_GUI = true;
 				Can_Be_Backed_Up = true;
@@ -224,6 +227,7 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 		} else if (Mount_Point == "/data") {
 			if (Is_Present) {
 				Display_Name = "Data";
+				Restore_Display_Name = Display_Name;
 				if (DataManager::GetIntValue(TW_DATA_ON_EXT))
 					Backup_Display_Name = "DataOnNand";
 				else
@@ -294,6 +298,7 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 			if (Is_Present) {
 				Display_Name = "Cache";
 				Backup_Display_Name = Display_Name;
+				Restore_Display_Name = Display_Name;
 				Storage_Name = Display_Name;
 				Wipe_Available_in_GUI = true;
 				Wipe_During_Factory_Reset = true;
@@ -306,6 +311,7 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 				Wipe_During_Factory_Reset = true;
 				Display_Name = "DataData";
 				Backup_Display_Name = Display_Name;
+				Restore_Display_Name = Display_Name;
 				Storage_Name = Display_Name;
 				Is_SubPartition = true;
 				SubPartition_Of = "/data";
@@ -317,6 +323,7 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 			if (Is_Present) {
 				Wipe_During_Factory_Reset = true;
 				Display_Name = "SD-Ext";
+				Restore_Display_Name = Display_Name;
 				if (DataManager::GetIntValue(TW_DATA_ON_EXT))
 					Backup_Display_Name = "DataOnExt";
 				else
@@ -344,6 +351,7 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 				Wipe_During_Factory_Reset = true;
 				Display_Name = "SDExt2";
 				Backup_Display_Name = Display_Name;
+				Restore_Display_Name = Display_Name;
 				Storage_Name = Display_Name;
 				Wipe_Available_in_GUI = true;
 				Removable = true;
@@ -358,6 +366,7 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 		} else if (Mount_Point == "/boot") {
 			Display_Name = "Boot";
 			Backup_Display_Name = Display_Name;
+			Restore_Display_Name = Display_Name;
 			DataManager::SetValue("tw_boot_is_mountable", 1);
 			Can_Be_Backed_Up = true;
 		}	
@@ -424,11 +433,13 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 		if (Mount_Point == "/boot") {
 			Display_Name = "Boot";
 			Backup_Display_Name = Display_Name;
+			Restore_Display_Name = Display_Name;
 			Can_Be_Backed_Up = true;
 			DataManager::SetValue("tw_boot_is_mountable", 0);
 		} else if (Mount_Point == "/recovery") {
 			Display_Name = "Recovery";
 			Backup_Display_Name = Display_Name;
+			Restore_Display_Name = Display_Name;
 			Can_Be_Backed_Up = true;
 		}
 	} else if (Is_Swap(Current_File_System)) {
@@ -638,6 +649,7 @@ void TWPartition::Setup_Image(bool Display_Error) {
 
 void TWPartition::Setup_AndSec(void) {
 	Backup_Display_Name = "Android Secure";
+	Restore_Display_Name = Backup_Display_Name;
 	Backup_Name = "and-sec";
 	Can_Be_Backed_Up = true;
 	Has_Android_Secure = true;
@@ -2056,8 +2068,8 @@ bool TWPartition::Restore_Tar(string restore_folder, string Restore_File_System)
 	if (!Mount(true))
 		return false;
 
-	TWFunc::GUI_Operation_Text(TW_RESTORE_TEXT, Backup_Display_Name, "Restoring");
-	gui_print("Restoring %s...\n", Backup_Display_Name.c_str());
+	TWFunc::GUI_Operation_Text(TW_RESTORE_TEXT, Restore_Display_Name, "Restoring");
+	gui_print("Restoring %s...\n", Restore_Display_Name.c_str());
 	Full_FileName = restore_folder + "/" + Backup_FileName;
 	if (!TWFunc::Path_Exists(Full_FileName)) {
 		// Backup is multiple archives
@@ -2192,6 +2204,11 @@ bool TWPartition::Restore_Yaffs_Image(string restore_folder) {
 
 void TWPartition::Change_FS_Type(string type) {
 	Current_File_System = type;
+	return;
+}
+
+void TWPartition::Change_Restore_Display_Name(string name) {
+	Restore_Display_Name = name;
 	return;
 }
 
