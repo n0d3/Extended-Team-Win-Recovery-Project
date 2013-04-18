@@ -452,17 +452,6 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 		} else
 			gui_print("Simulating actions...\n");
 		return 0;
-	}
-	if (function == "restoredefaultsettings") {
-		operation_start("Restore Defaults");
-		if (simulate) // Simulated so that people don't accidently wipe out the "simulation is on" setting
-			gui_print("Simulating actions...\n");
-		else {
-			DataManager::ResetDefaults();
-			PartitionManager.Update_System_Details(true);
-			PartitionManager.Mount_Current_Storage(true);
-		}
-		operation_end(0, simulate);
 	}	
 	if (function == "copylog") {
 		operation_start("Copy Log");
@@ -1198,6 +1187,26 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				ret = 0; // 0 for success
 			}
 		   	operation_end(ret, simulate);
+
+			return 0;
+		}
+		if (function == "restoredefaultsettings") {
+			operation_start("Restore Defaults");
+			if (simulate) // Simulated so that people don't accidently wipe out the "simulation is on" setting
+				gui_print("Simulating actions...\n");
+			else {
+				gui_print("Default settings restored.\n");
+				DataManager::ResetDefaults();
+				// koko: Since we are going to reboot are these needed?
+				PartitionManager.Update_System_Details(true);
+				PartitionManager.Mount_Current_Storage(true);
+			}
+			operation_end(0, simulate);
+			sync();
+			gui_print("Rebooting device...\n");
+			sleep(2);
+			DataManager::SetValue("tw_gui_done", 1);
+			DataManager::SetValue("tw_reboot_arg", "recovery");
 
 			return 0;
 		}

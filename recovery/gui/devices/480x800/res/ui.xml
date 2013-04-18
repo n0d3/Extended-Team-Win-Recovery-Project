@@ -2506,7 +2506,15 @@
 				<font resource="font" color="%button_text_color%" />
 				<text>Restore Defaults</text>
 				<image resource="ml_button" />
-				<action function="restoredefaultsettings"></action>
+				<actions>
+					<action function="set">tw_back=settings</action>
+					<action function="set">tw_action=restoredefaultsettings</action>
+					<action function="set">tw_text1=Restore Defaults?</action>
+					<action function="set">tw_text3=(Device will reboot into recovery</action>
+					<action function="set">tw_text4=after restoring default settings)</action>
+					<action function="set">tw_slider_text=Swipe to Confirm</action>
+					<action function="page">confirm_action</action>
+				</actions>
 			</object>
 
 			<object type="button">
