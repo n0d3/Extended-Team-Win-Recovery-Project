@@ -71,7 +71,7 @@ int twrpTar::createTarGZFork() {
 		}
 		else // parent process
 		{
-			sleep(1);
+			//usleep(20);
 			rc_pid = waitpid(pid, &status, 0);
 			if (rc_pid > 0) {
 				if (WEXITSTATUS(status) == 0)
@@ -116,7 +116,7 @@ int twrpTar::createTarFork() {
 		}
 		else // parent process
 		{
-			sleep(1);
+			//usleep(20);
 			rc_pid = waitpid(pid, &status, 0);
 			if (rc_pid > 0) {
 				if (WEXITSTATUS(status) == 0)
@@ -161,7 +161,7 @@ int twrpTar::extractTarFork() {
 		}
 		else // parent process
 		{
-			sleep(1);
+			//usleep(20);
 			rc_pid = waitpid(pid, &status, 0);
 			if (rc_pid > 0) {
 				if (WEXITSTATUS(status) == 0)
@@ -206,7 +206,7 @@ int twrpTar::splitArchiveFork() {
 		}
 		else // parent process
 		{
-			sleep(1);
+			//usleep(20);
 			rc_pid = waitpid(pid, &status, 0);
 			if (rc_pid > 0) {
 				if (WEXITSTATUS(status) == 0)
@@ -534,6 +534,7 @@ int twrpTar::addFilesToExistingTar(vector <string> files, string fn) {
 
 int twrpTar::createTar() {
 	char* charTarFile = (char*) tarfn.c_str();
+	char* charRootDir = (char*) tardir.c_str();
 	int use_compression = 0;
 	static tartype_t type = { open, close, read, write_tar };
 
@@ -543,7 +544,7 @@ int twrpTar::createTar() {
 		p = popen(cmd.c_str(), "w");
 		fd = fileno(p);
 		if (!p) return -1;
-		if(tar_fdopen(&t, fd, charTarFile, &type, O_RDONLY | O_LARGEFILE, 0644, TAR_GNU) != 0) {
+		if(tar_fdopen(&t, fd, charRootDir, &type, O_RDONLY | O_LARGEFILE, 0644, TAR_GNU) != 0) {
 			pclose(p);
 			return -1;
 		}
@@ -557,6 +558,7 @@ int twrpTar::createTar() {
 
 int twrpTar::openTar(bool gzip) {
 	char* charTarFile = (char*) tarfn.c_str();
+	char* charRootDir = (char*) tardir.c_str();
 
 	if (gzip) {
 		LOGINFO("Opening as a gzip\n");
@@ -564,9 +566,9 @@ int twrpTar::openTar(bool gzip) {
 		rp = popen(cmd.c_str(), "r");
 		rfd = fileno(rp);
 		if (!rp) return -1;
-		if(tar_fdopen(&t, rfd, charTarFile, NULL, O_RDONLY | O_LARGEFILE, 0644, TAR_GNU) != 0) {
+		if(tar_fdopen(&t, rfd, charRootDir, NULL, O_RDONLY | O_LARGEFILE, 0644, TAR_GNU) != 0) {
 			LOGINFO("tar_fdopen returned error\n");
-			__pclose(rp);
+			pclose(rp);
 			return -1;
 		}
 	}
@@ -660,7 +662,7 @@ int twrpTar::compress(string fn) {
 		if(fgets(buffer, 128, p) != NULL)
 			result += buffer;
 	}
-	__pclose(p);
+	pclose(p);
 	return 0;
 }
 
