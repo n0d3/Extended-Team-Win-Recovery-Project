@@ -742,18 +742,11 @@ bool TWPartitionManager::Backup_Partition(TWPartition* Part,
 }
 
 int TWPartitionManager::Run_Backup(void) {
-	int check, skip_md5_gen, do_md5, partition_count = 0, dataonext = 0, skip_free_space_check = 0;
+	int check, skip_md5_gen, do_md5, partition_count = 0, skip_free_space_check = 0;
 	string Backup_Folder, Backup_Name, Full_Backup_Path;
 	unsigned long long total_bytes = 0, file_bytes = 0, img_bytes = 0, free_space = 0, img_bytes_remaining, file_bytes_remaining, subpart_size;
 	unsigned long img_time = 0, file_time = 0;
-	TWPartition* backup_sys = NULL;
-	TWPartition* backup_data = NULL;
-	TWPartition* backup_cache = NULL;
-	TWPartition* backup_recovery = NULL;
-	TWPartition* backup_boot = NULL;
-	TWPartition* backup_andsec = NULL;
-	TWPartition* backup_sdext = NULL;
-	TWPartition* backup_sdext2 = NULL;
+	TWPartition* backup_part = NULL;
 	TWPartition* storage = NULL;
 	std::vector<TWPartition*>::iterator subpart;
 	struct tm *t;
@@ -768,54 +761,11 @@ int TWPartitionManager::Run_Backup(void) {
 	if (!Mount_Current_Storage(true))
 		return false;
 
-	// Get which partitions to backup from PartitionList
-	int tw_backup_boot = -1;
-	int tw_backup_system = -1;
-	int tw_backup_data = -1;
-	int tw_backup_recovery = -1;
-	int tw_backup_cache = -1;
-	int tw_backup_andsec = -1;
-	int tw_backup_sdext = -1;
-	int tw_backup_sdext2 = -1;
-
-	string Backup_List;
-	DataManager::GetValue("tw_backup_list", Backup_List);
-	if (!Backup_List.empty()) {
-		string backup_path;
-		size_t start_pos = 0, end_pos;
-		end_pos = Backup_List.find(";", start_pos);
-		while (end_pos != string::npos && start_pos < Backup_List.size()) {
-			backup_path = Backup_List.substr(start_pos, end_pos - start_pos);
-
-			if (backup_path == "/system")
-				tw_backup_system = 1;
-			else if (backup_path == "/data")
-				tw_backup_data = 1;
-			else if (backup_path == "/recovery")
-				tw_backup_recovery = 1;
-			else if (backup_path == "/cache")
-				tw_backup_cache = 1;
-			else if (backup_path == "/boot")
-				tw_backup_boot = 1;
-			else if (backup_path == "/and-sec")
-				tw_backup_andsec = 1;
-			else if (backup_path == "/sd-ext")
-				tw_backup_sdext = 1;
-			else if (backup_path == "/sdext2")
-				tw_backup_sdext2 = 1;
-
-			start_pos = end_pos + 1;
-			end_pos = Backup_List.find(";", start_pos);
-		}
-	}
-
 	DataManager::GetValue(TW_SKIP_MD5_GENERATE_VAR, skip_md5_gen);
 	if (skip_md5_gen > 0)
 		do_md5 = false;
 	else
 		do_md5 = true;
-
-	DataManager::GetValue(TW_DATA_ON_EXT, dataonext);	
 
 	DataManager::GetValue(TW_BACKUPS_FOLDER_VAR, Backup_Folder);
 	DataManager::GetValue(TW_BACKUP_NAME, Backup_Name);
@@ -831,117 +781,39 @@ int TWPartitionManager::Run_Backup(void) {
 	gui_print("\n[BACKUP STARTED]\n");
     	
 	LOGINFO("Calculating backup details...\n");
-	if (tw_backup_system > 0) {
-		backup_sys = Find_Partition_By_Path("/system");
-		if (backup_sys != NULL) {
-			partition_count++;
-			if (backup_sys->Backup_Method == 1)
-				file_bytes += backup_sys->Backup_Size;
-			else
-				img_bytes += backup_sys->Backup_Size;
-		} else {
-			LOGERR("Unable to locate system partition.\n");
-			DataManager::SetValue(TW_BACKUP_SYSTEM_VAR, 0);
-		}
-	}
-	if (tw_backup_data > 0) {
-		backup_data = Find_Partition_By_Path("/data");
-		if (backup_data != NULL) {
-			partition_count++;
-			subpart_size = 0;
-			if (backup_data->Has_SubPartition) {
-				for (subpart = Partitions.begin(); subpart != Partitions.end(); subpart++) {
-					if ((*subpart)->Is_SubPartition && (*subpart)->SubPartition_Of == backup_data->Mount_Point)
-						subpart_size += (*subpart)->Backup_Size;
+	// Get which partitions to backup from PartitionList
+	string Backup_List, backup_path;
+	size_t start_pos = 0, end_pos;
+	DataManager::GetValue("tw_backup_list", Backup_List);
+	if (!Backup_List.empty()) {
+		end_pos = Backup_List.find(";", start_pos);
+		while (end_pos != string::npos && start_pos < Backup_List.size()) {
+			backup_path = Backup_List.substr(start_pos, end_pos - start_pos);
+			backup_part = Find_Partition_By_Path(backup_path);
+			if (backup_part != NULL) {
+				partition_count++;
+				if (backup_part->Backup_Method == 1)
+					file_bytes += backup_part->Backup_Size;
+				else
+					img_bytes += backup_part->Backup_Size;
+				if (backup_part->Has_SubPartition) {
+					std::vector<TWPartition*>::iterator subpart;
+
+					for (subpart = Partitions.begin(); subpart != Partitions.end(); subpart++) {
+						if ((*subpart)->Can_Be_Backed_Up && (*subpart)->Is_Present && (*subpart)->Is_SubPartition && (*subpart)->SubPartition_Of == backup_part->Mount_Point) {
+							partition_count++;
+							if ((*subpart)->Backup_Method == 1)
+								file_bytes += (*subpart)->Backup_Size;
+							else
+								img_bytes += (*subpart)->Backup_Size;
+						}
+					}
 				}
+			} else {
+				LOGERR("Unable to locate '%s' partition.\n", backup_path.c_str());
 			}
-			if (backup_data->Backup_Method == 1)
-				file_bytes += backup_data->Backup_Size + subpart_size;
-			else
-				img_bytes += backup_data->Backup_Size + subpart_size;
-		} else {
-			LOGERR("Unable to locate data partition.\n");
-			DataManager::SetValue(TW_BACKUP_DATA_VAR, 0);
-		}
-	}
-	if (tw_backup_cache > 0) {
-		backup_cache = Find_Partition_By_Path("/cache");
-		if (backup_cache != NULL) {
-			partition_count++;
-			if (backup_cache->Backup_Method == 1)
-				file_bytes += backup_cache->Backup_Size;
-			else
-				img_bytes += backup_cache->Backup_Size;
-		} else {
-			LOGERR("Unable to locate cache partition.\n");
-			DataManager::SetValue(TW_BACKUP_CACHE_VAR, 0);
-		}
-	}
-	if (tw_backup_recovery > 0) {
-		backup_recovery = Find_Partition_By_Path("/recovery");
-		if (backup_recovery != NULL) {
-			partition_count++;
-			if (backup_recovery->Backup_Method == 1)
-				file_bytes += backup_recovery->Backup_Size;
-			else
-				img_bytes += backup_recovery->Backup_Size;
-		} else {
-			LOGERR("Unable to locate recovery partition.\n");
-			DataManager::SetValue(TW_BACKUP_RECOVERY_VAR, 0);
-		}
-	}
-#ifndef TW_HAS_NO_BOOT_PARTITION
-	if (tw_backup_boot > 0) {
-		backup_boot = Find_Partition_By_Path("/boot");
-		if (backup_boot != NULL) {
-			partition_count++;
-			if (backup_boot->Backup_Method == 1)
-				file_bytes += backup_boot->Backup_Size;
-			else
-				img_bytes += backup_boot->Backup_Size;
-		} else {
-			LOGERR("Unable to locate boot partition.\n");
-			DataManager::SetValue(TW_BACKUP_BOOT_VAR, 0);
-		}
-	}
-#endif
-	if (tw_backup_andsec > 0) {
-		backup_andsec = Find_Partition_By_Path("/and-sec");
-		if (backup_andsec != NULL) {
-			partition_count++;
-			if (backup_andsec->Backup_Method == 1)
-				file_bytes += backup_andsec->Backup_Size;
-			else
-				img_bytes += backup_andsec->Backup_Size;
-		} else {
-			LOGERR("Unable to locate android secure partition.\n");
-			DataManager::SetValue(TW_BACKUP_ANDSEC_VAR, 0);
-		}
-	}
-	if (tw_backup_sdext > 0) {
-		backup_sdext = Find_Partition_By_Path("/sd-ext");
-		if (backup_sdext != NULL) {
-			partition_count++;
-			if (backup_sdext->Backup_Method == 1)
-				file_bytes += backup_sdext->Backup_Size;
-			else
-				img_bytes += backup_sdext->Backup_Size;
-		} else {
-			LOGERR("Unable to locate sd-ext partition.\n");
-			DataManager::SetValue(TW_BACKUP_SDEXT_VAR, 0);
-		}
-	}
-	if (tw_backup_sdext2 > 0) {
-		backup_sdext2 = Find_Partition_By_Path("/sdext2");
-		if (backup_sdext2 != NULL) {
-			partition_count++;
-			if (backup_sdext2->Backup_Method == 1)
-				file_bytes += backup_sdext2->Backup_Size;
-			else
-				img_bytes += backup_sdext2->Backup_Size;
-		} else {
-			LOGERR("Unable to locate sdext2 partition.\n");
-			DataManager::SetValue(TW_BACKUP_SDEXT2_VAR, 0);
+			start_pos = end_pos + 1;
+			end_pos = Backup_List.find(";", start_pos);
 		}
 	}
 
@@ -980,22 +852,16 @@ int TWPartitionManager::Run_Backup(void) {
 
 	DataManager::SetProgress(0.0);
 
-	if (!Backup_Partition(backup_sys, Full_Backup_Path, do_md5, &img_bytes_remaining, &file_bytes_remaining, &img_time, &file_time, &img_bytes, &file_bytes))
-		return false;
-	if (!Backup_Partition(backup_data, Full_Backup_Path, do_md5, &img_bytes_remaining, &file_bytes_remaining, &img_time, &file_time, &img_bytes, &file_bytes))
-		return false;
-	if (!Backup_Partition(backup_cache, Full_Backup_Path, do_md5, &img_bytes_remaining, &file_bytes_remaining, &img_time, &file_time, &img_bytes, &file_bytes))
-		return false;
-	if (!Backup_Partition(backup_recovery, Full_Backup_Path, do_md5, &img_bytes_remaining, &file_bytes_remaining, &img_time, &file_time, &img_bytes, &file_bytes))
-		return false;
-	if (!Backup_Partition(backup_boot, Full_Backup_Path, do_md5, &img_bytes_remaining, &file_bytes_remaining, &img_time, &file_time, &img_bytes, &file_bytes))
-		return false;
-	if (!Backup_Partition(backup_andsec, Full_Backup_Path, do_md5, &img_bytes_remaining, &file_bytes_remaining, &img_time, &file_time, &img_bytes, &file_bytes))
-		return false;
-	if (!Backup_Partition(backup_sdext, Full_Backup_Path, do_md5, &img_bytes_remaining, &file_bytes_remaining, &img_time, &file_time, &img_bytes, &file_bytes))
-		return false;
-	if (!Backup_Partition(backup_sdext2, Full_Backup_Path, do_md5, &img_bytes_remaining, &file_bytes_remaining, &img_time, &file_time, &img_bytes, &file_bytes))
-		return false;
+	start_pos = 0;
+	end_pos = Backup_List.find(";", start_pos);
+	while (end_pos != string::npos && start_pos < Backup_List.size()) {
+		backup_path = Backup_List.substr(start_pos, end_pos - start_pos);
+		backup_part = Find_Partition_By_Path(backup_path);
+		if (!Backup_Partition(backup_part, Full_Backup_Path, do_md5, &img_bytes_remaining, &file_bytes_remaining, &img_time, &file_time, &img_bytes, &file_bytes))
+			return false;
+		start_pos = end_pos + 1;
+		end_pos = Backup_List.find(";", start_pos);
+	}
 
 	// Average BPS
 	if (img_time == 0)
@@ -1064,64 +930,14 @@ bool TWPartitionManager::Restore_Partition(TWPartition* Part, string Restore_Nam
 }
 
 int TWPartitionManager::Run_Restore(string Restore_Name) {
-	int hserr, skip_md5_check, check, partition_count = 0;
-	TWPartition* restore_sys = NULL;
-	TWPartition* restore_data = NULL;
-	TWPartition* restore_cache = NULL;
-	TWPartition* restore_boot = NULL;
-	TWPartition* restore_andsec = NULL;
-	TWPartition* restore_sdext = NULL;
-	TWPartition* restore_sdext2 = NULL;
-	TWPartition* restore_sp1 = NULL;
-	TWPartition* restore_sp2 = NULL;
-	TWPartition* restore_sp3 = NULL;
+	int handle_size_errors, skip_md5_check, tw_restore_boot, partition_count = 0;
+	TWPartition* restore_part = NULL;
 	time_t rStart, rStop;
 	time(&rStart);
-
-	// Get which partitions to restore from PartitionList
-	int tw_restore_boot = -1;
-	int tw_restore_system = -1;
-	int tw_restore_data = -1;
-	int tw_restore_cache = -1;
-	int tw_restore_andsec = -1;
-	int tw_restore_sdext = -1;
-	int tw_restore_sdext2 = -1;
-
-	string Restore_List;
-	DataManager::GetValue("tw_restore_selected", Restore_List);
-	if (!Restore_List.empty()) {
-		string restore_path;
-		size_t start_pos = 0, end_pos;
-		end_pos = Restore_List.find(";", start_pos);
-		while (end_pos != string::npos && start_pos < Restore_List.size()) {
-			restore_path = Restore_List.substr(start_pos, end_pos - start_pos);
-
-			if (restore_path == "/system")
-				tw_restore_system = 1;
-			else if (restore_path == "/data")
-				tw_restore_data = 1;
-			else if (restore_path == "/cache")
-				tw_restore_cache = 1;
-			else if (restore_path == "/boot")
-				tw_restore_boot = 1;
-			else if (restore_path == "/and-sec")
-				tw_restore_andsec = 1;
-			else if (restore_path == "/sd-ext")
-				tw_restore_sdext = 1;
-			else if (restore_path == "/sdext2")
-				tw_restore_sdext2 = 1;
-
-			start_pos = end_pos + 1;
-			end_pos = Restore_List.find(";", start_pos);
-		}
-	}
-
 	// Needed for any size checks
 	string Full_FileName, part_size, parts, Command, data_size, dalvik_nfo, dalvik_host;
-	int dataonext, dalvik_found_on_data = 1, dalvik_found_on_sdext = 1, dalvik_found_on_sdext2 = 1, nodalvikcache = 0;
+	int restore_data = 0, restore_sdext = 0, restore_sdext2 = 0, dataonext, dalvik_found_on_data = 1, dalvik_found_on_sdext = 1, dalvik_found_on_sdext2 = 1, nodalvikcache = 0;
 	unsigned long long min_size = 0, dt_size = 0, dc_size = 0, tar_size = 0, file_size = 0;
-	// TODO: 1048576(=1MB) or 131072(=1block) ?
-	//	 Test and see which one is better to use...
 	unsigned long long multiple = 1048576;
 
 	gui_print("\n[RESTORE STARTED]\n\n");
@@ -1129,10 +945,21 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 	if (!Mount_Current_Storage(true))
 		return false;
 
+	// Backup has DataOnExt?
+	DataManager::GetValue(TW_RESTORE_IS_DATAONEXT, dataonext);
+	// Skip md5 check?
+	DataManager::GetValue(TW_SKIP_MD5_CHECK_VAR, skip_md5_check);
+	if (skip_md5_check > 0)
+		gui_print("Skipping MD5 check based on user setting.\n");
+	else {
+		// Check MD5 files first before restoring to ensure that all of them match before starting a restore
+		TWFunc::GUI_Operation_Text(TW_VERIFY_MD5_TEXT, "Verifying MD5");
+		gui_print("Verifying MD5...\n");
+	}
 	// Handle size errors?
-	DataManager::GetValue("tw_handle_restore_size", hserr);
-	if (hserr > 0) {
-		LOGINFO("TWRP will adjust partitions' size if needed.\n");
+	DataManager::GetValue("tw_handle_restore_size", handle_size_errors);
+	if (handle_size_errors > 0) {
+		LOGINFO("TWRP will also check partitions' size before trying to restore.\n");
 		// Check if this is a backup without dalvik-cache
 		nodalvikcache = TWFunc::Path_Exists(Restore_Name + "/.nodalvikcache");
 		if (nodalvikcache) {
@@ -1146,348 +973,297 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 			}
 		}
 	}
-	DataManager::GetValue(TW_RESTORE_IS_DATAONEXT, dataonext);
-	DataManager::GetValue(TW_SKIP_MD5_CHECK_VAR, skip_md5_check);
-	if (tw_restore_system > 0) {
-		restore_sys = Find_Partition_By_Path("/system");
-		if (restore_sys == NULL)
-			LOGERR("Unable to locate system partition.\n");
-		else {
-			if (hserr > 0) {
-				LOGINFO("Comparing %s's size to %s's size...\n", restore_sys->Backup_FileName.c_str(), restore_sys->Backup_Name.c_str());
-				min_size = 0;
-				Full_FileName = Restore_Name + "/" + restore_sys->Backup_FileName;				
-				if (restore_sys->Use_unyaffs_To_Restore) {
-					// This is a yaffs2.img
-					file_size = TWFunc::Get_File_Size(Full_FileName);
-					min_size = TWFunc::RoundUpSize(file_size, multiple);
-				} else {
-					// This is an archive
-					twrpTar tar;
-					tar.setfn(Full_FileName);
-					tar_size = tar.uncompressedSize();
-					min_size = TWFunc::RoundUpSize(tar_size, multiple);
-				}
-				// Now compare the size of the partition and the minimum required size
-				LOGINFO("'system': size=%llub / min-req-size=%llub\n", restore_sys->Size, min_size);
-				if (restore_sys->Size > min_size) {
-					LOGINFO("%s's size is adequate to restore %s.\n", restore_sys->Backup_Name.c_str(), restore_sys->Backup_FileName.c_str());
-					partition_count++;
-				} else {
-					LOGINFO("Size mismatch for %s.\n", restore_sys->Backup_Name.c_str());
-					// cLK can deal with this case
-					// TWRP just needs to call later clkpartmgr
-					if (DataManager::Detect_BLDR() == 1) {
-						part_size += " system:" + TWFunc::to_string((int)(min_size/131072));
-					} else if (DataManager::Detect_BLDR() == 2) {
-						restore_data = NULL;
-						LOGERR("Size of 'system' partition is less than needed.\n");
-						LOGERR("Skipping 'system' from restoring process.\n");
-					} else if (DataManager::Detect_BLDR() == 0)
+
+	// Get which partitions to restore from PartitionList
+	string Restore_List, restore_path;
+	size_t start_pos = 0, end_pos;
+	DataManager::GetValue("tw_restore_selected", Restore_List);
+	if (!Restore_List.empty()) {
+		end_pos = Restore_List.find(";", start_pos);
+		while (end_pos != string::npos && start_pos < Restore_List.size()) {
+			restore_path = Restore_List.substr(start_pos, end_pos - start_pos);
+			restore_part = Find_Partition_By_Path(restore_path);
+			if (restore_part == NULL) {
+				LOGERR("Unable to locate '%s' partition.\n", restore_path.c_str());
+			} else {
+				restore_part->Skip_From_Restore = false;
+				if(restore_path == "/system"
+				|| restore_path == "/data") {
+					if (handle_size_errors > 0) {
+						LOGINFO("Comparing %s's size to %s's size...\n", restore_part->Backup_FileName.c_str(), restore_part->Backup_Name.c_str());
+						min_size = 0;
+						Full_FileName = Restore_Name + "/" + restore_part->Backup_FileName;				
+						if (restore_part->Use_unyaffs_To_Restore) {
+							// This is a yaffs2.img
+							file_size = TWFunc::Get_File_Size(Full_FileName);
+							min_size = TWFunc::RoundUpSize(file_size, multiple);
+						} else {
+							// This is an archive
+							twrpTar tar;
+							tar.setfn(Full_FileName);
+							tar_size = tar.uncompressedSize();
+							min_size = TWFunc::RoundUpSize(tar_size, multiple);
+							if (restore_path == "/data") {
+								// check if the archive contains dalvik-cache.
+								// If not we must add enough space for it
+								if (!dataonext && !tar.entryExists("data/dalvik-cache/"))
+									dalvik_found_on_data = 0;
+							}
+						}
+						if (restore_path == "/data") {
+							restore_data = 1;
+							if (nodalvikcache && dalvik_host == "/data")
+								min_size += dc_size;
+							dt_size = min_size;
+						}
+						// Now compare the size of the partition and the minimum required size
+						LOGINFO("'%s': size=%llub / min-req-size=%llub\n", restore_part->Backup_Name.c_str(), restore_part->Size, min_size);
+						if (restore_part->Size > min_size) {
+							LOGINFO("%s's size is adequate to restore %s.\n", restore_part->Backup_Name.c_str(), restore_part->Backup_FileName.c_str());
+							partition_count++;
+						} else {
+							LOGINFO("Size mismatch for %s.\n", restore_part->Backup_Name.c_str());
+							// cLK can deal with this case
+							// TWRP just needs to call later clkpartmgr
+							if (DataManager::Detect_BLDR() == 1) {
+								data_size = " " + restore_part->Backup_Name + ":" + TWFunc::to_string((int)(min_size/131072));
+							} else if (DataManager::Detect_BLDR() == 2) {
+								restore_part->Skip_From_Restore = true;
+								LOGERR("Skipping '%s' from restoring process.\n", restore_part->Backup_Name.c_str());
+							} else if (DataManager::Detect_BLDR() == 0)
+								partition_count++;
+						}
+						parts += restore_part->ORS_Mark;
+					} else {
 						partition_count++;
-				}
-				parts += "S";
-			} else
-				partition_count++;
-		}
-	}
-	if (tw_restore_data > 0) {
-		restore_data = Find_Partition_By_Path("/data");
-		if (restore_data == NULL)
-			LOGERR("Unable to locate data partition.\n");
-		else {
-			if (hserr > 0) {
-				LOGINFO("Comparing %s's size to %s's size...\n", restore_data->Backup_FileName.c_str(), restore_data->Backup_Name.c_str());
-				min_size = 0;
-				Full_FileName = Restore_Name + "/" + restore_data->Backup_FileName;				
-				if (restore_data->Use_unyaffs_To_Restore) {
-					// This is a yaffs2.img
-					file_size = TWFunc::Get_File_Size(Full_FileName);
-					min_size = TWFunc::RoundUpSize(file_size, multiple);
-				} else {
-					// This is an archive
-					twrpTar tar;
-					tar.setfn(Full_FileName);
-					tar_size = tar.uncompressedSize();
-					// check if the archive contains dalvik-cache.
-					// If not we must add enough space for it
-					if (!dataonext && !tar.entryExists("data/dalvik-cache/"))
-						dalvik_found_on_data = 0;
-					min_size = TWFunc::RoundUpSize(tar_size, multiple);
-				}
-				if (nodalvikcache && dalvik_host == "/data")
-					min_size += dc_size;
-				dt_size = min_size;
-				// Now compare the size of the partition and the minimum required size
-				LOGINFO("'data': size=%llub / min-req-size=%llub\n", restore_data->Size, min_size);
-				if (restore_data->Size > min_size) {
-					LOGINFO("%s's size is adequate to restore %s.\n", restore_data->Backup_Name.c_str(), restore_data->Backup_FileName.c_str());
+					}
+				} else
+				if(restore_path == "/cache"
+				|| restore_path == "/and-sec") {
 					partition_count++;
-				} else {
-					LOGINFO("Size mismatch for %s.\n", restore_data->Backup_Name.c_str());
-					// cLK can deal with this case
-					// TWRP just needs to call later clkpartmgr
-					if (DataManager::Detect_BLDR() == 1) {
-						data_size = " userdata:" + TWFunc::to_string((int)(min_size/131072));
-					} else if (DataManager::Detect_BLDR() == 2) {
-						restore_data = NULL;
-						LOGERR("Size of 'data' partition is less than needed.\n");
-						LOGERR("Skipping 'data' from restoring process.\n");
-					} else if (DataManager::Detect_BLDR() == 0)
-						partition_count++;
-				}
-				parts += "D";
-			} else
-				partition_count++;
-		}
-	}
-	if (tw_restore_cache > 0) {
-		restore_cache = Find_Partition_By_Path("/cache");
-		if (restore_cache == NULL)
-			LOGERR("Unable to locate cache partition.\n");
-		else {
-			partition_count++;
-			parts += "C";
-		}
-	}
-#ifndef TW_HAS_NO_BOOT_PARTITION
-	if (tw_restore_boot > 0) {
-		restore_boot = Find_Partition_By_Path("/boot");
-		if (restore_boot == NULL)
-			LOGERR("Unable to locate boot partition.\n");
-		else {
-			DataManager::GetValue(TW_RESTORE_BOOT_VAR, check);
-			LOGINFO("TW_RESTORE_BOOT_VAR = %i\n", check);
-			if (check == 2) {
-				if (!TWFunc::Path_Exists(Restore_Name + "/boot.mtd.win")) {
-					string cmd = "cd '" + Restore_Name + "' && tar -xf " + restore_boot->Backup_FileName + " ./initrd.gz ./zImage";
-					LOGINFO("%s will be converted to boot.mtd.win\n", restore_boot->Backup_FileName.c_str());
-					if (system(cmd.c_str()) == 0) {
-						if(TWFunc::Path_Exists(Restore_Name + "/initrd.gz")
-						&& TWFunc::Path_Exists(Restore_Name + "/zImage")) {
-							// Create 'boot' mtd image
-							cmd = "mkbootimg --kernel '" + Restore_Name + "/zImage'\
-									 --ramdisk '" + Restore_Name + "/initrd.gz'\
-									 --cmdline \"\"\
-									 --base 0x11800000\
-									 --output '" + Restore_Name + "/boot.mtd.win'";
+					parts += restore_part->ORS_Mark;
+				} else if (restore_path == "/boot") {
+					DataManager::GetValue(TW_RESTORE_BOOT_VAR, tw_restore_boot);
+					LOGINFO("TW_RESTORE_BOOT_VAR = %i\n", tw_restore_boot);
+					if (tw_restore_boot == 2) {
+						if (!TWFunc::Path_Exists(Restore_Name + "/boot.mtd.win")) {
+							string cmd = "cd '" + Restore_Name + "' && tar -xf " + restore_part->Backup_FileName + " ./initrd.gz ./zImage";
+							LOGINFO("%s will be converted to boot.mtd.win\n", restore_part->Backup_FileName.c_str());
 							if (system(cmd.c_str()) == 0) {
-								if (TWFunc::Path_Exists(Restore_Name + "/boot.mtd.win")) {
-									// Remove the tar and the md5 file
-									cmd = "cd '" + Restore_Name + "' && rm -rf " + restore_boot->Backup_FileName + "*";
-									system(cmd.c_str());
-									// Set new backup name
-									restore_boot->Backup_FileName = "boot.mtd.win";
-									// Create an MD5 file for the new file
-									cmd = "cd '" + Restore_Name + "' && md5sum boot.mtd.win > boot.mtd.win.md5";
-									LOGINFO("cmd = %s\n", cmd.c_str());
-									system(cmd.c_str());
-									LOGINFO("boot.mtd.win created!\n");
+								if(TWFunc::Path_Exists(Restore_Name + "/initrd.gz")
+								&& TWFunc::Path_Exists(Restore_Name + "/zImage")) {
+									// Create 'boot' mtd image
+									cmd = "mkbootimg --kernel '" + Restore_Name + "/zImage'\
+											 --ramdisk '" + Restore_Name + "/initrd.gz'\
+											 --cmdline \"\"\
+											 --base 0x11800000\
+											 --output '" + Restore_Name + "/boot.mtd.win'";
+									if (system(cmd.c_str()) == 0) {
+										if (TWFunc::Path_Exists(Restore_Name + "/boot.mtd.win")) {
+											// Remove the tar and the md5 file
+											cmd = "cd '" + Restore_Name + "' && rm -rf " + restore_part->Backup_FileName + "*";
+											system(cmd.c_str());
+											// Set new backup name
+											restore_part->Backup_FileName = "boot.mtd.win";
+											// Create an MD5 file for the new file
+											cmd = "cd '" + Restore_Name + "' && md5sum boot.mtd.win > boot.mtd.win.md5";
+											LOGINFO("cmd = %s\n", cmd.c_str());
+											system(cmd.c_str());
+											LOGINFO("boot.mtd.win created!\n");
+										}
+									}
 								}
 							}
 						}
 					}
-				}
-			}
-			if (check == 3) {
-				if (!TWFunc::Path_Exists(Restore_Name + "/boot.yaffs2.win")) {
-					string cmd = "cd '" + Restore_Name + "' && unpackbootimg " + restore_boot->Backup_FileName;
-					LOGINFO("%s will be converted to boot.yaffs2.win\n", restore_boot->Backup_FileName.c_str());
-					if (system(cmd.c_str()) == 0) {
-						string ramdisk = Restore_Name + "/" + restore_boot->Backup_FileName + "-ramdisk.gz";
-						string kernel = Restore_Name + "/" + restore_boot->Backup_FileName + "-zImage";
-						if(TWFunc::Path_Exists(ramdisk)
-						&& TWFunc::Path_Exists(kernel)) {
-							string initrd = Restore_Name + "/initrd.gz";
-							string zImage = Restore_Name + "/zImage";
-							rename(ramdisk.c_str(), initrd.c_str());
-							rename(kernel.c_str(), zImage.c_str());
-							// Create 'boot' tar
-							cmd = "cd '" + Restore_Name + "' && tar -cf boot.yaffs2.win initrd.gz zImage";
+					if (tw_restore_boot == 3) {
+						if (!TWFunc::Path_Exists(Restore_Name + "/boot.yaffs2.win")) {
+							string cmd = "cd '" + Restore_Name + "' && unpackbootimg " + restore_part->Backup_FileName;
+							LOGINFO("%s will be converted to boot.yaffs2.win\n", restore_part->Backup_FileName.c_str());
 							if (system(cmd.c_str()) == 0) {
-								if (TWFunc::Path_Exists(Restore_Name + "/boot.yaffs2.win")) {
-									// Remove all the boot.img* files
-									cmd = "cd '" + Restore_Name + "' && rm -rf " + restore_boot->Backup_FileName + "*";
-									system(cmd.c_str());
-									// Set new backup name
-									restore_boot->Backup_FileName = "boot.yaffs2.win";
-									// Create an MD5 file for the new file
-									cmd = "cd '" + Restore_Name + "' && md5sum boot.yaffs2.win > boot.yaffs2.win.md5";
-									system(cmd.c_str());
-									LOGINFO("boot.yaffs2.win created!\n");
+								string ramdisk = Restore_Name + "/" + restore_part->Backup_FileName + "-ramdisk.gz";
+								string kernel = Restore_Name + "/" + restore_part->Backup_FileName + "-zImage";
+								if(TWFunc::Path_Exists(ramdisk)
+								&& TWFunc::Path_Exists(kernel)) {
+									string initrd = Restore_Name + "/initrd.gz";
+									string zImage = Restore_Name + "/zImage";
+									rename(ramdisk.c_str(), initrd.c_str());
+									rename(kernel.c_str(), zImage.c_str());
+									// Create 'boot' tar
+									cmd = "cd '" + Restore_Name + "' && tar -cf boot.yaffs2.win initrd.gz zImage";
+									if (system(cmd.c_str()) == 0) {
+										if (TWFunc::Path_Exists(Restore_Name + "/boot.yaffs2.win")) {
+											// Remove all the boot.img* files
+											cmd = "cd '" + Restore_Name + "' && rm -rf " + restore_part->Backup_FileName + "*";
+											system(cmd.c_str());
+											// Set new backup name
+											restore_part->Backup_FileName = "boot.yaffs2.win";
+											// Create an MD5 file for the new file
+											cmd = "cd '" + Restore_Name + "' && md5sum boot.yaffs2.win > boot.yaffs2.win.md5";
+											system(cmd.c_str());
+											LOGINFO("boot.yaffs2.win created!\n");
+										}
+									}
 								}
 							}
 						}
 					}
+					if (handle_size_errors > 0) {
+						LOGINFO("Comparing %s's size to %s's size...\n", restore_part->Backup_FileName.c_str(), restore_part->Backup_Name.c_str());
+						min_size = 0;
+						Full_FileName = Restore_Name + "/" + restore_part->Backup_FileName;
+						if (restore_part->Backup_FileName.find("mtd") != string::npos || restore_part->Backup_FileName == "boot.img") {
+							// This is a dumped img
+							file_size = TWFunc::Get_File_Size(Full_FileName);
+							min_size = TWFunc::RoundUpSize(file_size, multiple);
+						} else {
+							// This is an archive
+							twrpTar tar;
+							tar.setfn(Full_FileName);
+							tar_size = tar.uncompressedSize();
+							min_size = TWFunc::RoundUpSize(tar_size, multiple);
+						}
+						// Now compare the size of the partition and the minimum required size
+						LOGINFO("'%s': size=%llub / min-req-size=%llub\n", restore_part->Backup_Name.c_str(), restore_part->Size, min_size);
+						if (restore_part->Size > min_size) {
+							LOGINFO("%s's size is adequate to restore %s.\n", restore_part->Backup_Name.c_str(), restore_part->Backup_FileName.c_str());
+							partition_count++;
+						} else {
+							LOGINFO("Size mismatch for %s.\n", restore_part->Backup_Name.c_str());
+							// cLK can help us deal with this case
+							// TWRP just needs to call later clkpartmgr
+							if (DataManager::Detect_BLDR() == 1) {
+								part_size += " " + restore_part->Backup_Name + ":" + TWFunc::to_string((int)(min_size/131072));
+							} else if (DataManager::Detect_BLDR() == 2) {
+								restore_part->Skip_From_Restore = true;
+								LOGERR("Skipping '%s' from restoring process.\n", restore_part->Backup_Name.c_str());
+							} else if (DataManager::Detect_BLDR() == 0)
+								partition_count++;
+						}
+						parts += restore_part->ORS_Mark;
+					} else {
+						partition_count++;
+					}
+				} else
+				if(restore_path == "/sboot"
+				|| restore_path == "/tboot"
+				|| restore_path == "/vboot"
+				|| restore_path == "/wboot"
+				|| restore_path == "/xboot"
+				|| restore_path == "/yboot"
+				|| restore_path == "/zboot") {
+					if (handle_size_errors > 0) {
+						LOGINFO("Comparing %s's size to %s's size...\n", restore_part->Backup_FileName.c_str(), restore_part->Backup_Name.c_str());
+						min_size = 0;
+						Full_FileName = Restore_Name + "/" + restore_part->Backup_FileName;
+						// This is a dumped img
+						file_size = TWFunc::Get_File_Size(Full_FileName);
+						min_size = TWFunc::RoundUpSize(file_size, multiple);
+						// Now compare the size of the partition and the minimum required size
+						LOGINFO("'%s': size=%llub / min-req-size=%llub\n", restore_part->Backup_Name.c_str(), restore_part->Size, min_size);
+						if (restore_part->Size > min_size) {
+							LOGINFO("%s's size is adequate to restore %s.\n", restore_part->Backup_Name.c_str(), restore_part->Backup_FileName.c_str());
+							partition_count++;
+						} else {
+							LOGINFO("Size mismatch for %s.\n", restore_part->Backup_Name.c_str());
+							// cLK can help us deal with this case
+							// TWRP just needs to call later clkpartmgr
+							if (DataManager::Detect_BLDR() == 1) {
+								part_size += " " + restore_part->Backup_Name + ":" + TWFunc::to_string((int)(min_size/131072));
+							} else {
+								restore_part->Skip_From_Restore = true;
+								LOGERR("Skipping '%s' from restoring process.\n", restore_part->Backup_Name.c_str());
+							}
+						}
+						parts += restore_part->ORS_Mark;
+					} else {
+						partition_count++;
+					}
+				} else
+				if(restore_path == "/sd-ext"
+				|| restore_path == "/sdext2") {
+					if (handle_size_errors > 0) {
+						LOGINFO("Comparing %s's size to %s's size...\n", restore_part->Backup_FileName.c_str(), restore_part->Backup_Name.c_str());
+						min_size = 0;
+						Full_FileName = Restore_Name + "/" + restore_part->Backup_FileName;
+						if (!TWFunc::Path_Exists(Full_FileName)) {
+							int index = 0;
+							char split_index[5];
+							sprintf(split_index, "%03i", index);
+							Full_FileName += split_index;
+							while (TWFunc::Path_Exists(Full_FileName)) {
+								gui_print("Getting size of archive %i...\n", index+1);
+								twrpTar tar;
+								tar.setfn(Full_FileName);
+								min_size += tar.uncompressedSize();
+								index++;		
+								sprintf(split_index, "%03i", index);
+								Full_FileName = Restore_Name + "/" + restore_part->Backup_FileName + split_index;
+							}
+							if (index == 0)
+								LOGERR("Error locating restore file: '%s'\n", Full_FileName.c_str());
+						} else {
+							twrpTar tar;
+							tar.setfn(Full_FileName);
+							min_size = tar.uncompressedSize();
+							// check if the archive contains dalvik-cache.
+							// If not we must add enough space for it
+							if (restore_path == "/sd-ext") {
+								restore_sdext = 1;
+								if (!tar.entryExists("sd-ext/dalvik-cache/"))
+									dalvik_found_on_sdext = 0;
+							} else {
+								restore_sdext2 = 1;
+								if (!tar.entryExists("sdext2/dalvik-cache/"))
+									dalvik_found_on_sdext2 = 0;
+							}
+						}
+						if (nodalvikcache && dalvik_host == restore_path)
+							min_size += dc_size;
+						// Now compare the size of the partition and the minimum required size
+						LOGINFO("'%s': size=%llub / min-req-size=%llub\n", restore_part->Backup_Name.c_str(), restore_part->Size, min_size);
+						if (restore_part->Size > min_size) {
+							LOGINFO("%s's size is adequate to restore %s.\n", restore_part->Backup_Name.c_str(), restore_part->Backup_FileName.c_str());
+							partition_count++;
+						} else {
+							LOGINFO("Size mismatch for %s.\n", restore_part->Backup_Name.c_str());
+							restore_part->Skip_From_Restore = true;
+							LOGERR("Skipping '%s' from restoring process.\n", restore_part->Backup_Name.c_str());
+						}
+						parts += restore_part->ORS_Mark;
+					} else {
+						partition_count++;
+					}
+				}
+				if (!restore_part->Skip_From_Restore && !restore_part->Check_MD5(Restore_Name))
+					return false;
+				if (!restore_part->Skip_From_Restore && restore_part->Has_SubPartition) {
+					std::vector<TWPartition*>::iterator subpart;
+					for (subpart = Partitions.begin(); subpart != Partitions.end(); subpart++) {
+						if ((*subpart)->Is_SubPartition && (*subpart)->SubPartition_Of == restore_part->Mount_Point) {
+							if (!(*subpart)->Check_MD5(Restore_Name))
+								return false;
+						}
+					}
 				}
 			}
-			if (hserr > 0) {
-				LOGINFO("Comparing %s's size to %s's size...\n", restore_boot->Backup_FileName.c_str(), restore_boot->Backup_Name.c_str());
-				min_size = 0;
-				Full_FileName = Restore_Name + "/" + restore_boot->Backup_FileName;
-				if (restore_boot->Backup_FileName.find("mtd") != string::npos || restore_boot->Backup_FileName == "boot.img") {
-					// This is a dumped img
-					file_size = TWFunc::Get_File_Size(Full_FileName);
-					min_size = TWFunc::RoundUpSize(file_size, multiple);
-				} else {
-					// This is an archive
-					twrpTar tar;
-					tar.setfn(Full_FileName);
-					tar_size = tar.uncompressedSize();
-					min_size = TWFunc::RoundUpSize(tar_size, multiple);
-				}
-				// Now compare the size of the partition and the minimum required size
-				LOGINFO("'boot': size=%llub / min-req-size=%llub\n", restore_boot->Size, min_size);
-				if (restore_boot->Size > min_size) {
-					LOGINFO("%s's size is adequate to restore %s.\n", restore_boot->Backup_Name.c_str(), restore_boot->Backup_FileName.c_str());
-					partition_count++;
-				} else {
-					LOGINFO("Size mismatch for %s.\n", restore_boot->Backup_Name.c_str());
-					// cLK can help us deal with this case
-					// TWRP just needs to call later clkpartmgr
-					if (DataManager::Detect_BLDR() == 1) {
-						part_size += " boot:" + TWFunc::to_string((int)(min_size/131072));
-					} else if (DataManager::Detect_BLDR() == 2) {
-						restore_boot = NULL;
-						LOGERR("Size of 'boot' partition is less than needed.\n");
-						LOGERR("Skipping 'boot' from restoring process.\n");
-					} else if (DataManager::Detect_BLDR() == 0)
-						partition_count++;
-				}
-				parts += "B";
-			} else
-				partition_count++;
+			start_pos = end_pos + 1;
+			end_pos = Restore_List.find(";", start_pos);
 		}
 	}
-#endif
-	if (tw_restore_andsec > 0) {
-		restore_andsec = Find_Partition_By_Path("/and-sec");
-		if (restore_andsec == NULL)
-			LOGERR("Unable to locate android secure partition.\n");
-		else {
-			partition_count++;
-			parts += "A";
-		}
-	}
-	if (tw_restore_sdext > 0) {
-		restore_sdext = Find_Partition_By_Path("/sd-ext");
-		if (restore_sdext == NULL)
-			LOGERR("Unable to locate sd-ext partition.\n");
-		else {
-			if (hserr > 0) {
-				LOGINFO("Comparing %s's size to %s's size...\n", restore_sdext->Backup_FileName.c_str(), restore_sdext->Backup_Name.c_str());
-				min_size = 0;
-				Full_FileName = Restore_Name + "/" + restore_sdext->Backup_FileName;
-				if (!TWFunc::Path_Exists(Full_FileName)) {
-					int index = 0;
-					char split_index[5];
-					sprintf(split_index, "%03i", index);
-					Full_FileName += split_index;
-					while (TWFunc::Path_Exists(Full_FileName)) {
-						gui_print("Getting size of archive %i...\n", index+1);
-						twrpTar tar;
-						tar.setfn(Full_FileName);
-						min_size += tar.uncompressedSize();
-						index++;		
-						sprintf(split_index, "%03i", index);
-						Full_FileName = Restore_Name + "/" + restore_sys->Backup_FileName + split_index;
-					}
-					if (index == 0)
-						LOGERR("Error locating restore file: '%s'\n", Full_FileName.c_str());
-				} else {
-					twrpTar tar;
-					tar.setfn(Full_FileName);
-					min_size = tar.uncompressedSize();
-					// check if the archive contains dalvik-cache.
-					// If not we must add enough space for it
-					if (!tar.entryExists("sd-ext/dalvik-cache/"))
-						dalvik_found_on_sdext = 0;
-				}
-				if (nodalvikcache && dalvik_host == "/sd-ext")
-					min_size += dc_size;
-				// Now compare the size of the partition and the minimum required size
-				LOGINFO("'sd-ext': size=%llub / min-req-size=%llub\n", restore_sdext->Size, min_size);
-				if (restore_sdext->Size > min_size) {
-					LOGINFO("%s's size is adequate to restore %s.\n", restore_sdext->Backup_Name.c_str(), restore_sdext->Backup_FileName.c_str());
-					partition_count++;
-				} else {
-					LOGINFO("Size mismatch for %s.\n", restore_sdext->Backup_Name.c_str());
-					// TODO: TWRP could repartition card in this case
-					//	 but better just inform that sd-ext partition is too small for this backup to be restored
-					restore_sdext = NULL;
-					LOGERR("Size of 'sd-ext' partition is less than needed.\n");
-					LOGERR("Skipping 'sd-ext' from restoring process.\n");
-				}
-				parts += "E";
-			} else
-				partition_count++;
-		}
-	}
-	if (tw_restore_sdext2 > 0) {
-		restore_sdext2 = Find_Partition_By_Path("/sdext2");
-		if (restore_sdext2 == NULL)
-			LOGERR("Unable to locate sdext2 partition.\n");
-		else {
-			if (hserr > 0) {
-				LOGINFO("Comparing %s's size to %s's size...\n", restore_sdext2->Backup_FileName.c_str(), restore_sdext2->Backup_Name.c_str());
-				min_size = 0;
-				Full_FileName = Restore_Name + "/" + restore_sdext2->Backup_FileName;
-				if (!TWFunc::Path_Exists(Full_FileName)) {
-					int index = 0;
-					char split_index[5];
-					sprintf(split_index, "%03i", index);
-					Full_FileName += split_index;
-					while (TWFunc::Path_Exists(Full_FileName)) {
-						gui_print("Checking archive %i...\n", index+1);
-						twrpTar tar;
-						tar.setfn(Full_FileName);
-						min_size += tar.uncompressedSize();
-						index++;		
-						sprintf(split_index, "%03i", index);
-						Full_FileName = Restore_Name + "/" + restore_sdext2->Backup_FileName + split_index;
-					}
-					if (index == 0)
-						LOGERR("Error locating restore file: '%s'\n", Full_FileName.c_str());
-				} else {
-					twrpTar tar;
-					tar.setfn(Full_FileName);
-					min_size = tar.uncompressedSize();
-					// check if the archive contains dalvik-cache.
-					// If not we must add enough space for it
-					if (!tar.entryExists("sdext2/dalvik-cache/"))
-						dalvik_found_on_sdext2 = 0;
-				}
-				if (nodalvikcache && dalvik_host == "/sdext2")
-					min_size += dc_size;
-				// Now compare the size of the partition and the minimum required size
-				LOGINFO("'sdext2': size=%llub / min-req-size=%llub\n", restore_sdext2->Size, min_size);
-				if (restore_sdext2->Size > min_size) {
-					LOGINFO("%s's size is adequate to restore %s.\n", restore_sdext2->Backup_Name.c_str(), restore_sdext2->Backup_FileName.c_str());
-					partition_count++;
-				} else {
-					LOGINFO("Size mismatch for %s.\n", restore_sdext2->Backup_Name.c_str());
-					// TODO: TWRP could repartition card in this case
-					//	 but better just inform that sdext2 partition is too small for this backup to be restored
-					restore_sdext2 = NULL;
-					LOGERR("Size of 'sdext2' partition is less than needed.\n");
-					LOGERR("Skipping 'sdext2' from restoring process.\n");
-				}
-				parts += "X";
-			} else
-				partition_count++;
-		}
-	}
-	
-	if (hserr > 0 && DataManager::Detect_BLDR() == 1) {
+	if (skip_md5_check <= 0)
+		gui_print("Done verifying MD5.\n");
+
+	if (handle_size_errors > 0 && DataManager::Detect_BLDR() == 1) {
 		if (!data_size.empty()) {
 			// .nodalvikcache file was not found
 			if (!nodalvikcache) {
 				// data backup is to be restored, BUT no dalvik-cache was detected inside 
-				if (restore_data != NULL && !dalvik_found_on_data) {
+				if (restore_data && !dalvik_found_on_data) {
 					// Either sdext backup is to be restored, BUT no dalvik-cache was detected inside
-					if((restore_sdext != NULL && !dalvik_found_on_sdext)
+					if((restore_sdext && !dalvik_found_on_sdext)
 					/* or sdext2 backup is to be restored, BUT no dalvik-cache was detected inside	  */
-					|| (restore_sdext2 != NULL && !dalvik_found_on_sdext2)) {
+					|| (restore_sdext2 && !dalvik_found_on_sdext2)) {
 						int i = 1; float incr = 1.0;
 						DataManager::GetValue(TW_INCR_SIZE, i);
 						incr += (float)i / (float)100;
@@ -1528,65 +1304,37 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 		return false;
 	}
 
-	if (skip_md5_check > 0)
-		gui_print("Skipping MD5 check based on user setting.\n");
-	else {
-		// Check MD5 files first before restoring to ensure that all of them match before starting a restore
-		TWFunc::GUI_Operation_Text(TW_VERIFY_MD5_TEXT, "Verifying MD5");
-		gui_print("Verifying MD5...\n");
-		if (restore_sys != NULL && !restore_sys->Check_MD5(Restore_Name))
-			return false;
-		if (restore_data != NULL && !restore_data->Check_MD5(Restore_Name))
-			return false;
-		if (restore_data != NULL && restore_data->Has_SubPartition) {
-			std::vector<TWPartition*>::iterator subpart;
-
-			for (subpart = Partitions.begin(); subpart != Partitions.end(); subpart++) {
-				if ((*subpart)->Is_SubPartition && (*subpart)->SubPartition_Of == restore_data->Mount_Point) {
-					if (!(*subpart)->Check_MD5(Restore_Name))
-						return false;
-				}
-			}
-		}
-		if (restore_cache != NULL && !restore_cache->Check_MD5(Restore_Name))
-			return false;
-		if (restore_boot != NULL && !restore_boot->Check_MD5(Restore_Name))
-			return false;
-		if (restore_andsec != NULL && !restore_andsec->Check_MD5(Restore_Name))
-			return false;
-		if (restore_sdext != NULL && !restore_sdext->Check_MD5(Restore_Name))
-			return false;
-		if (restore_sdext2 != NULL && !restore_sdext2->Check_MD5(Restore_Name))
-			return false;
-		gui_print("Done verifying MD5.\n");
-	}
-
 	gui_print("Restoring %i partitions...\n", partition_count);
 	DataManager::SetProgress(0.0);
-	if (restore_sys != NULL && !Restore_Partition(restore_sys, Restore_Name, partition_count))
-		return false;
-	if (restore_data != NULL && !Restore_Partition(restore_data, Restore_Name, partition_count))
-		return false;
-	if (restore_cache != NULL && !Restore_Partition(restore_cache, Restore_Name, partition_count))
-		return false;
-	if (restore_boot != NULL && !Restore_Partition(restore_boot, Restore_Name, partition_count))
-		return false;
-	if (restore_andsec != NULL && !Restore_Partition(restore_andsec, Restore_Name, partition_count))
-		return false;
-	if (restore_sdext != NULL && !Restore_Partition(restore_sdext, Restore_Name, partition_count))
-		return false;
-	if (restore_sdext2 != NULL && !Restore_Partition(restore_sdext2, Restore_Name, partition_count))
-		return false;
+	start_pos = 0;
+	if (!Restore_List.empty()) {
+		end_pos = Restore_List.find(";", start_pos);
+		while (end_pos != string::npos && start_pos < Restore_List.size()) {
+			restore_path = Restore_List.substr(start_pos, end_pos - start_pos);
+			restore_part = Find_Partition_By_Path(restore_path);
+			if (restore_part != NULL) {
+				if (restore_part->Skip_From_Restore) {
+					LOGERR("Skipping '%s' partition.\n", restore_path.c_str());
+				} else {
+					if (!Restore_Partition(restore_part, Restore_Name, partition_count))
+						return false;
+				}
+			} else {
+				LOGERR("Unable to locate '%s' partition for restoring.\n", restore_path.c_str());
+			}
+			start_pos = end_pos + 1;
+			end_pos = Restore_List.find(";", start_pos);
+		}
+	}
 
-	//sleep(3);
 	TWFunc::GUI_Operation_Text(TW_UPDATE_SYSTEM_DETAILS_TEXT, "Updating System Details");
 	Update_System_Details(true);
 	UnMount_Main_Partitions();
 	time(&rStop);
 	gui_print("[RESTORE COMPLETED IN %d SECONDS]\n\n",(int)difftime(rStop,rStart));
-	// hserr will be negative if we are restoring via OpenRecoveryScript
+	// handle_size_errors will be negative if we are restoring via OpenRecoveryScript
 	// reset to 1, the pre-restore selected value
-	if (hserr < 0)
+	if (handle_size_errors < 0)
 		DataManager::SetValue("tw_handle_restore_size", 1);
 	return true;
 }
