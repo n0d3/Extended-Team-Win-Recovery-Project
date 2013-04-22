@@ -261,6 +261,7 @@ public:
     virtual int NotifyKey(int key);
     virtual int NotifyVarChange(std::string varName, std::string value);
 	virtual int doActions();
+	virtual std::string Function_Name();
 
 protected:
     class Action

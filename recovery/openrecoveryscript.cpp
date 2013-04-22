@@ -251,13 +251,34 @@ int OpenRecoveryScript::run_script_file(void) {
 						} else if ((value2[i] == 'B' || value2[i] == 'b') && Partition_List.find("/boot;") != string::npos) {
 							Restore_List += "/boot;";
 							gui_print("Boot\n");
+						} else if ((value2[i] == 'U' || value2[i] == 'u') && Partition_List.find("/sboot;") != string::npos) {
+							Restore_List += "/sboot;";
+							gui_print("sBoot\n");
+						} else if ((value2[i] == 'T' || value2[i] == 't') && Partition_List.find("/tboot;") != string::npos) {
+							Restore_List += "/tboot;";
+							gui_print("tBoot\n");
+						} else if ((value2[i] == 'V' || value2[i] == 'v') && Partition_List.find("/vboot;") != string::npos) {
+							Restore_List += "/vboot;";
+							gui_print("vBoot\n");
+						} else if ((value2[i] == 'W' || value2[i] == 'w') && Partition_List.find("/wboot;") != string::npos) {
+							Restore_List += "/wboot;";
+							gui_print("wBoot\n");
+						} else if ((value2[i] == 'X' || value2[i] == 'x') && Partition_List.find("/xboot;") != string::npos) {
+							Restore_List += "/xboot;";
+							gui_print("xBoot\n");
+						} else if ((value2[i] == 'Y' || value2[i] == 'y') && Partition_List.find("/yboot;") != string::npos) {
+							Restore_List += "/yboot;";
+							gui_print("yBoot\n");
+						} else if ((value2[i] == 'Z' || value2[i] == 'z') && Partition_List.find("/zboot;") != string::npos) {
+							Restore_List += "/zboot;";
+							gui_print("zBoot\n");
 						} else if ((value2[i] == 'A' || value2[i] == 'a') && Partition_List.find("/and-sec;") != string::npos) {
 							Restore_List += "/and-sec;";
 							gui_print("Android Secure\n");
 						} else if ((value2[i] == 'E' || value2[i] == 'e') && Partition_List.find("/sd-ext;") != string::npos) {
 							Restore_List += "/sd-ext;";
 							gui_print("SD-Ext\n");
-						} else if ((value2[i] == 'X' || value2[i] == 'x') && Partition_List.find("/sdext2;") != string::npos) {
+						} else if ((value2[i] == 'F' || value2[i] == 'f') && Partition_List.find("/sdext2;") != string::npos) {
 							Restore_List += "/sdext2;";
 							gui_print("SDExt2\n");
 						} else if (value2[i] == 'M' || value2[i] == 'm') {
@@ -515,13 +536,34 @@ int OpenRecoveryScript::Backup_Command(string Options) {
 		} else if (Options.substr(i, 1) == "B" || Options.substr(i, 1) == "b") {
 			Backup_List += "/boot;";
 			gui_print("Boot\n");
+		} else if (Options.substr(i, 1) == "U" || Options.substr(i, 1) == "u") {
+			Backup_List += "/sboot;";
+			gui_print("sBoot\n");
+		} else if (Options.substr(i, 1) == "T" || Options.substr(i, 1) == "t") {
+			Backup_List += "/tboot;";
+			gui_print("tBoot\n");
+		} else if (Options.substr(i, 1) == "V" || Options.substr(i, 1) == "v") {
+			Backup_List += "/vboot;";
+			gui_print("vBoot\n");
+		} else if (Options.substr(i, 1) == "W" || Options.substr(i, 1) == "w") {
+			Backup_List += "/wboot;";
+			gui_print("wBoot\n");
+		} else if (Options.substr(i, 1) == "X" || Options.substr(i, 1) == "x") {
+			Backup_List += "/xboot;";
+			gui_print("xBoot\n");
+		} else if (Options.substr(i, 1) == "Y" || Options.substr(i, 1) == "y") {
+			Backup_List += "/yboot;";
+			gui_print("yBoot\n");
+		} else if (Options.substr(i, 1) == "Z" || Options.substr(i, 1) == "z") {
+			Backup_List += "/zboot;";
+			gui_print("zBoot\n");
 		} else if (Options.substr(i, 1) == "A" || Options.substr(i, 1) == "a") {
 			Backup_List += "/and-sec;";
 			gui_print("Android Secure\n");
 		} else if (Options.substr(i, 1) == "E" || Options.substr(i, 1) == "e") {
 			Backup_List += "/sd-ext;";
 			gui_print("SD-Ext\n");
-		} else if (Options.substr(i, 1) == "X" || Options.substr(i, 1) == "x") {
+		} else if (Options.substr(i, 1) == "F" || Options.substr(i, 1) == "f") {
 			Backup_List += "/sdext2;";
 			gui_print("SDExt2\n");
 		} else if (Options.substr(i, 1) == "O" || Options.substr(i, 1) == "o") {

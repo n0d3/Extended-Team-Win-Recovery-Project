@@ -109,6 +109,8 @@ class TWPartition {
 		string MTD_Name;                                              
 		// dev/mtd/mtd# for MTD devices
 		string MTD_Dev;
+		// Letter used in ORS
+		string ORS_Mark;
 
 	// Extended functions
 		// Size of dalvik-cache folder (used when calculating the backup size if we skip dalvik during backup)
@@ -121,6 +123,8 @@ class TWPartition {
 		string Path_For_DataOnExt;
 		// For restoring a CWM-backup file type						  
 		bool Use_unyaffs_To_Restore;
+		// For skipping a partition if size check returns error					  
+		bool Skip_From_Restore;
 	
 	protected:
 		// Processes a fstab line

@@ -58,6 +58,7 @@ TWPartition::TWPartition(void) {
 	Can_Be_Mounted = false;
 	Can_Be_Wiped = false;
 	Can_Be_Backed_Up = false;
+	Skip_From_Restore = false;
 	Wipe_During_Factory_Reset = false;
 	Wipe_Available_in_GUI = false;
 	Is_SubPartition = false;
@@ -87,6 +88,7 @@ TWPartition::TWPartition(void) {
 	Is_Encrypted = false;
 	Is_Decrypted = false;
 	Decrypted_Block_Device = "";
+	ORS_Mark = "";
 	Display_Name = "";
 	Backup_Display_Name = "";
 	Restore_Display_Name = "";
@@ -216,6 +218,7 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 			Setup_File_System(Display_Error);
 		if (Mount_Point == "/system") {
 			if (Is_Present) {
+				ORS_Mark = "S";
 				Display_Name = "System";
 				Backup_Display_Name = Display_Name;
 				Restore_Display_Name = Display_Name;
@@ -226,6 +229,7 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 			}
 		} else if (Mount_Point == "/data") {
 			if (Is_Present) {
+				ORS_Mark = "D";
 				Display_Name = "Data";
 				Restore_Display_Name = Display_Name;
 				if (DataManager::GetIntValue(TW_DATA_ON_EXT))
@@ -296,6 +300,7 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 			}
 		} else if (Mount_Point == "/cache") {
 			if (Is_Present) {
+				ORS_Mark = "C";
 				Display_Name = "Cache";
 				Backup_Display_Name = Display_Name;
 				Restore_Display_Name = Display_Name;
@@ -321,6 +326,7 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 				DataManager::SetValue(TW_HAS_DATADATA, 0);
 		} else if (Mount_Point == "/sd-ext") {
 			if (Is_Present) {
+				ORS_Mark = "E";
 				Wipe_During_Factory_Reset = true;
 				Display_Name = "SD-Ext";
 				Restore_Display_Name = Display_Name;
@@ -348,6 +354,7 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 			}
 		} else if (Mount_Point == "/sdext2") {
 			if (Is_Present) {
+				ORS_Mark = "F";
 				Wipe_During_Factory_Reset = true;
 				Display_Name = "SDExt2";
 				Backup_Display_Name = Display_Name;
@@ -364,6 +371,7 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 				DataManager::SetValue(TW_SDEXT2_SIZE, 0);
 			}
 		} else if (Mount_Point == "/boot") {
+			ORS_Mark = "B";
 			Display_Name = "Boot";
 			Backup_Display_Name = Display_Name;
 			Restore_Display_Name = Display_Name;
@@ -432,6 +440,7 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 		if (Is_Present)
 			Setup_Image(Display_Error);
 		if (Mount_Point == "/boot") {
+			ORS_Mark = "B";
 			Display_Name = "Boot";
 			Backup_Display_Name = Display_Name;
 			Restore_Display_Name = Display_Name;
@@ -439,6 +448,7 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 			Wipe_Available_in_GUI = true;
 			DataManager::SetValue("tw_boot_is_mountable", 0);
 		} else if (Mount_Point == "/recovery") {
+			ORS_Mark = "R";
 			Display_Name = "Recovery";
 			Backup_Display_Name = Display_Name;
 			Restore_Display_Name = Display_Name;
@@ -659,6 +669,10 @@ int TWPartition::Setup_Extra_Boot(string name, string mtd_num) {
 
 	string x = name;
 	x.resize(1);
+	if (x == "s")
+		ORS_Mark = "U";
+	else
+		ORS_Mark = x;
 	Display_Name = x + "Boot";
 	Backup_Display_Name = Display_Name;
 	Restore_Display_Name = Display_Name;
@@ -699,6 +713,7 @@ void TWPartition::Setup_AndSec(void) {
 	Backup_Name = "and-sec";
 	Can_Be_Backed_Up = true;
 	Has_Android_Secure = true;
+	ORS_Mark = "A";
 	Symlink_Path = Mount_Point + "/.android_secure";
 	Symlink_Mount_Point = "/and-sec";
 	Backup_Path = Symlink_Mount_Point;
@@ -2030,6 +2045,7 @@ bool TWPartition::Backup_Dump_Image(string backup_folder) {
  * Partition restoring...
  */
 bool TWPartition::Restore(string restore_folder) {
+	Skip_From_Restore = false;
 	size_t first_period, second_period;
 	string Restore_File_System, FileName;
 	
@@ -2347,33 +2363,10 @@ unsigned int TWPartition::FS_Type_Via_statfs() {
 	return st.f_type;
 }
 
-// TODO: Basic check for boot partition
-// If 'ANDROID!' is detected then a boot.img is flashed (FS is mtd)
-int TWPartition::CheckFor_ValidIMG() {
-	if (MTD_Dev.empty())
-		return 0;
-
-        int st = -1;
-        string::size_type i = 0;
-	char header[9];
-        
-        ifstream f;
-        f.open(MTD_Dev.c_str(), ios::in | ios::binary);
-        f.get(header, 9);
-        f.close();
-	for (i=0; i<9; i++) {
-		header[i] &= 0xff;
-	}
-
-	if (header[0] == 0xff && header[1] == 0xff && header[2] == 0xff && header[3] == 0xff && header[4] == 0xff && header[5] == 0xff && header[6] == 0xff && header[7] == 0xff)		
-		st = 0;
-	else if (header[0] == 0x41 && header[1] == 0x4e && header[2] == 0x44 && header[3] == 0x52 && header[4] == 0x4f && header[5] == 0x49 && header[6] == 0x44 && header[7] == 0x21)		
-		st = 1;
-
-	return st;
-}
-
 bool TWPartition::Check_MD5(string restore_folder) {
+	if (DataManager::GetIntValue(TW_SKIP_MD5_CHECK_VAR) > 0)
+		return true;
+
 	string Full_Filename, md5file, NandroidMD5;
 	char split_filename[512];
 	int index = 0;
