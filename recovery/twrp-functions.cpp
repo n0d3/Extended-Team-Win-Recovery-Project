@@ -555,6 +555,29 @@ int TWFunc::drop_caches(void) {
 	return 0;
 }
 
+// Button backlight control
+void TWFunc::toggle_keybacklight(unsigned int usec) {
+	string cmd, res;
+	switch (usec) {
+		case 0: // just turn off button-backlight
+			cmd = "echo \"0\" > /sys/class/leds/button-backlight/brightness";
+			Exec_Cmd(cmd, res);
+			break;
+		case 1: // just turn on button-backlight
+			cmd = "echo \"1\" > /sys/class/leds/button-backlight/brightness";
+			Exec_Cmd(cmd, res);
+			break;
+		default: // toggle button-backlight
+			cmd = "echo \"1\" > /sys/class/leds/button-backlight/brightness";
+			Exec_Cmd(cmd, res);
+			usleep(usec);
+			cmd = "echo \"0\" > /sys/class/leds/button-backlight/brightness";
+			Exec_Cmd(cmd, res);
+			break;
+	}
+	return;
+}
+
 // Screen off
 void TWFunc::screen_off(void) {
 	if (screen_state != TW_SCRN_OFF) {
@@ -793,7 +816,7 @@ int TWFunc::Vibrate(FeedbackReason reason) {
 	return 0;
 }
 
-void TWFunc::Take_Screenshot(void) {
+int TWFunc::Take_Screenshot(void) {
 	// Where to store the screenshot
 	string current_storage_path = DataManager::GetCurrentStoragePath();
 	string twrp_dir = current_storage_path + "/TWRP";
@@ -857,8 +880,12 @@ void TWFunc::Take_Screenshot(void) {
 	bmp_num = temp;
 	string bmp_full_pth = scr_path + "/TWRPScr-" + bmp_num + ".bmp";	
 
-    	if (gr_screenshot(bmp_full_pth.c_str()))
+    	if (gr_screenshot(bmp_full_pth.c_str())) {
+		toggle_keybacklight(90000); // notify user by blinking key backlight
 		LOGINFO("Saved screenshot at %s\n", bmp_full_pth.c_str());
+		return 0;
+	}
+	return 1;
 }
 
 /* Checks if a Directory has any of the subDirs we're looking for and

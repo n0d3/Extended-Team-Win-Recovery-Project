@@ -314,6 +314,16 @@ void GUIAction::operation_end(const int operation_status, const int simulate) {
 		blankTimer.resetTimerAndUnblank();
 }
 
+// lame...
+std::string GUIAction::Function_Name() {
+	std::string func;
+	if (mActions.size() < 1)
+		func = "";
+	else if (mActions.size() >= 1)
+		func = mActions.at(0).mFunction;
+	return func;
+}
+
 int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 	static string zip_queue[10];
 	static int zip_queue_index;
@@ -635,6 +645,19 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 		operation_start("Sleep");
 		usleep(atoi(arg.c_str()));
 		operation_end(0, simulate);
+		return 0;
+	}
+	if (function == "screenshot") {
+		int y, z;
+		DataManager::GetValue(TW_ACTION_BUSY, y);
+		DataManager::GetValue(TW_SCREENSHOT_VAR, z);
+		if (y != 1 && z == 1) {
+			string current_storage_path = DataManager::GetCurrentStoragePath();
+			if (!PartitionManager.Is_Mounted_By_Path(current_storage_path))
+				PartitionManager.Mount_Current_Storage(false);
+			if (PartitionManager.Is_Mounted_By_Path(current_storage_path))
+				TWFunc::Take_Screenshot();
+		}
 		return 0;
 	}
 //Threaded functions
@@ -1312,18 +1335,6 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			}
 			operation_end(ret_val, simulate);
 			TWFunc::Vibrate((FeedbackReason)150);
-			return 0;
-		}	
-		if (function == "screenshot") {
-			int z;
-			DataManager::GetValue(TW_SCREENSHOT_VAR, z);
-			if (z == 1) {
-				string current_storage_path = DataManager::GetCurrentStoragePath();
-				if (!PartitionManager.Is_Mounted_By_Path(current_storage_path))
-					PartitionManager.Mount_Current_Storage(false);
-				if (PartitionManager.Is_Mounted_By_Path(current_storage_path))
-					TWFunc::Take_Screenshot();
-			}
 			return 0;
 		}	
 		if (function == "fschk") {

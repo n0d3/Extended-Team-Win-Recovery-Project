@@ -99,15 +99,17 @@ class TWFunc {
 		static int set_bootloader_msg(const struct bootloader_message *in);
 
 		// Extended functions
+		static int CheckFor_ValidIMG(string mtdName);
 		static unsigned long RoundUpSize(unsigned long sz, unsigned long multiple);
 		static void apply_system_tweaks(int charge_mode);
+		static void toggle_keybacklight(unsigned int usec);
 		static void screen_off(void);
 		static void power_save(void);
 		static void power_restore(int charge_mode);
 		static bool replace_string(string& str, const string& search_str, const string& replace_str);
 		static string to_string(int number);
 		static string Find_File_On_Storage(string Filename);
-		static void Take_Screenshot(void);
+		static int Take_Screenshot(void);
 		static int Vibrate(FeedbackReason reason);
 		static int SubDir_Check(string Dir, string subDir1, string subDir2, string subDir3, string subDir4, string subDir5, int min);
 		static vector<string> split_string(const string &in, char del, bool skip_empty);
