@@ -896,6 +896,39 @@ int TWFunc::SubDir_Check(string Dir, string subDir1, string subDir2, string subD
 	return 0;
 }
 
+/* Basic quick check for an 'MTD' boot partition.
+ * If 'ANDROID!' is detected then a valid boot.img is flashed,
+ * so rebooting from that partition can be allowed in ui.
+ */
+int TWFunc::CheckFor_ValidIMG(string mtdName) {
+	if (mtdName.empty())
+		return 0;
+	TWPartition* Part = PartitionManager.Find_Partition_By_Path("/" + mtdName);
+	if (Part == NULL) {
+		LOGERR("Cannot find volume '/%s'!\n", mtdName.c_str());
+		return -1;
+	}
+
+        int st = -1;
+        string::size_type i = 0;
+	char header[9];
+        
+        ifstream f;
+        f.open(Part->MTD_Dev.c_str(), ios::in | ios::binary);
+        f.get(header, 9);
+        f.close();
+	for (i=0; i<9; i++) {
+		header[i] &= 0xff;
+	}
+
+	if (header[0] == 0xff && header[1] == 0xff && header[2] == 0xff && header[3] == 0xff && header[4] == 0xff && header[5] == 0xff && header[6] == 0xff && header[7] == 0xff)		
+		st = 0;
+	else if (header[0] == 0x41 && header[1] == 0x4e && header[2] == 0x44 && header[3] == 0x52 && header[4] == 0x4f && header[5] == 0x49 && header[6] == 0x44 && header[7] == 0x21)		
+		st = 1;
+
+	return st;
+}
+
 int TWFunc::Check_su_Perms(void) {
 	struct stat st;
 	int ret = 0;

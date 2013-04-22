@@ -68,7 +68,6 @@ int TWPartitionManager::Process_Fstab(string Fstab_Filename, bool Display_Error)
 		LOGERR("Critical Error: Unable to open fstab at '%s'.\n", Fstab_Filename.c_str());
 		return false;
 	}
-	Partitions.clear();
 	while (fgets(fstab_line, sizeof(fstab_line), fstabFile) != NULL) {
 		if (fstab_line[0] != '/')
 			continue;
@@ -84,7 +83,7 @@ int TWPartitionManager::Process_Fstab(string Fstab_Filename, bool Display_Error)
 			Partitions.push_back(partition);
 			if (partition->Is_Settings_Storage) {
 				Found_Settings_Storage = true;
-				// Why not try to read SettingsFile as soon as storage can be accessible!
+				// Try to read SettingsFile as soon as storage can be accessible!
 				DataManager::ReadSettingsFile();
 			}
 		} else {
@@ -115,6 +114,73 @@ int TWPartitionManager::Process_Fstab(string Fstab_Filename, bool Display_Error)
 	UnMount_Main_Partitions();
 	Fstab_Proc_Done = 1;
 	return true;
+}
+
+void TWPartitionManager::Process_Extra_Boot_Partitions(void) {
+	int lines_read, total_mtd = 0;
+	vector<string> lines;
+	lines_read = TWFunc::read_file_line_by_line("/proc/mtd", lines, true);
+	if (lines_read && lines.size() > 0) {
+		int i;
+		vector<string> line_parts;
+		string mtd_num;
+		Partitions.clear();
+		for (i = 1; i < (int)lines.size(); i++) {
+			line_parts = TWFunc::split_string(lines[i], ' ', true);
+			if (line_parts.size() > 0) {
+				mtd_num = line_parts[0].substr(3, 1);
+				total_mtd++;
+				TWPartition* partition = new TWPartition();
+				if (line_parts[3] == "\"sboot\"") {
+					DataManager::SetValue("tw_has_sboot_ptn", 1);
+					if (partition->Setup_Extra_Boot("sboot", mtd_num) == 0)
+						Partitions.push_back(partition);
+					else
+						delete partition;
+				} else if (line_parts[3] == "\"tboot\"") {
+					DataManager::SetValue("tw_has_tboot_ptn", 1);
+					if (partition->Setup_Extra_Boot("tboot", mtd_num) == 0)
+						Partitions.push_back(partition);
+					else
+						delete partition;
+				} else if (line_parts[3] == "\"vboot\"") {
+					DataManager::SetValue("tw_has_vboot_ptn", 1);
+					if (partition->Setup_Extra_Boot("vboot", mtd_num) == 0)
+						Partitions.push_back(partition);
+					else
+						delete partition;
+				} else if (line_parts[3] == "\"wboot\"") {
+					DataManager::SetValue("tw_has_wboot_ptn", 1);
+					if (partition->Setup_Extra_Boot("wboot", mtd_num) == 0)
+						Partitions.push_back(partition);
+					else
+						delete partition;
+				} else if (line_parts[3] == "\"xboot\"") {
+					DataManager::SetValue("tw_has_xboot_ptn", 1);
+					if (partition->Setup_Extra_Boot("xboot", mtd_num) == 0)
+						Partitions.push_back(partition);
+					else
+						delete partition;
+				} else if (line_parts[3] == "\"yboot\"") {
+					DataManager::SetValue("tw_has_yboot_ptn", 1);
+					if (partition->Setup_Extra_Boot("yboot", mtd_num) == 0)
+						Partitions.push_back(partition);
+					else
+						delete partition;
+				} else if (line_parts[3] == "\"zboot\"") {
+					DataManager::SetValue("tw_has_zboot_ptn", 1);
+					if (partition->Setup_Extra_Boot("zboot", mtd_num) == 0)
+						Partitions.push_back(partition);
+					else
+						delete partition;
+				} else {
+					delete partition;
+				}
+			}
+		}
+		LOGINFO("=> Scanned mtd partitions : %i\n", total_mtd);
+	} else
+		LOGINFO("=> Failed parsing /proc/mtd.\n");
 }
 
 int TWPartitionManager::Write_Fstab(void) {
@@ -1766,23 +1832,6 @@ int TWPartitionManager::Wipe_By_Name(string Name) {
 	}
 	LOGERR("Wipe: Unable to find partition for name '%s'\n", Name.c_str());
 	return false;
-}
-
-bool TWPartitionManager::Wipe_MTD_By_Name(string ptnName) {
-	gui_print("MTD Formatting \"%s\"\n", ptnName.c_str());
-
-    	TWPartition* Part = Find_Partition_By_Name(ptnName);
-    	if (Part == NULL) {
-        	LOGERR("No mtd partition named '%s'", ptnName.c_str());
-        	return false;
-    	}
-	string eraseimg = "erase_image " + ptnName;
-	if (system(eraseimg.c_str()) != 0) {
-		LOGERR("Failed to format '%s'", ptnName.c_str());
-		return false;
-	}	
-	gui_print("Done.\n");
-    	return true;
 }
 
 int TWPartitionManager::Factory_Reset(void) {

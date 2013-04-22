@@ -83,7 +83,6 @@ class TWPartition {
 		virtual void Recreate_Media_Folder();                                     
 
 		// Extended functions
-		virtual int CheckFor_ValidIMG();
 		virtual unsigned int FS_Type_Via_statfs();
 		// When formatting card's partitions to different fs
 		virtual void Change_FS_Type(string type);
@@ -91,6 +90,7 @@ class TWPartition {
 		virtual int TarExtract(string tarfn, string tardir);
 		virtual int TarFindEntry(string tarfn, string entry);
 		virtual void Change_Restore_Display_Name(string name);
+		virtual int Setup_Extra_Boot(string name, string mtd_num);
 
 	public:
 		// Indicates if the partition is a swap partition
@@ -239,6 +239,8 @@ class TWPartition {
 		bool Wipe_EXFAT();                                                         
 		// Formats as yaffs2 for MTD memory types
 		bool Wipe_YAFFS2();
+		// Format using erase_image for MTD memory types
+		bool Wipe_MTD();
 		// Uses rm -rf to wipe
 		bool Wipe_RMRF();                                                         
 		// Uses rm -rf to wipe but does not wipe /data/media
@@ -302,8 +304,6 @@ class TWPartitionManager {
 		virtual ~TWPartitionManager() {}
 
 	public:
-		// Format using erase_image for MTD memory types
-		virtual bool Wipe_MTD_By_Name(string ptnName);
 		// Parses the fstab and populates the partitions
 		virtual int Process_Fstab(string Fstab_Filename, bool Display_Error);     
 		// Creates /etc/fstab file that's used by the command line for mount commands
@@ -337,7 +337,7 @@ class TWPartitionManager {
 		// Returns a pointer to a partition based on block device
 		TWPartition* Find_Partition_By_Block(string Block);                       
 		// Returns a pointer to a partition based on name
-		TWPartition* Find_Partition_By_Name(string Block);                        
+		TWPartition* Find_Partition_By_Name(string Name);                        
 		// Checks the current backup name to ensure that it is valid
 		virtual int Check_Backup_Name(bool Display_Error);                        
 		// Initiates a backup in the current storage
@@ -397,6 +397,7 @@ class TWPartitionManager {
 		virtual int Check_SDCard(void);						  
 		// Set filesystem on ext
 		virtual int FSConvert_SDEXT(string extpath);   
+		virtual void Process_Extra_Boot_Partitions(void);
 
 	private:
 		bool Backup_Partition(TWPartition* Part, string Backup_Folder, bool generate_md5,

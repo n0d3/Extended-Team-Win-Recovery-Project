@@ -1111,6 +1111,32 @@
 			</object>
 		</page>
 
+		<page name="xbootcheck">
+			<object type="action">
+				<action function="validbootimg">%tw_action_param%</action>
+			</object>
+
+			<object type="action">
+				<conditions>
+					<condition var1="tw_operation_state" var2="1" />
+					<condition var1="tw_operation_status" var2="0" />
+				</conditions>
+				<actions>
+					<action function="reboot">%tw_action_param%</action>
+				</actions>
+			</object>
+
+			<object type="action">
+				<conditions>
+					<condition var1="tw_operation_state" var2="1" />
+					<condition var1="tw_operation_status" var2="1" />
+				</conditions>
+				<actions>
+					<action function="page">confirm_action</action>
+				</actions>
+			</object>
+		</page>
+
 		<page name="wipe">
 			<object type="template" name="header" />
 
@@ -1149,32 +1175,12 @@
 			</object>
 
 			<object type="button">
-				<highlight color="%highlight_color%" />
-				<condition var1="tw_has_sboot_ptn" var2="1" />
-				<placement x="%col1_x%" y="%row6_text_y%" />
-				<font resource="font" color="%button_text_color%" />
-				<text>sBoot</text>
-				<image resource="main_button" />
-				<actions>
-					<action function="set">tw_back=wipe</action>
-					<action function="set">tw_action=wipe</action>
-					<action function="set">tw_action_param=sboot</action>
-					<action function="set">tw_text1=Wipe sBoot?</action>
-					<action function="set">tw_text2=This will wipe your sBoot</action>
-					<action function="set">tw_action_text1=Wiping sBoot...</action>
-					<action function="set">tw_complete_text1=sBoot Wipe Complete</action>
-					<action function="set">tw_slider_text=Swipe to Wipe</action>
-					<action function="page">confirm_action</action>
-				</actions>
-			</object>
-
-			<object type="button">
 				<conditions>
 					<condition var1="tw_has_internal" var2="1" />
 					<condition var1="tw_has_data_media" var2="1" />
 				</conditions>
 				<highlight color="%highlight_color%" />
-				<placement x="%col2_x%" y="%row6_text_y%" />
+				<placement x="%col_center_x%" y="%row6_text_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Format Data</text>
 				<image resource="main_button" />
@@ -2191,7 +2197,18 @@
 				<font resource="font" color="%button_text_color%" />
 				<text>sBoot</text>
 				<image resource="medium_button" />
-				<action function="reboot">sboot</action>
+				<actions>
+					<action function="set">tw_back=reboot</action>
+					<action function="set">tw_action=reboot</action>
+					<action function="set">tw_action_param=sboot</action>
+					<action function="set">tw_has_action2=0</action>
+					<action function="set">tw_text1=No Kernel Installed! Are you</action>
+					<action function="set">tw_text2=sure you wish to reboot?</action>
+					<action function="set">tw_action_text1=Rebooting...</action>
+					<action function="set">tw_complete_text1=Rebooting...</action>
+					<action function="set">tw_slider_text=Swipe to Reboot</action>
+					<action function="page">xbootcheck</action>
+				</actions>
 			</object>
 
 			<object type="button">
@@ -2204,7 +2221,18 @@
 				<font resource="font" color="%button_text_color%" />
 				<text>tBoot</text>
 				<image resource="medium_button" />
-				<action function="reboot">tboot</action>
+				<actions>
+					<action function="set">tw_back=reboot</action>
+					<action function="set">tw_action=reboot</action>
+					<action function="set">tw_action_param=tboot</action>
+					<action function="set">tw_has_action2=0</action>
+					<action function="set">tw_text1=No Kernel Installed! Are you</action>
+					<action function="set">tw_text2=sure you wish to reboot?</action>
+					<action function="set">tw_action_text1=Rebooting...</action>
+					<action function="set">tw_complete_text1=Rebooting...</action>
+					<action function="set">tw_slider_text=Swipe to Reboot</action>
+					<action function="page">xbootcheck</action>
+				</actions>
 			</object>
 
 			<object type="button">
@@ -2217,7 +2245,18 @@
 				<font resource="font" color="%button_text_color%" />
 				<text>vBoot</text>
 				<image resource="medium_button" />
-				<action function="reboot">vboot</action>
+				<actions>
+					<action function="set">tw_back=reboot</action>
+					<action function="set">tw_action=reboot</action>
+					<action function="set">tw_action_param=vboot</action>
+					<action function="set">tw_has_action2=0</action>
+					<action function="set">tw_text1=No Kernel Installed! Are you</action>
+					<action function="set">tw_text2=sure you wish to reboot?</action>
+					<action function="set">tw_action_text1=Rebooting...</action>
+					<action function="set">tw_complete_text1=Rebooting...</action>
+					<action function="set">tw_slider_text=Swipe to Reboot</action>
+					<action function="page">xbootcheck</action>
+				</actions>
 			</object>
 
 			<object type="button">
@@ -2226,11 +2265,22 @@
 					<condition var1="tw_bldr_is_clk" var2="1" />
 					<condition var1="tw_has_wboot_ptn" var2="1" />
 				</conditions>
-				<placement x="%col4_medium_x%" y="%row6_medium_y%" />
+				<placement x="%col4_medium_x%" y="%row5_medium_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>wBoot</text>
 				<image resource="medium_button" />
-				<action function="reboot">wboot</action>
+				<actions>
+					<action function="set">tw_back=reboot</action>
+					<action function="set">tw_action=reboot</action>
+					<action function="set">tw_action_param=wboot</action>
+					<action function="set">tw_has_action2=0</action>
+					<action function="set">tw_text1=No Kernel Installed! Are you</action>
+					<action function="set">tw_text2=sure you wish to reboot?</action>
+					<action function="set">tw_action_text1=Rebooting...</action>
+					<action function="set">tw_complete_text1=Rebooting...</action>
+					<action function="set">tw_slider_text=Swipe to Reboot</action>
+					<action function="page">xbootcheck</action>
+				</actions>
 			</object>
 
 			<object type="button">
@@ -2243,7 +2293,18 @@
 				<font resource="font" color="%button_text_color%" />
 				<text>xBoot</text>
 				<image resource="medium_button" />
-				<action function="reboot">xboot</action>
+				<actions>
+					<action function="set">tw_back=reboot</action>
+					<action function="set">tw_action=reboot</action>
+					<action function="set">tw_action_param=xboot</action>
+					<action function="set">tw_has_action2=0</action>
+					<action function="set">tw_text1=No Kernel Installed! Are you</action>
+					<action function="set">tw_text2=sure you wish to reboot?</action>
+					<action function="set">tw_action_text1=Rebooting...</action>
+					<action function="set">tw_complete_text1=Rebooting...</action>
+					<action function="set">tw_slider_text=Swipe to Reboot</action>
+					<action function="page">xbootcheck</action>
+				</actions>
 			</object>
 
 			<object type="button">
@@ -2256,7 +2317,18 @@
 				<font resource="font" color="%button_text_color%" />
 				<text>yBoot</text>
 				<image resource="medium_button" />
-				<action function="reboot">yboot</action>
+				<actions>
+					<action function="set">tw_back=reboot</action>
+					<action function="set">tw_action=reboot</action>
+					<action function="set">tw_action_param=yboot</action>
+					<action function="set">tw_has_action2=0</action>
+					<action function="set">tw_text1=No Kernel Installed! Are you</action>
+					<action function="set">tw_text2=sure you wish to reboot?</action>
+					<action function="set">tw_action_text1=Rebooting...</action>
+					<action function="set">tw_complete_text1=Rebooting...</action>
+					<action function="set">tw_slider_text=Swipe to Reboot</action>
+					<action function="page">xbootcheck</action>
+				</actions>
 			</object>
 
 			<object type="button">
@@ -2269,7 +2341,18 @@
 				<font resource="font" color="%button_text_color%" />
 				<text>zBoot</text>
 				<image resource="medium_button" />
-				<action function="reboot">zboot</action>
+				<actions>
+					<action function="set">tw_back=reboot</action>
+					<action function="set">tw_action=reboot</action>
+					<action function="set">tw_action_param=zboot</action>
+					<action function="set">tw_has_action2=0</action>
+					<action function="set">tw_text1=No Kernel Installed! Are you</action>
+					<action function="set">tw_text2=sure you wish to reboot?</action>
+					<action function="set">tw_action_text1=Rebooting...</action>
+					<action function="set">tw_complete_text1=Rebooting...</action>
+					<action function="set">tw_slider_text=Swipe to Reboot</action>
+					<action function="page">xbootcheck</action>
+				</actions>
 			</object>
 
 			<object type="button">
@@ -2322,15 +2405,15 @@
 				<highlight color="%fileselector_highlight_color%" />
 				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
 				<filter folders="1" files="0" nav="0" />
-				<path name="sd_rom_location2" default="/sdcard/NativeSD" />
-				<data name="sd_rom2" default="" />
-				<selection name="sd_rom_selection2" />
+				<path name="sd_rom_location1" default="/sdcard/NativeSD" />
+				<data name="sd_rom1" default="" />
+				<selection name="sd_rom_selection1" />
 			</object>
 
 			<object type="template" name="sort_options" />
 
 			<object type="action">
-				<condition var1="sd_rom2" op="modified" />
+				<condition var1="sd_rom1" op="modified" />
 				<actions>
 					<action function="set">tw_back=nativeboot</action>
 					<action function="set">tw_action=nativeboot_run</action>

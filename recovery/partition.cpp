@@ -649,6 +649,50 @@ void TWPartition::Setup_Image(bool Display_Error) {
 	}
 }
 
+/* Setup an extra boot partition (for cLK bootloader)
+ */
+int TWPartition::Setup_Extra_Boot(string name, string mtd_num) {
+	if (PartitionManager.Find_Partition_By_Path("/" + name) != NULL) {
+		LOGINFO("Partition '%s' already processed.\n", name.c_str());
+		return 1;
+	}
+
+	string x = name;
+	x.resize(1);
+	Display_Name = x + "Boot";
+	Backup_Display_Name = Display_Name;
+	Restore_Display_Name = Display_Name;
+
+	Mount_Point = "/" + name;
+	Backup_Path = Mount_Point;
+
+	Fstab_File_System = "mtd";
+	Current_File_System = "mtd";
+
+	Can_Be_Backed_Up = true;
+	Can_Be_Mounted = false;
+	Can_Be_Wiped = true;
+	Wipe_Available_in_GUI = true;
+
+	Primary_Block_Device = "/dev/block/mtdblock" + mtd_num;
+	MTD_Dev = "/dev/mtd/mtd" + mtd_num;
+	Find_Actual_Block_Device();
+	if (!Is_Present)
+		return 1;
+
+	Storage_Name = name;
+	Backup_Name = name;
+	MTD_Name = name;
+
+	Backup_Method = FLASH_UTILS;
+
+	Find_Partition_Size();
+	Used = Size;
+	Backup_Size = Size;
+
+	return 0;
+}
+
 void TWPartition::Setup_AndSec(void) {
 	Backup_Display_Name = "Android Secure";
 	Restore_Display_Name = Backup_Display_Name;
@@ -881,13 +925,15 @@ bool TWPartition::Update_Size(bool Display_Error) {
 		if (Size - Backup_Size < 1024) {
 			LOGINFO("Cleaning /cache/recovery logs to free some space...\n");
 			string rm, result;
-			unsigned long long l;
+			unsigned long long l = 0;
 
-			l = TWFunc::Get_File_Size("/cache/recovery/last_log");
+			if (TWFunc::Path_Exists("/cache/recovery/last_log"))
+				l = TWFunc::Get_File_Size("/cache/recovery/last_log");
 			rm = "rm -f /cache/recovery/last_log";
 			if (TWFunc::Exec_Cmd(rm, result) == 0)
 				Backup_Size -= l;
-			l = TWFunc::Get_File_Size("/cache/recovery/last_install");
+			if (TWFunc::Path_Exists("/cache/recovery/last_install"))
+				l = TWFunc::Get_File_Size("/cache/recovery/last_install");
 			rm = "rm -f /cache/recovery/last_install";
 			if (TWFunc::Exec_Cmd(rm, result) == 0)
 				Backup_Size -= l;
@@ -1455,7 +1501,7 @@ bool TWPartition::Wipe(string New_File_System) {
 			wiped = Wipe_NTFS();		
 #endif
 		else if (New_File_System == "mtd")
-			return PartitionManager.Wipe_MTD_By_Name(MTD_Name);
+			wiped = Wipe_MTD();
 		else {
 			LOGERR("Unable to wipe '%s' -- unknown file system '%s'\n", Mount_Point.c_str(), New_File_System.c_str());
 			unlink("/.layout_version");
@@ -1483,8 +1529,8 @@ bool TWPartition::Wipe(string New_File_System) {
 			TWFunc::copy_file("/.layout_version", Layout_Filename, 0600);
 
 		if (update_crypt) {
-			Setup_File_System(false);
 			if (Is_Encrypted && !Is_Decrypted) {
+				Setup_File_System(false);
 				// just wiped an encrypted partition back to its unencrypted state
 				Is_Encrypted = false;
 				Is_Decrypted = false;
@@ -1496,7 +1542,13 @@ bool TWPartition::Wipe(string New_File_System) {
 			}
 		}
 		// If the partition was wiped update sizes
-		Update_Size(true);
+		if (Can_Be_Mounted)
+			Update_Size(false);
+		else {
+			Find_Partition_Size();
+			Used = Size;
+			Backup_Size = Size;
+		}
 	}
 	return wiped;
 }
@@ -1511,7 +1563,7 @@ bool TWPartition::Wipe_AndSec(void) {
 	gui_print("Wiping %s\n", Backup_Display_Name.c_str());
 	TWFunc::removeDir(Mount_Point + "/.android_secure/", true);
 	gui_print("Done.\n");
-    return true;
+	return true;
 }
 
 bool TWPartition::Decrypt(string Password) {
@@ -1715,7 +1767,7 @@ bool TWPartition::Wipe_YAFFS2() {
 	if (!UnMount(true))
 		return false;
 
-	gui_print("MTD Formatting \"%s\"\n", MTD_Name.c_str());
+	gui_print("YAFFS2 Formatting \"%s\"\n", MTD_Name.c_str());
 
 	mtd_scan_partitions();
 	const MtdPartition* mtd = mtd_find_partition_by_name(MTD_Name.c_str());
@@ -1739,6 +1791,26 @@ bool TWPartition::Wipe_YAFFS2() {
         	return false;
 	}
 	Current_File_System = "yaffs2";
+	gui_print("Done.\n");
+    	return true;
+}
+
+bool TWPartition::Wipe_MTD() {
+	string command, result;
+	gui_print("MTD Formatting \"%s\"\n", MTD_Name.c_str());
+
+	mtd_scan_partitions();
+	const MtdPartition* mtd = mtd_find_partition_by_name(MTD_Name.c_str());
+	if (mtd == NULL) {
+		LOGERR("No mtd partition named '%s'", MTD_Name.c_str());
+        	return false;
+	}
+	string eraseimg = "erase_image " + MTD_Name;
+	if (TWFunc::Exec_Cmd(eraseimg, result) != 0) {
+		LOGERR("Failed to format '%s'", MTD_Name.c_str());
+		return false;
+	}	
+	Current_File_System = "mtd";
 	gui_print("Done.\n");
     	return true;
 }

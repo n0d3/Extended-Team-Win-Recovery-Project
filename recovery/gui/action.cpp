@@ -676,6 +676,18 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				operation_end(1, simulate);
 		}
 
+		if (function == "validbootimg") {
+			int ret = 0;
+			operation_start("BootImgValidate");
+			ret = TWFunc::CheckFor_ValidIMG(arg);
+			if (ret > 0)
+				ret = 0; // 0 for success
+			else
+				ret = 1; // 1 for failure
+			operation_end(ret, simulate);
+			return 0;
+		}
+
 		if (function == "app_run") {
 			int ret = 0, wipe_cache = 0;;
 			string appfile;
@@ -771,8 +783,6 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 					ret_val = PartitionManager.Wipe_By_Path(External_Path);
 				} else if (arg == "ANDROIDSECURE") {
 					ret_val = PartitionManager.Wipe_Android_Secure();
-				} else if (arg == "boot" || arg == "sboot") {
-					ret_val = PartitionManager.Wipe_MTD_By_Name(arg);
 				} else if (arg == "LIST") {
 					string Wipe_List, wipe_path;
 					bool skip = false;
@@ -930,7 +940,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			int ret = 0;
 			string tmp, sdrompath;
 
-			DataManager::GetValue("sd_rom2", sdrompath);
+			DataManager::GetValue("sd_rom1", sdrompath);
 			operation_start("NativeSDManager");
 			gui_print("Preparing kernel before rebooting...\n");
 			if (simulate) {
