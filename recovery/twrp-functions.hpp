@@ -83,7 +83,7 @@ class TWFunc {
 		// Return a diff for 2 times
 		static timespec timespec_diff(timespec& start, timespec& end);
 		//drop linux cache memory
-		static int drop_caches(void);
+		static int drop_caches(string drop);
 		// check perms and owner of su binary in various locations
 		static int Check_su_Perms(void);
 		// sets proper permissions for su binaries and superuser apk

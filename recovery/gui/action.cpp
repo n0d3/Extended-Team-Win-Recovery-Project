@@ -931,7 +931,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				ret = 1; // 1 for failure
 			else {
 				ret = 0; // 0 for success
-				TWFunc::drop_caches();
+				TWFunc::drop_caches("3\n");
 			}
 			operation_end(ret, simulate);
 			return 0;
@@ -1038,7 +1038,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			else {
 				ret = 0; // 0 for success
 				TWFunc::Vibrate(sdbackup_completed);
-				TWFunc::drop_caches();
+				TWFunc::drop_caches("3\n");
 			}
 		   	operation_end(ret, simulate);
 
@@ -1073,7 +1073,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			else {
 				ret = 0; // 0 for success
 				TWFunc::Vibrate(sdrestore_completed);
-				TWFunc::drop_caches();
+				TWFunc::drop_caches("3\n");
 			}
 		   	operation_end(ret, simulate);
 

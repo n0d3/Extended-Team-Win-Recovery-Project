@@ -538,7 +538,7 @@ timespec TWFunc::timespec_diff(timespec& start, timespec& end) {
 
 // Dropping the cache will make the available RAM go up, but the CPU load will go up too.
 // It may have a positive effect after heavy jobs (backup/restore, install, partitioning)[?]
-int TWFunc::drop_caches(void) {
+int TWFunc::drop_caches(string drop) {
 	int do_drop = DataManager::GetIntValue(TW_DROP_CACHES);
 	if (do_drop) {
 		sync();
@@ -548,7 +548,6 @@ int TWFunc::drop_caches(void) {
 		    free dentries & inodes:		string drop = "2\n";
 		    free pagecache, dentries & inodes:	string drop = "3\n";
 		*/
-		string drop = "3\n";
 		if (write_file(caches, drop) != 0)
 			return -1;
 	}
