@@ -367,6 +367,7 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 			Display_Name = "Boot";
 			Backup_Display_Name = Display_Name;
 			Restore_Display_Name = Display_Name;
+			Wipe_Available_in_GUI = true;
 			DataManager::SetValue("tw_boot_is_mountable", 1);
 			Can_Be_Backed_Up = true;
 		}	
@@ -435,6 +436,7 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 			Backup_Display_Name = Display_Name;
 			Restore_Display_Name = Display_Name;
 			Can_Be_Backed_Up = true;
+			Wipe_Available_in_GUI = true;
 			DataManager::SetValue("tw_boot_is_mountable", 0);
 		} else if (Mount_Point == "/recovery") {
 			Display_Name = "Recovery";
