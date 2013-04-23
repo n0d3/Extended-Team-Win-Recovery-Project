@@ -107,7 +107,7 @@ static char rcsid[] = "$OpenBSD: glob.c,v 1.8 1998/08/14 21:39:30 deraadt Exp $"
 #define	SLASH		'/'
 #define	COMMA		','
 
-#ifndef DEBUG
+#ifndef DEBUG_GLOB
 
 #define	M_QUOTE		0x8000
 #define	M_PROTECT	0x4000
@@ -157,7 +157,7 @@ static const Char *	globtilde (const Char *, Char *, size_t, glob_t *);
 static int	 globexp1 (const Char *, glob_t *);
 static int	 globexp2 (const Char *, const Char *, glob_t *, int *);
 static int	 match (Char *, Char *, Char *);
-#ifdef DEBUG
+#ifdef DEBUG_GLOB
 static void	 qprintf (const char *, Char *);
 #endif
 
@@ -320,7 +320,7 @@ static int globexp2(ptr, pattern, pglob, rv)
 					continue;
 
 				/* Expand the current pattern */
-#ifdef DEBUG
+#ifdef DEBUG_GLOB
 				qprintf("globexp2:", patbuf);
 #endif
 				*rv = globexp1(patbuf, pglob);
@@ -473,7 +473,7 @@ glob0(pattern, pglob)
 		}
 	}
 	*bufnext = EOS;
-#ifdef DEBUG
+#ifdef DEBUG_GLOB
 	qprintf("glob0:", patbuf);
 #endif
 
@@ -851,7 +851,7 @@ g_Ctoc(str, buf)
 		continue;
 }
 
-#ifdef DEBUG
+#ifdef DEBUG_GLOB
 static void
 qprintf(str, s)
 	const char *str;

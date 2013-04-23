@@ -19,7 +19,6 @@
 #include <errno.h>
 #include <utime.h>
 
-#define DEBUG
 #ifdef STDC_HEADERS
 # include <stdlib.h>
 #endif
@@ -28,7 +27,6 @@
 # include <unistd.h>
 #endif
 
-#define DEBUG
 
 static int
 tar_set_file_perms(TAR *t, char *realname)
@@ -45,7 +43,7 @@ tar_set_file_perms(TAR *t, char *realname)
 	gid = th_get_gid(t);
 	ut.modtime = ut.actime = th_get_mtime(t);
 
-#ifdef DEBUG
+#ifdef TAR_DEBUG_VERBOSE
 	printf("   ==> setting perms: %s (mode %04o, uid %d, gid %d)\n",
 	       filename, mode, uid, gid);
 #endif
@@ -55,17 +53,17 @@ tar_set_file_perms(TAR *t, char *realname)
 #ifdef HAVE_LCHOWN
 		if (lchown(filename, uid, gid) == -1)
 		{
-# ifdef DEBUG
+	#ifdef TAR_DEBUG_VERBOSE
 			fprintf(stderr, "lchown(\"%s\", %d, %d): %s\n",
 				filename, uid, gid, strerror(errno));
-# endif
+	#endif
 #else /* ! HAVE_LCHOWN */
 		if (!TH_ISSYM(t) && chown(filename, uid, gid) == -1)
 		{
-# ifdef DEBUG
+	#ifdef TAR_DEBUG_VERBOSE
 			fprintf(stderr, "chown(\"%s\", %d, %d): %s\n",
 				filename, uid, gid, strerror(errno));
-# endif
+	#endif
 #endif /* HAVE_LCHOWN */
 			return -1;
 		}
@@ -73,7 +71,7 @@ tar_set_file_perms(TAR *t, char *realname)
 	/* change access/modification time */
 	if (!TH_ISSYM(t) && utime(filename, &ut) == -1)
 	{
-#ifdef DEBUG
+#ifdef TAR_DEBUG_VERBOSE
 		perror("utime()");
 #endif
 		return -1;
@@ -82,7 +80,7 @@ tar_set_file_perms(TAR *t, char *realname)
 	/* change permissions */
 	if (!TH_ISSYM(t) && chmod(filename, mode) == -1)
 	{
-#ifdef DEBUG
+#ifdef TAR_DEBUG_VERBOSE
 		perror("chmod()");
 #endif
 		return -1;
@@ -114,44 +112,83 @@ tar_extract_file(TAR *t, char *realname, char *prefix)
 
 	if (TH_ISDIR(t))
 	{
-		printf("dir\n");
+#ifndef TAR_DEBUG_SUPPRESS
+		printf("dir");
+#endif
+#ifdef TAR_DEBUG_VERBOSE
+		printf("\n");
+#endif
 		i = tar_extract_dir(t, realname);
 		if (i == 1)
 			i = 0;
 	}
 	else if (TH_ISLNK(t)) {
-		printf("link\n");
+#ifndef TAR_DEBUG_SUPPRESS
+		printf("link");
+#endif
+#ifdef TAR_DEBUG_VERBOSE
+		printf("\n");
+#endif
 		i = tar_extract_hardlink(t, realname, prefix);
 	}
 	else if (TH_ISSYM(t)) {
-		printf("sym\n");
+#ifndef TAR_DEBUG_SUPPRESS
+		printf("sym");
+#endif
+#ifdef TAR_DEBUG_VERBOSE
+		printf("\n");
+#endif
 		i = tar_extract_symlink(t, realname);
 	}
 	else if (TH_ISCHR(t)) {
-		printf("chr\n");
+#ifndef TAR_DEBUG_SUPPRESS
+		printf("chr");
+#endif
+#ifdef TAR_DEBUG_VERBOSE
+		printf("\n");
+#endif
 		i = tar_extract_chardev(t, realname);
 	}
 	else if (TH_ISBLK(t)) {
-		printf("blk\n");
+#ifndef TAR_DEBUG_SUPPRESS
+		printf("blk");
+#endif
+#ifdef TAR_DEBUG_VERBOSE
+		printf("\n");
+#endif
 		i = tar_extract_blockdev(t, realname);
 	}
 	else if (TH_ISFIFO(t)) {
-		printf("fifo\n");
+#ifndef TAR_DEBUG_SUPPRESS
+		printf("fifo");
+#endif
+#ifdef TAR_DEBUG_VERBOSE
+		printf("\n");
+#endif
 		i = tar_extract_fifo(t, realname);
 	}
 	else /* if (TH_ISREG(t)) */ {
-		printf("reg\n");
+#ifndef TAR_DEBUG_SUPPRESS
+		printf("reg");
+#endif
+#ifdef TAR_DEBUG_VERBOSE
+		printf("\n");
+#endif
 		i = tar_extract_regfile(t, realname);
 	}
 
 	if (i != 0) {
-		printf("FAILED RESTORE OF FILE i: %s\n", realname);
+#ifdef TAR_DEBUG_VERBOSE
+		printf("\nFAILED RESTORE OF FILE i: %s\n", realname);
+#endif
 		return i;
 	}
 
 	i = tar_set_file_perms(t, realname);
 	if (i != 0) {
-		printf("FAILED SETTING PERMS: %d\n", i);
+#ifdef TAR_DEBUG_VERBOSE
+		printf("\nFAILED SETTING PERMS: %d\n", i);
+#endif
 		return i;
 	}
 /*
@@ -162,7 +199,7 @@ tar_extract_file(TAR *t, char *realname, char *prefix)
 		return -1;
 	strcpy(&lnp[0], th_get_pathname(t));
 	strcpy(&lnp[pathname_len], realname);
-#ifdef DEBUG
+#ifdef TAR_DEBUG_VERBOSE
 	printf("tar_extract_file(): calling libtar_hash_add(): key=\"%s\", "
 	       "value=\"%s\"\n", th_get_pathname(t), realname);
 #endif
@@ -188,7 +225,7 @@ tar_extract_regfile(TAR *t, char *realname)
 	char *filename;
 
 	fflush(NULL);
-#ifdef DEBUG
+#ifdef TAR_DEBUG_VERBOSE
 	printf("==> tar_extract_regfile(t=0x%lx, realname=\"%s\")\n", t,
 	       realname);
 #endif
@@ -208,7 +245,7 @@ tar_extract_regfile(TAR *t, char *realname)
 	if (mkdirhier(dirname(filename)) == -1)
 		return -1;
 
-#ifdef DEBUG
+#ifdef TAR_DEBUG_VERBOSE
 	//printf("  ==> extracting: %s (mode %04o, uid %d, gid %d, %d bytes)\n",
 	//       filename, mode, uid, gid, size);
 	printf("  ==> extracting: %s (file size %d bytes)\n",
@@ -221,7 +258,7 @@ tar_extract_regfile(TAR *t, char *realname)
 		    , 0666);
 	if (fdout == -1)
 	{
-#ifdef DEBUG
+#ifdef TAR_DEBUG_VERBOSE
 		perror("open()");
 #endif
 		return -1;
@@ -231,7 +268,7 @@ tar_extract_regfile(TAR *t, char *realname)
 	/* change the owner.  (will only work if run as root) */
 	if (fchown(fdout, uid, gid) == -1 && errno != EPERM)
 	{
-#ifdef DEBUG
+#ifdef TAR_DEBUG_VERBOSE
 		perror("fchown()");
 #endif
 		return -1;
@@ -240,7 +277,7 @@ tar_extract_regfile(TAR *t, char *realname)
 	/* make sure the mode isn't inheritted from a file we're overwriting */
 	if (fchmod(fdout, mode & 07777) == -1)
 	{
-#ifdef DEBUG
+#ifdef TAR_DEBUG_VERBOSE
 		perror("fchmod()");
 #endif
 		return -1;
@@ -268,7 +305,7 @@ tar_extract_regfile(TAR *t, char *realname)
 	if (close(fdout) == -1)
 		return -1;
 
-#ifdef DEBUG
+#ifdef TAR_DEBUG_VERBOSE
 	printf("### done extracting %s\n", filename);
 #endif
 
@@ -335,15 +372,15 @@ tar_extract_hardlink(TAR * t, char *realname, char *prefix)
 		linktgt = th_get_linkname(t);
 	char *newtgt = strdup(linktgt);
 	sprintf(linktgt, "%s/%s", prefix, newtgt);
-#ifdef DEBUG
+#ifdef TAR_DEBUG_VERBOSE
 	printf("  ==> extracting: %s (link to %s)\n", filename, linktgt);
 #endif
 	if (link(linktgt, filename) == -1)
 	{
-#ifdef DEBUG
+#ifdef TAR_DEBUG_VERBOSE
 		perror("link()");
-#endif
 		printf("Failed restore of hardlink '%s' but returning as if nothing bad happened anyway\n", filename);
+#endif
 		return 0; // Used to be -1
 	}
 
@@ -359,30 +396,36 @@ tar_extract_symlink(TAR *t, char *realname)
 
 	if (!TH_ISSYM(t))
 	{
+#ifdef TAR_DEBUG_VERBOSE
 		printf("not a sym\n");
+#endif
 		errno = EINVAL;
 		return -1;
 	}
 
 	filename = (realname ? realname : th_get_pathname(t));
+#ifdef TAR_DEBUG_VERBOSE
 	printf("file: %s\n", filename);
+#endif
 	if (mkdirhier(dirname(filename)) == -1) {
 		printf("mkdirhier\n");
 		return -1;
 	}
 
 	if (unlink(filename) == -1 && errno != ENOENT) {
+#ifdef TAR_DEBUG_VERBOSE
 		printf("unlink\n");
+#endif
 		return -1;
 	}
 
-#ifdef DEBUG
+#ifdef TAR_DEBUG_VERBOSE
 	printf("  ==> extracting: %s (symlink to %s)\n",
 	       filename, th_get_linkname(t));
 #endif
 	if (symlink(th_get_linkname(t), filename) == -1)
 	{
-#ifdef DEBUG
+#ifdef TAR_DEBUG_VERBOSE
 		perror("symlink()");
 #endif
 		return -1;
@@ -414,14 +457,14 @@ tar_extract_chardev(TAR *t, char *realname)
 	if (mkdirhier(dirname(filename)) == -1)
 		return -1;
 
-#ifdef DEBUG
+#ifdef TAR_DEBUG_VERBOSE
 	printf("  ==> extracting: %s (character device %ld,%ld)\n",
 	       filename, devmaj, devmin);
 #endif
 	if (mknod(filename, mode | S_IFCHR,
 		  compat_makedev(devmaj, devmin)) == -1)
 	{
-#ifdef DEBUG
+#ifdef TAR_DEBUG_VERBOSE
 		printf("mknod() failed, returning good anyway");
 #endif
 		return 0;
@@ -453,14 +496,14 @@ tar_extract_blockdev(TAR *t, char *realname)
 	if (mkdirhier(dirname(filename)) == -1)
 		return -1;
 
-#ifdef DEBUG
+#ifdef TAR_DEBUG_VERBOSE
 	printf("  ==> extracting: %s (block device %ld,%ld)\n",
 	       filename, devmaj, devmin);
 #endif
 	if (mknod(filename, mode | S_IFBLK,
 		  compat_makedev(devmaj, devmin)) == -1)
 	{
-#ifdef DEBUG
+#ifdef TAR_DEBUG_VERBOSE
 		printf("mknod() failed but returning anyway");
 #endif
 		return 0;
@@ -486,11 +529,13 @@ tar_extract_dir(TAR *t, char *realname)
 	mode = th_get_mode(t);
 
 	if (mkdirhier(dirname(filename)) == -1) {
+#ifdef TAR_DEBUG_VERBOSE
 		printf("tar_extract_dir mkdirhier failed\n");
+#endif
 		return -1;
 	}
 
-#ifdef DEBUG
+#ifdef TAR_DEBUG_VERBOSE
 	printf("  ==> extracting: %s (mode %04o, directory)\n", filename,
 	       mode);
 #endif
@@ -498,13 +543,13 @@ tar_extract_dir(TAR *t, char *realname)
 	{
 		if (errno == EEXIST)
 		{
-#ifdef DEBUG
+#ifdef TAR_DEBUG_VERBOSE
 			printf("  *** using existing directory");
 #endif
 		}
 		else
 		{
-#ifdef DEBUG
+#ifdef TAR_DEBUG_VERBOSE
 			perror("mkdir()");
 #endif
 			return -1;
@@ -534,12 +579,12 @@ tar_extract_fifo(TAR *t, char *realname)
 	if (mkdirhier(dirname(filename)) == -1)
 		return -1;
 
-#ifdef DEBUG
+#ifdef TAR_DEBUG_VERBOSE
 	printf("  ==> extracting: %s (fifo)\n", filename);
 #endif
 	if (mkfifo(filename, mode) == -1)
 	{
-#ifdef DEBUG
+#ifdef TAR_DEBUG_VERBOSE
 		perror("mkfifo()");
 #endif
 		return -1;

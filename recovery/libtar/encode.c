@@ -73,7 +73,7 @@ th_set_path(TAR *t, char *pathname)
 	char suffix[2] = "";
 	char *tmp;
 
-#ifdef DEBUG
+#ifdef DEBUG_ENCODE
 	printf("in th_set_path(th, pathname=\"%s\")\n", pathname);
 #endif
 
@@ -108,7 +108,7 @@ th_set_path(TAR *t, char *pathname)
 		/* classic tar format */
 		snprintf(t->th_buf.name, 100, "%s%s", pathname, suffix);
 
-#ifdef DEBUG
+#ifdef DEBUG_ENCODE
 	puts("returning from th_set_path()...");
 #endif
 }
@@ -118,7 +118,7 @@ th_set_path(TAR *t, char *pathname)
 void
 th_set_link(TAR *t, char *linkname)
 {
-#ifdef DEBUG
+#ifdef DEBUG_ENCODE
 	printf("==> th_set_link(th, linkname=\"%s\")\n", linkname);
 #endif
 
@@ -144,7 +144,7 @@ th_set_link(TAR *t, char *linkname)
 void
 th_set_device(TAR *t, dev_t device)
 {
-#ifdef DEBUG
+#ifdef DEBUG_ENCODE
 	printf("th_set_device(): major = %d, minor = %d\n",
 	       major(device), minor(device));
 #endif

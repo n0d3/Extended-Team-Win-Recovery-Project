@@ -74,19 +74,28 @@ int twrpTar::createTarGZFork() {
 			//usleep(20);
 			rc_pid = waitpid(pid, &status, 0);
 			if (rc_pid > 0) {
-				if (WEXITSTATUS(status) == 0)
+				if (WEXITSTATUS(status) == 0) {
+#ifdef TAR_DEBUG_VERBOSE
 					LOGINFO("createTarGZFork(): Child process ended with RC=%d\n", WEXITSTATUS(status));
-				else if (WIFSIGNALED(status)) {
+#endif
+					LOGINFO("Gzipped archive created.\n");
+				} else if (WIFSIGNALED(status)) {
+#ifdef TAR_DEBUG_VERBOSE
 					LOGINFO("createTarGZFork(): Child process ended with signal: %d\n", WTERMSIG(status));
+#endif
 					return -1;
 				}					
 			}
 			else // no PID returned
 			{
-				if (errno == ECHILD)
+				if (errno == ECHILD) {
+#ifdef TAR_DEBUG_VERBOSE
 					LOGINFO("createTarGZFork(): No child process exist\n");
-				else {
+#endif
+				} else {
+#ifdef TAR_DEBUG_VERBOSE
 					LOGINFO("createTarGZFork(): Unexpected error\n");
+#endif
 					return -1;
 				}
 			}
@@ -94,7 +103,9 @@ int twrpTar::createTarGZFork() {
 	}
 	else // fork has failed
 	{
+#ifdef TAR_DEBUG_VERBOSE
 		LOGINFO("create tarGZ failed to fork.\n");
+#endif
 		return -1;
 	}
 	return 0;
@@ -119,19 +130,28 @@ int twrpTar::createTarFork() {
 			//usleep(20);
 			rc_pid = waitpid(pid, &status, 0);
 			if (rc_pid > 0) {
-				if (WEXITSTATUS(status) == 0)
+				if (WEXITSTATUS(status) == 0) {
+#ifdef TAR_DEBUG_VERBOSE
 					LOGINFO("createTarFork(): Child process ended with RC=%d\n", WEXITSTATUS(status));
-				else if (WIFSIGNALED(status)) {
+#endif
+					LOGINFO("Uncompressed archive created.\n");
+				} else if (WIFSIGNALED(status)) {
+#ifdef TAR_DEBUG_VERBOSE
 					LOGINFO("createTarFork(): Child process ended with signal: %d\n", WTERMSIG(status));
+#endif
 					return -1;
 				}					
 			}
 			else // no PID returned
 			{
-				if (errno == ECHILD)
+				if (errno == ECHILD) {
+#ifdef TAR_DEBUG_VERBOSE
 					LOGINFO("createTarFork(): No child process exist\n");
-				else {
+#endif
+				} else {
+#ifdef TAR_DEBUG_VERBOSE
 					LOGINFO("createTarFork(): Unexpected error\n");
+#endif
 					return -1;
 				}
 			}
@@ -139,7 +159,9 @@ int twrpTar::createTarFork() {
 	}
 	else // fork has failed
 	{
+#ifdef TAR_DEBUG_VERBOSE
 		LOGINFO("create tar failed to fork.\n");
+#endif
 		return -1;
 	}
 	return 0;
@@ -164,19 +186,28 @@ int twrpTar::extractTarFork() {
 			//usleep(20);
 			rc_pid = waitpid(pid, &status, 0);
 			if (rc_pid > 0) {
-				if (WEXITSTATUS(status) == 0)
+				if (WEXITSTATUS(status) == 0) {
+#ifdef TAR_DEBUG_VERBOSE
 					LOGINFO("extractTarFork(): Child process ended with RC=%d\n", WEXITSTATUS(status));
-				else if (WIFSIGNALED(status)) {
+#endif
+					LOGINFO("Archive extracted.\n");
+				} else if (WIFSIGNALED(status)) {
+#ifdef TAR_DEBUG_VERBOSE
 					LOGINFO("extractTarFork(): Child process ended with signal: %d\n", WTERMSIG(status));
+#endif
 					return -1;
 				}					
 			}
 			else // no PID returned
 			{
-				if (errno == ECHILD)
+				if (errno == ECHILD) {
+#ifdef TAR_DEBUG_VERBOSE
 					LOGINFO("extractTarFork(): No child process exist\n");
-				else {
+#endif
+				} else {
+#ifdef TAR_DEBUG_VERBOSE
 					LOGINFO("extractTarFork(): Unexpected error\n");
+#endif
 					return -1;
 				}
 			}
@@ -184,7 +215,9 @@ int twrpTar::extractTarFork() {
 	}
 	else // fork has failed
 	{
+#ifdef TAR_DEBUG_VERBOSE
 		LOGINFO("extract tar failed to fork.\n");
+#endif
 		return -1;
 	}
 	return 0;
@@ -209,19 +242,27 @@ int twrpTar::splitArchiveFork() {
 			//usleep(20);
 			rc_pid = waitpid(pid, &status, 0);
 			if (rc_pid > 0) {
-				if (WEXITSTATUS(status) == 0)
+				if (WEXITSTATUS(status) == 0) {
+#ifdef TAR_DEBUG_VERBOSE
 					LOGINFO("splitArchiveFork(): Child process ended with RC=%d\n", WEXITSTATUS(status));
-				else if (WIFSIGNALED(status)) {
+#endif
+				} else if (WIFSIGNALED(status)) {
+#ifdef TAR_DEBUG_VERBOSE
 					LOGINFO("splitArchiveFork(): Child process ended with signal: %d\n", WTERMSIG(status));
+#endif
 					return -1;
 				}					
 			}
 			else // no PID returned
 			{
-				if (errno == ECHILD)
+				if (errno == ECHILD) {
+#ifdef TAR_DEBUG_VERBOSE
 					LOGINFO("splitArchiveFork(): No child process exist\n");
-				else {
+#endif
+				} else {
+#ifdef TAR_DEBUG_VERBOSE
 					LOGINFO("splitArchiveFork(): Unexpected error\n");
+#endif
 					return -1;
 				}
 			}
@@ -229,7 +270,9 @@ int twrpTar::splitArchiveFork() {
 	}
 	else // fork has failed
 	{
+#ifdef TAR_DEBUG_VERBOSE
 		LOGINFO("split archive failed to fork.\n");
+#endif
 		return -1;
 	}
 	return 0;
@@ -250,23 +293,36 @@ int twrpTar::Generate_Multiple_Archives(string Path) {
 
 	if (has_data_media == 1 && Path.size() >= 11 && strncmp(Path.c_str(), "/data/media", 11) == 0)
 		return 0; // Skip /data/media
+#ifdef TAR_DEBUG_VERBOSE
 	LOGINFO("Path: '%s', archive filename: '%s'\n", Path.c_str(), tarfn.c_str());
-
+#endif
 	d = opendir(Path.c_str());
-	if (d == NULL)
-	{
+	if (d == NULL) {
+#ifdef TAR_DEBUG_VERBOSE
 		LOGERR("error opening '%s' -- error: %s\n", Path.c_str(), strerror(errno));
+#endif
 		closedir(d);
 		return -1;
 	}
-	while ((de = readdir(d)) != NULL)
-	{
+	while ((de = readdir(d)) != NULL) {
+#ifndef TAR_DEBUG_SUPPRESS
+		string type = "";
+		if (de->d_type == DT_DIR)
+			type = "(dir) ";
+		else if (de->d_type == DT_REG)
+			type = "(reg) ";
+		else if (de->d_type == DT_LNK)
+			type = "(link) ";
+#endif
+
 		// Skip excluded stuff
 		if (split.size() > 0) {
 			skip = false;
 			for (i = 0; i < split.size(); i++) {
 				if (strcmp(de->d_name, split[i].c_str()) == 0) {
-					LOGINFO("excluding %s\n", de->d_name);
+#ifndef TAR_DEBUG_SUPPRESS
+					LOGINFO("Excluding %s: '%s'\n", type.c_str(), de->d_name);
+#endif
 					skip = true;
 					break;
 				}
@@ -284,12 +340,15 @@ int twrpTar::Generate_Multiple_Archives(string Path) {
 		{
 			unsigned long long folder_size = TWFunc::Get_Folder_Size(FileName, false);
 			if (Archive_Current_Size + folder_size > MAX_ARCHIVE_SIZE) {
+#ifdef TAR_DEBUG_VERBOSE
 				LOGINFO("Calling Generate_Multiple_Archives\n");
+#endif
 				if (Generate_Multiple_Archives(FileName) < 0)
 					return -1;
 			} else {
-				//FileName += "/";
-				LOGINFO("Adding folder '%s'\n", FileName.c_str());
+#ifndef TAR_DEBUG_SUPPRESS
+				LOGINFO("Adding %s: '%s'\n", type.c_str(), FileName.c_str());
+#endif
 				tardir = FileName;
 				if (tarDirs(true) < 0)
 					return -1;
@@ -301,7 +360,9 @@ int twrpTar::Generate_Multiple_Archives(string Path) {
 			stat(FileName.c_str(), &st);
 
 			if (Archive_Current_Size != 0 && Archive_Current_Size + st.st_size > MAX_ARCHIVE_SIZE) {
+#ifdef TAR_DEBUG_VERBOSE
 				LOGINFO("Closing tar '%s', ", tarfn.c_str());
+#endif
 				closeTar(false);
 				reinit_libtar_buffer();
 				if (TWFunc::Get_File_Size(tarfn) == 0) {
@@ -322,13 +383,19 @@ int twrpTar::Generate_Multiple_Archives(string Path) {
 				if (createTar() != 0)
 					return -1;
 			}
-			LOGINFO("Adding file: '%s'... ", FileName.c_str());
+#ifndef TAR_DEBUG_SUPPRESS
+			LOGINFO("Adding %s: '%s'\n", type.c_str(), FileName.c_str());
+#endif
 			if (addFile(FileName, true) < 0)
 				return -1;
 			Archive_Current_Size += st.st_size;
+#ifdef TAR_DEBUG_VERBOSE
 			LOGINFO("added successfully, archive size: %llu\n", Archive_Current_Size);
-			if (st.st_size > 2147483648LL)
-				LOGERR("There is a file that is larger than 2GB in the file system\n'%s'\nThis file may not restore properly\n", FileName.c_str());
+#endif
+			if (st.st_size > 2147483648LL) {
+				LOGERR("File larger than 2GB in file system:\n'%s'\n", FileName.c_str());
+				LOGERR("This file may not restore properly.\n");
+			}
 		}
 	}
 	closedir(d);
@@ -350,7 +417,9 @@ int twrpTar::Split_Archive()
 	DataManager::GetValue(TW_HAS_DATA_MEDIA, has_data_media);
 	gui_print("Creating archive 1...\n");
 	if (Generate_Multiple_Archives(tardir) < 0) {
+#ifdef TAR_DEBUG_VERBOSE
 		LOGERR("Error generating multiple archives\n");
+#endif
 		free_libtar_buffer();
 		return -1;
 	}
@@ -366,11 +435,15 @@ int twrpTar::extractTar() {
 	if (openTar(false) == -1)
 		return -1;
 	if (tar_extract_all(t, charRootDir) != 0) {
+#ifdef TAR_DEBUG_VERBOSE
 		LOGERR("Unable to extract tar archive '%s'\n", tarfn.c_str());
+#endif
 		return -1;
 	}
 	if (tar_close(t) != 0) {
+#ifdef TAR_DEBUG_VERBOSE
 		LOGERR("Unable to close tar file\n");
+#endif
 		return -1;
 	}
 	return 0;
@@ -401,12 +474,12 @@ int twrpTar::extract() {
 	Archive_Current_Type = getArchiveType();
 	if (Archive_Current_Type == 1) {
 		//if you return the extractTGZ function directly, stack crashes happen
-		LOGINFO("Extracting gzipped tar\n");
+		LOGINFO("Extracting gzipped tar...\n");
 		int ret = extractTGZ();
 		return ret;
 	}
 	else {
-		LOGINFO("Extracting uncompressed tar\n");
+		LOGINFO("Extracting uncompressed tar...\n");
 		return extractTar();
 	}
 }
@@ -436,12 +509,23 @@ int twrpTar::tarDirs(bool include_root) {
 			if (de->d_type == DT_BLK || de->d_type == DT_CHR || strcmp(de->d_name, "..") == 0)
 				continue;
 
+#ifndef TAR_DEBUG_SUPPRESS
+			string type = "";
+			if (de->d_type == DT_DIR)
+				type = "(dir) ";
+			else if (de->d_type == DT_REG)
+				type = "(reg) ";
+			else if (de->d_type == DT_LNK)
+				type = "(link) ";
+#endif
 			// Skip excluded stuff
 			if (split.size() > 0) {
 				skip = false;
 				for (i = 0; i < split.size(); i++) {
 					if (strcmp(de->d_name, split[i].c_str()) == 0) {
-						LOGINFO("excluding %s\n", de->d_name);
+#ifndef TAR_DEBUG_SUPPRESS
+						LOGINFO("Excluding %s: '%s'\n", type.c_str(), de->d_name);
+#endif
 						skip = true;
 						break;
 					}
@@ -454,12 +538,16 @@ int twrpTar::tarDirs(bool include_root) {
 			if (strcmp(de->d_name, ".") != 0) {
 				subfolder += de->d_name;
 			} else {
-				LOGINFO("adding '%s'\n", subfolder.c_str());
+#ifndef TAR_DEBUG_SUPPRESS
+				LOGINFO("Adding %s: '%s'\n", type.c_str(), subfolder.c_str());
+#endif
 				if (addFile(subfolder, include_root) != 0)
 					return -1;
 				continue;
 			}
-			LOGINFO("adding '%s'\n", subfolder.c_str());
+#ifndef TAR_DEBUG_SUPPRESS
+			LOGINFO("Adding %s: '%s'\n", type.c_str(), subfolder.c_str());
+#endif
 			strcpy(buf, subfolder.c_str());
 			if (de->d_type == DT_DIR) {
 				char* charTarPath;
@@ -470,7 +558,9 @@ int twrpTar::tarDirs(bool include_root) {
 					charTarPath = (char*) temp.c_str();
 				}
 				if (tar_append_tree(t, buf, charTarPath, excl) != 0) {
+#ifdef TAR_DEBUG_VERBOSE
 					LOGERR("Error appending '%s' to tar archive '%s'\n", buf, tarfn.c_str());
+#endif
 					return -1;
 				}
 			} else if (tardir != "/" && (de->d_type == DT_REG || de->d_type == DT_LNK)) {
@@ -540,6 +630,7 @@ int twrpTar::createTar() {
 
 	DataManager::GetValue(TW_USE_COMPRESSION_VAR, use_compression);
 	if (use_compression) {
+		LOGINFO("Creating gzipped archive...\n");
 		string cmd = "pigz - > '" + tarfn + "'";
 		p = popen(cmd.c_str(), "w");
 		fd = fileno(p);
@@ -550,6 +641,7 @@ int twrpTar::createTar() {
 		}
 	}
 	else {
+		LOGINFO("Creating uncompressed archive...\n");
 		if (tar_open(&t, charTarFile, &type, O_WRONLY | O_CREAT | O_LARGEFILE, 0644, TAR_GNU) == -1)
 			return -1;
 	}
@@ -561,20 +653,23 @@ int twrpTar::openTar(bool gzip) {
 	char* charRootDir = (char*) tardir.c_str();
 
 	if (gzip) {
-		LOGINFO("Opening as a gzip\n");
 		string cmd = "pigz -d -c '" + tarfn + "'";
 		rp = popen(cmd.c_str(), "r");
 		rfd = fileno(rp);
 		if (!rp) return -1;
 		if(tar_fdopen(&t, rfd, charRootDir, NULL, O_RDONLY | O_LARGEFILE, 0644, TAR_GNU) != 0) {
+#ifdef TAR_DEBUG_VERBOSE
 			LOGINFO("tar_fdopen returned error\n");
+#endif
 			pclose(rp);
 			return -1;
 		}
 	}
 	else {
 		if (tar_open(&t, charTarFile, NULL, O_RDONLY | O_LARGEFILE, 0644, TAR_GNU) != 0) {
-			LOGERR("Unable to open tar archive '%s'\n", charTarFile);
+#ifdef TAR_DEBUG_VERBOSE
+			LOGERR("Unable to open tar archive '%s'.\n", charTarFile);
+#endif
 			return -1;
 		}
 	}
@@ -621,16 +716,22 @@ int twrpTar::closeTar(bool gzip) {
 
 	flush_libtar_buffer(t->fd);
 	if (tar_append_eof(t) != 0) {
+#ifdef TAR_DEBUG_VERBOSE
 		LOGERR("tar_append_eof(): %s\n", strerror(errno));
+#endif
 		tar_close(t);
 		return -1;
 	}
 	if (tar_close(t) != 0) {
+#ifdef TAR_DEBUG_VERBOSE
 		LOGERR("Unable to close tar archive: '%s'\n", tarfn.c_str());
+#endif
 		return -1;
 	}
 	if (use_compression || gzip) {
+#ifdef TAR_DEBUG_VERBOSE
 		LOGINFO("Closing popen and fd\n");
+#endif
 		pclose(p);
 		close(fd);
 	}
@@ -673,13 +774,18 @@ int twrpTar::extractTGZ() {
 		return -1;
 	int ret = tar_extract_all(t, splatCharRootDir);
 	if (tar_close(t) != 0) {
+#ifdef TAR_DEBUG_VERBOSE
 		LOGERR("Unable to close tar file\n");
+#endif
 		return -1;
 	}
 	return 0;
 }
 
 int twrpTar::entryExists(string entry) {
+#ifdef TAR_DEBUG_VERBOSE
+	LOGINFO("Searching archive for entry: '%s'\n", entry.c_str());
+#endif
 	char* searchstr = (char*)entry.c_str();
 	int ret;
 
@@ -689,9 +795,18 @@ int twrpTar::entryExists(string entry) {
 	else
 		ret = tar_find(t, searchstr);
 
-	if (tar_close(t) != 0)
-		LOGINFO("Unable to close tar file after searching for entry '%s'.\n", entry.c_str());
+#ifdef TAR_DEBUG_VERBOSE
+	if (ret)
+		LOGINFO("Found matching entry.\n");
+	else
+		LOGINFO("No matching entry found.\n");
+#endif
 
+	if (tar_close(t) != 0) {
+#ifdef TAR_DEBUG_VERBOSE
+		LOGINFO("Unable to close tar file after searching for entry '%s'.\n", entry.c_str());
+#endif
+	}
 	if (Archive_Current_Type == 1) {
 		pclose(rp);
 		close(rfd);

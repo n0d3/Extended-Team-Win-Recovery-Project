@@ -21,7 +21,6 @@
 
 #define BIT_ISSET(bitmask, bit) ((bitmask) & (bit))
 
-
 /* read a header block */
 int
 th_read_internal(TAR *t)
@@ -29,7 +28,7 @@ th_read_internal(TAR *t)
 	int i;
 	int num_zero_blocks = 0;
 
-#ifdef DEBUG
+#ifdef DEBUG_BLOCK
 	printf("==> th_read_internal(TAR=\"%s\")\n", t->pathname);
 #endif
 
@@ -50,7 +49,7 @@ th_read_internal(TAR *t)
 		if (BIT_ISSET(t->options, TAR_CHECK_MAGIC)
 		    && strncmp(t->th_buf.magic, TMAGIC, TMAGLEN - 1) != 0)
 		{
-#ifdef DEBUG
+#ifdef DEBUG_BLOCK
 			puts("!!! unknown magic value in tar header");
 #endif
 			return -2;
@@ -59,7 +58,7 @@ th_read_internal(TAR *t)
 		if (BIT_ISSET(t->options, TAR_CHECK_VERSION)
 		    && strncmp(t->th_buf.version, TVERSION, TVERSLEN) != 0)
 		{
-#ifdef DEBUG
+#ifdef DEBUG_BLOCK
 			puts("!!! unknown version value in tar header");
 #endif
 			return -2;
@@ -69,7 +68,7 @@ th_read_internal(TAR *t)
 		if (!BIT_ISSET(t->options, TAR_IGNORE_CRC)
 		    && !th_crc_ok(t))
 		{
-#ifdef DEBUG
+#ifdef DEBUG_BLOCK
 			puts("!!! tar header checksum error");
 #endif
 			return -2;
@@ -78,7 +77,7 @@ th_read_internal(TAR *t)
 		break;
 	}
 
-#ifdef DEBUG
+#ifdef DEBUG_BLOCK
 	printf("<== th_read_internal(): returning %d\n", i);
 #endif
 	return i;
@@ -93,7 +92,7 @@ th_read(TAR *t)
 	size_t sz;
 	char *ptr;
 
-#ifdef DEBUG
+#ifdef DEBUG_BLOCK
 	printf("==> th_read(t=0x%lx)\n", t);
 #endif
 
@@ -118,7 +117,7 @@ th_read(TAR *t)
 	{
 		sz = th_get_size(t);
 		j = (sz / T_BLOCKSIZE) + (sz % T_BLOCKSIZE ? 1 : 0);
-#ifdef DEBUG
+#ifdef DEBUG_BLOCK
 		printf("    th_read(): GNU long linkname detected "
 		       "(%ld bytes, %d blocks)\n", sz, j);
 #endif
@@ -129,7 +128,7 @@ th_read(TAR *t)
 		for (ptr = t->th_buf.gnu_longlink; j > 0;
 		     j--, ptr += T_BLOCKSIZE)
 		{
-#ifdef DEBUG
+#ifdef DEBUG_BLOCK
 			printf("    th_read(): reading long linkname "
 			       "(%d blocks left, ptr == %ld)\n", j, ptr);
 #endif
@@ -140,11 +139,11 @@ th_read(TAR *t)
 					errno = EINVAL;
 				return -1;
 			}
-#ifdef DEBUG
+#ifdef DEBUG_BLOCK
 			printf("    th_read(): read block == \"%s\"\n", ptr);
 #endif
 		}
-#ifdef DEBUG
+#ifdef DEBUG_BLOCK
 		printf("    th_read(): t->th_buf.gnu_longlink == \"%s\"\n",
 		       t->th_buf.gnu_longlink);
 #endif
@@ -163,7 +162,7 @@ th_read(TAR *t)
 	{
 		sz = th_get_size(t);
 		j = (sz / T_BLOCKSIZE) + (sz % T_BLOCKSIZE ? 1 : 0);
-#ifdef DEBUG
+#ifdef DEBUG_BLOCK
 		printf("    th_read(): GNU long filename detected "
 		       "(%ld bytes, %d blocks)\n", sz, j);
 #endif
@@ -174,7 +173,7 @@ th_read(TAR *t)
 		for (ptr = t->th_buf.gnu_longname; j > 0;
 		     j--, ptr += T_BLOCKSIZE)
 		{
-#ifdef DEBUG
+#ifdef DEBUG_BLOCK
 			printf("    th_read(): reading long filename "
 			       "(%d blocks left, ptr == %ld)\n", j, ptr);
 #endif
@@ -185,11 +184,11 @@ th_read(TAR *t)
 					errno = EINVAL;
 				return -1;
 			}
-#ifdef DEBUG
+#ifdef DEBUG_BLOCK
 			printf("    th_read(): read block == \"%s\"\n", ptr);
 #endif
 		}
-#ifdef DEBUG
+#ifdef DEBUG_BLOCK
 		printf("    th_read(): t->th_buf.gnu_longname == \"%s\"\n",
 		       t->th_buf.gnu_longname);
 #endif
@@ -252,14 +251,14 @@ th_write(TAR *t)
 	char *ptr;
 	char buf[T_BLOCKSIZE];
 
-#ifdef DEBUG
+#ifdef DEBUG_BLOCK
 	printf("==> th_write(TAR=\"%s\")\n", t->pathname);
 	th_print(t);
 #endif
 
 	if ((t->options & TAR_GNU) && t->th_buf.gnu_longlink != NULL)
 	{
-#ifdef DEBUG
+#ifdef DEBUG_BLOCK
 		printf("th_write(): using gnu_longlink (\"%s\")\n",
 		       t->th_buf.gnu_longlink);
 #endif
@@ -310,7 +309,7 @@ th_write(TAR *t)
 
 	if ((t->options & TAR_GNU) && t->th_buf.gnu_longname != NULL)
 	{
-#ifdef DEBUG
+#ifdef DEBUG_BLOCK
 		printf("th_write(): using gnu_longname (\"%s\")\n",
 		       t->th_buf.gnu_longname);
 #endif
@@ -361,7 +360,7 @@ th_write(TAR *t)
 
 	th_finish(t);
 
-#ifdef DEBUG
+#ifdef DEBUG_BLOCK
 	/* print tar header */
 	th_print(t);
 #endif
@@ -374,7 +373,7 @@ th_write(TAR *t)
 		return -1;
 	}
 
-#ifdef DEBUG
+#ifdef DEBUG_BLOCK
 	puts("th_write(): returning 0");
 #endif
 	return 0;

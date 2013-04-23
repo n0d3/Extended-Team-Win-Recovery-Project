@@ -10,7 +10,6 @@
 **  University of Illinois at Urbana-Champaign
 */
 
-#define DEBUG
 #include <internal.h>
 
 #include <stdio.h>
@@ -18,8 +17,9 @@
 #include <dirent.h>
 #include <errno.h>
 #include <stdlib.h>
+
 #ifdef STDC_HEADERS
-# include <string.h>
+	#include <string.h>
 #endif
 
 int
@@ -58,14 +58,14 @@ tar_extract_all(TAR *t, char *prefix)
 	char *filename;
 	char buf[MAXPATHLEN];
 	int i;
+#ifdef TAR_DEBUG_VERBOSE
 	printf("prefix: %s\n", prefix);
-#ifdef DEBUG
 	printf("==> tar_extract_all(TAR *t, \"%s\")\n",
 	       (prefix ? prefix : "(null)"));
 #endif
 	while ((i = th_read(t)) == 0)
 	{
-#ifdef DEBUG
+#ifdef TAR_DEBUG_VERBOSE
 		puts("    tar_extract_all(): calling th_get_pathname()");
 #endif
 		filename = th_get_pathname(t);
@@ -77,13 +77,19 @@ tar_extract_all(TAR *t, char *prefix)
 			snprintf(buf, sizeof(buf), "%s/%s", prefix, filename);
 		else
 			strlcpy(buf, filename, sizeof(buf));
-#ifdef DEBUG
+#ifdef TAR_DEBUG_VERBOSE
 		printf("    tar_extract_all(): calling tar_extract_file(t, "
 		       "\"%s\")\n", buf);
-#endif
 		printf("item name: '%s'\n", filename);
+#endif
+#ifdef TAR_DEBUG_INFO
+		printf("I:Extracting (");
+#endif
 		if (tar_extract_file(t, buf, prefix) != 0)  
 			return -1;
+#ifdef TAR_DEBUG_INFO
+		printf(") : '%s%s'\n", prefix, filename);
+#endif
 	}
 	return (i == 1 ? 0 : -1);
 }
@@ -92,7 +98,7 @@ tar_extract_all(TAR *t, char *prefix)
 int
 tar_append_tree(TAR *t, char *realdir, char *savedir, char *exclude)
 {
-#ifdef DEBUG
+#ifdef TAR_DEBUG_VERBOSE
 	printf("==> tar_append_tree(0x%lx, \"%s\", \"%s\")\n",
 	       (long unsigned int)t, realdir, (savedir ? savedir : "[NULL]"));
 #endif
@@ -118,7 +124,9 @@ tar_append_tree(TAR *t, char *realdir, char *savedir, char *exclude)
 		excluded[n_spaces] = 0;
 		for (i = 0; i < (n_spaces+1); i++) {
 			if (realdir == excluded[i]) {
-				printf("    excluding '%s'\n", excluded[i]);
+#ifndef TAR_DEBUG_SUPPRESS
+				printf("I:Excluding : '%s'\n", excluded[i]);
+#endif
 				skip = 1;
 				break;
 			}
@@ -150,7 +158,9 @@ tar_append_tree(TAR *t, char *realdir, char *savedir, char *exclude)
 			int omit = 0;
 			for (i = 0; i < (n_spaces+1); i++) {
 				if (dent->d_name == excluded[i]) {
-					printf("    excluding '%s'\n", excluded[i]);
+#ifndef TAR_DEBUG_SUPPRESS
+					printf("I:Excluding : '%s'\n", excluded[i]);
+#endif
 					omit = 1;
 					break;
 				}
@@ -171,6 +181,18 @@ tar_append_tree(TAR *t, char *realdir, char *savedir, char *exclude)
 				return -1;
 			continue;
 		} else {
+#ifdef TAR_DEBUG_INFO
+			if (S_ISREG(s.st_mode))
+				printf("I:Adding (reg) : '%s'\n", realpath);
+			else if (S_ISCHR(s.st_mode))
+				printf("I:Adding (chr) : '%s'\n", realpath);
+			else if (S_ISLNK(s.st_mode))
+				printf("I:Adding (link) : '%s'\n", realpath);
+			else if (S_ISBLK(s.st_mode))
+				printf("I:Adding (blk) : '%s'\n", realpath);
+			else if (S_ISFIFO(s.st_mode))
+				printf("I:Adding (fifo) : '%s'\n", realpath);
+#endif
 			if (tar_append_file(t, realpath, (savedir ? savepath : NULL)) != 0)
 				return -1;
 			continue;
@@ -191,20 +213,25 @@ tar_find(TAR *t, char *searchstr)
 
 	char *filename;
 	int i, entryfound = 0;
-#ifdef DEBUG
+#ifdef TAR_DEBUG_VERBOSE
 	printf("==> tar_find(0x%lx, %s)\n", (long unsigned int)t, searchstr);
 #endif
 	while ((i = th_read(t)) == 0) {
 		filename = th_get_pathname(t);
 		if (fnmatch(searchstr, filename, FNM_FILE_NAME | FNM_PERIOD) == 0) {
 			entryfound++;
+#ifdef TAR_DEBUG_VERBOSE
 			printf("    found matching entry: %s\n", filename);
+#endif
 			break;
 		}
 	}
 
-	if (!entryfound)
+	if (!entryfound) {
+#ifdef TAR_DEBUG_VERBOSE
 		printf("    no matching entry found.\n");
+#endif
+	}
 
 	return entryfound;
 }

@@ -10,6 +10,16 @@ LOCAL_SRC_FILES = append.c block.c decode.c encode.c extract.c handle.c output.c
 LOCAL_C_INCLUDES += $(LOCAL_PATH) \
 					external/zlib
 LOCAL_SHARED_LIBRARIES += libz libc
+ifneq ($(TW_TAR_DEBUG_LEVEL),)
+	ifeq ($(TW_TAR_DEBUG_LEVEL),"verbose")
+		LOCAL_CFLAGS += -DTAR_DEBUG_VERBOSE
+	endif
+	ifeq ($(TW_TAR_DEBUG_LEVEL),"info")
+		LOCAL_CFLAGS += -DTAR_DEBUG_INFO
+	endif
+else
+	LOCAL_CFLAGS += -DTAR_DEBUG_SUPPRESS
+endif
 
 include $(BUILD_SHARED_LIBRARY)
 

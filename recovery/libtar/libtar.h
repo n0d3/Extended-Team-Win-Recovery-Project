@@ -24,6 +24,10 @@ extern "C"
 {
 #endif
 
+/* Also available for debugging */
+//#define DEBUG_GLOB
+//#define DEBUG_ENCODE
+//#define DEBUG_BLOCK
 
 /* useful constants */
 #define T_BLOCKSIZE		512

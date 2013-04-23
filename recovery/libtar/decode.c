@@ -29,7 +29,9 @@ th_get_pathname(TAR *t)
 	char filename[MAXPATHLEN];
 
 	if (t->th_buf.gnu_longname) {
+#ifdef TAR_DEBUG_VERBOSE
 		printf("returning gnu longname\n");
+#endif
 		return t->th_buf.gnu_longname;
 	}
 
