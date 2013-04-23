@@ -134,7 +134,7 @@ int TWNativeSDManager::Backup(string RomPath) {
 		DataManager::ShowProgress(pos, section_time);
 		if (system_backup_size > MAX_ARCHIVE_SIZE) {
 			// This backup needs to be split into multiple archives
-			gui_print("Breaking backup file into multiple archives...\nGenerating file lists\n");
+			gui_print("Breaking backup file into multiple archives...\n");
 			sprintf(back_name, "%s/system", RomPath.c_str());
 			twrpTar tar;
 			tar.setexcl("");
@@ -190,7 +190,7 @@ int TWNativeSDManager::Backup(string RomPath) {
 		DataManager::ShowProgress(pos, section_time);
 		if (data_backup_size > MAX_ARCHIVE_SIZE) {
 			// This backup needs to be split into multiple archives
-			gui_print("Breaking backup file into multiple archives...\nGenerating file lists\n");
+			gui_print("Breaking backup file into multiple archives...\n");
 			sprintf(back_name, "%s/data", RomPath.c_str());
 			twrpTar tar;
 			tar.setexcl(Tar_Excl);

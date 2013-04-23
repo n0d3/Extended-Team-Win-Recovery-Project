@@ -1467,6 +1467,7 @@ bool TWPartition::Wipe(string New_File_System) {
 	bool wiped = false, update_crypt = false;
 	int check;
 	string Layout_Filename = Mount_Point + "/.layout_version";
+	string theme_path, tmp_path = "/tmp/ui.zip";
 
 	if (!Can_Be_Wiped) {
 		LOGERR("Partition '%s' cannot be wiped.\n", Mount_Point.c_str());
@@ -1482,6 +1483,12 @@ bool TWPartition::Wipe(string New_File_System) {
 			TWFunc::copy_file("/data/system/edk_p_sd", "/tmp/edk_p_sd", 0600);
 	}
 #endif
+	// Save theme file if in use
+	if (Mount_Point == "/sdcard") {
+		theme_path = DataManager::GetStrValue(TW_SEL_THEME_PATH);
+		if (!theme_path.empty())
+			rename(theme_path.c_str(), tmp_path.c_str());
+	}
 
 	if (Retain_Layout_Version && Mount(false) && TWFunc::Path_Exists(Layout_Filename))
 		TWFunc::copy_file(Layout_Filename, "/.layout_version", 0600);
@@ -1534,8 +1541,12 @@ bool TWPartition::Wipe(string New_File_System) {
 			}
 		}
 #endif
-		if (Mount_Point == "/sdcard")
+		if (Mount_Point == "/sdcard") {
 			DataManager::SetupTwrpFolder();
+			// restore theme file if needed
+			if (!theme_path.empty() && TWFunc::Path_Exists(tmp_path))
+				rename(tmp_path.c_str(), theme_path.c_str());
+		}
 
 		if (Mount_Point == "/cache")
 			DataManager::Output_Version();
@@ -1577,7 +1588,7 @@ bool TWPartition::Wipe_AndSec(void) {
 
 	gui_print("Wiping %s\n", Backup_Display_Name.c_str());
 	TWFunc::removeDir(Mount_Point + "/.android_secure/", true);
-	gui_print("Done.\n");
+	gui_print("[Android Secure wipe done]\n");
 	return true;
 }
 
@@ -1602,7 +1613,8 @@ bool TWPartition::Wipe_Encryption() {
 		if (Has_Data_Media && !Symlink_Mount_Point.empty()) {
 			Recreate_Media_Folder();
 		}
-		gui_print("You may need to reboot recovery to be able to use /data again.\n");
+		gui_print("[%s wipe done]\n", Display_Name.c_str());
+		gui_print("[Rebooting recovery is recommended]\n");
 		return true;
 	} else {
 		Has_Data_Media = Save_Data_Media;
@@ -1627,7 +1639,7 @@ bool TWPartition::Wipe_EXT23(string File_System) {
 			Current_File_System = File_System;
 			Recreate_AndSec_Folder();
 			Recreate_DataOnExt_Folder();
-			gui_print("Done.\n");
+			gui_print("[%s wipe done]\n", Display_Name.c_str());
 			return true;
 		} else {
 			LOGERR("Unable to wipe '%s'.\n", Mount_Point.c_str());
@@ -1662,7 +1674,7 @@ bool TWPartition::Wipe_EXT4() {
 			Current_File_System = "ext4";
 			Recreate_AndSec_Folder();
 			Recreate_DataOnExt_Folder();
-			gui_print("Done.\n");
+			gui_print("[%s wipe done]\n", Display_Name.c_str());
 			return true;
 		} else {
 			LOGERR("Unable to wipe '%s'.\n", Mount_Point.c_str());
@@ -1688,7 +1700,7 @@ bool TWPartition::Wipe_NILFS2() {
 			Current_File_System = "nilfs2";
 			Recreate_AndSec_Folder();
 			Recreate_DataOnExt_Folder();
-			gui_print("Done.\n");
+			gui_print("[%s wipe done]\n", Display_Name.c_str());
 			return true;
 		} else {
 			LOGERR("Unable to wipe '%s'.\n", Mount_Point.c_str());
@@ -1713,7 +1725,7 @@ bool TWPartition::Wipe_FAT() {
 		if (TWFunc::Exec_Cmd(command, result) == 0) {
 			Current_File_System = "vfat";
 			Recreate_AndSec_Folder();
-			gui_print("Done.\n");
+			gui_print("[%s wipe done]\n", Display_Name.c_str());
 			return true;
 		} else {
 			LOGERR("Unable to wipe '%s'.\n", Mount_Point.c_str());
@@ -1739,7 +1751,7 @@ bool TWPartition::Wipe_EXFAT() {
 		command = "mkexfatfs " + Actual_Block_Device;
 		if (TWFunc::Exec_Cmd(command, result) == 0) {
 			Recreate_AndSec_Folder();
-			gui_print("Done.\n");
+			gui_print("[%s wipe done]\n", Display_Name.c_str());
 			return true;
 		} else {
 			LOGERR("Unable to wipe '%s'.\n", Mount_Point.c_str());
@@ -1765,7 +1777,7 @@ bool TWPartition::Wipe_NTFS() {
 		if (TWFunc::Exec_Cmd(command, result) == 0) {
 			Current_File_System = "ntfs";
 			Recreate_AndSec_Folder();
-			gui_print("Done.\n");
+			gui_print("[%s wipe done]\n", Display_Name.c_str());
 			return true;
 		} else {
 			LOGERR("Unable to wipe '%s'.\n", Mount_Point.c_str());
@@ -1782,7 +1794,7 @@ bool TWPartition::Wipe_YAFFS2() {
 	if (!UnMount(true))
 		return false;
 
-	gui_print("YAFFS2 Formatting \"%s\"\n", MTD_Name.c_str());
+	gui_print("YAFFS2 Formatting \"%s\"...\n", MTD_Name.c_str());
 
 	mtd_scan_partitions();
 	const MtdPartition* mtd = mtd_find_partition_by_name(MTD_Name.c_str());
@@ -1806,13 +1818,13 @@ bool TWPartition::Wipe_YAFFS2() {
         	return false;
 	}
 	Current_File_System = "yaffs2";
-	gui_print("Done.\n");
+	gui_print("[%s wipe done]\n", Display_Name.c_str());
     	return true;
 }
 
 bool TWPartition::Wipe_MTD() {
 	string command, result;
-	gui_print("MTD Formatting \"%s\"\n", MTD_Name.c_str());
+	gui_print("MTD Formatting \"%s\"...\n", MTD_Name.c_str());
 
 	mtd_scan_partitions();
 	const MtdPartition* mtd = mtd_find_partition_by_name(MTD_Name.c_str());
@@ -1826,7 +1838,7 @@ bool TWPartition::Wipe_MTD() {
 		return false;
 	}	
 	Current_File_System = "mtd";
-	gui_print("Done.\n");
+	gui_print("[%s wipe done]\n", Display_Name.c_str());
     	return true;
 }
 
@@ -1834,10 +1846,11 @@ bool TWPartition::Wipe_RMRF() {
 	if (!Mount(true))
 		return false;
 
-	gui_print("Removing all files under '%s'\n", Mount_Point.c_str());
+	gui_print("Removing all files under '%s' ...\n", Mount_Point.c_str());
 	TWFunc::removeDir(Mount_Point, true);
 	Recreate_AndSec_Folder();
 	Recreate_DataOnExt_Folder();
+	gui_print("[%s wipe done]\n", Display_Name.c_str());
 	return true;
 }
 
@@ -1848,7 +1861,7 @@ bool TWPartition::Wipe_Data_Without_Wiping_Media() {
 	if (!Mount(true))
 		return false;
 
-	gui_print("Wiping data without wiping /data/media ...\n");
+	gui_print("Wiping data without wiping '/data/media' ...\n");
 
 	DIR* d;
 	d = opendir("/data");
@@ -1874,7 +1887,7 @@ bool TWPartition::Wipe_Data_Without_Wiping_Media() {
 		gui_print("Done.\n");
 		return true;
 	}
-	gui_print("Dirent failed to open /data, error!\n");
+	gui_print("Dirent failed to open '/data', error!\n");
 	return false;
 }
 
