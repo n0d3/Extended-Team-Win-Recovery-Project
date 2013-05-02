@@ -67,6 +67,12 @@ extern "C" void gui_print(const char *fmt, ...)
     return;
 }
 
+extern "C" void gui_cls()
+{
+	gConsole.clear();
+	return;
+}
+
 extern "C" void gui_print_overwrite(const char *fmt, ...)
 {
     char buf[512];          // We're going to limit a single request to 512 bytes

@@ -647,6 +647,12 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 		operation_end(0, simulate);
 		return 0;
 	}
+	if (function == "cls") {
+		operation_start("Cls");
+		gui_cls();
+		operation_end(0, simulate);
+		return 0;
+	}
 	if (function == "screenshot") {
 		int y, z;
 		DataManager::GetValue(TW_ACTION_BUSY, y);

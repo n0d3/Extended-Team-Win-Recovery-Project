@@ -8,6 +8,7 @@ int gui_start();
 int gui_startPage(const char* page_name);
 void gui_print(const char *fmt, ...);
 void gui_print_overwrite(const char *fmt, ...);
+void gui_cls();
 
 #endif  // _GUI_HEADER
 
