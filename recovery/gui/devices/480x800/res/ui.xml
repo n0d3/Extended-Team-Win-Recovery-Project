@@ -5184,10 +5184,10 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<placement x="%col1_x%" y="%row3_y%" />
+				<placement x="%col1_x%" y="454" />
 				<font resource="font" color="%button_text_color%" />
 				<text>chmod 755</text>
-				<image resource="main_button" />
+				<image resource="ml_button" />
 				<actions>
 					<action function="set">tw_filemanager_command=chmod 755</action>
 					<action function="set">tw_fm_text1=chmod 755</action>
@@ -5201,10 +5201,10 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<placement x="%col2_x%" y="%row3_y%" />
+				<placement x="%col1_x%" y="513" />
 				<font resource="font" color="%button_text_color%" />
 				<text>chmod</text>
-				<image resource="main_button" />
+				<image resource="ml_button" />
 				<actions>
 					<action function="set">tw_filemanager_rename=0000</action>
 					<action function="set">tw_fm_text2=</action>
@@ -5217,7 +5217,7 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<placement x="%col1_x%" y="%row4_y%" />
+				<placement x="%col2_x%" y="%row3_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Delete</text>
 				<image resource="main_button" />
@@ -5230,6 +5230,16 @@
 					<action function="set">tw_back=filemanageroptions</action>
 					<action function="page">filemanagerconfirm</action>
 				</actions>
+			</object>
+
+			<object type="button">
+				<condition var1="tw_fm_isfolder" var2="0" />
+				<highlight color="%highlight_color%" />
+				<placement x="%col1_x%" y="%row4_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>View File</text>
+				<image resource="main_button" />
+				<action function="page">fileviewer</action>
 			</object>
 
 			<object type="button">
@@ -5270,6 +5280,40 @@
 			<object type="action">
 				<touch key="back" />
 				<action function="page">filemanagerlist</action>
+			</object>
+
+			<object type="template" name="footer" />
+		</page>
+
+		<page name="fileviewer">
+			<object type="template" name="header" />
+
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%row1_header_y%" placement="5"/>
+				<text>%tw_filename1%</text>
+			</object>
+
+			<object type="console">
+				<placement x="%console_x%" y="%row1_y%" w="%console_width%" h="600" />
+				<color foreground="%console_foreground%" background="%console_background%" scroll="%console_scroll%" />
+				<font resource="fixed" />
+			</object>
+			
+			<object type="action">
+				<action function="viewfile">%tw_filename1%</action>
+			</object>
+
+			<object type="action">
+				<touch key="home" />
+				<action function="cls"></action>
+				<action function="page">main</action>
+			</object>
+
+			<object type="action">
+				<touch key="back" />
+				<action function="cls"></action>
+				<action function="page">filemanageroptions</action>
 			</object>
 
 			<object type="template" name="footer" />

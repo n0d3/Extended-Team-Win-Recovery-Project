@@ -114,6 +114,7 @@ class TWFunc {
 		static int SubDir_Check(string Dir, string subDir1, string subDir2, string subDir3, string subDir4, string subDir5, int min);
 		static vector<string> split_string(const string &in, char del, bool skip_empty);
 		static int Split_NandroidMD5(string File);
+		static int cat_file(string fn, int print_line_length);
 		// Used in restoring tar
 		static int TarExtract(string tarfn, string tardir);
 		static int TarEntryExists(string tarfn, string entry);

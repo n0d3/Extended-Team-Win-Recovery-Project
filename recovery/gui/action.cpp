@@ -677,6 +677,13 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			operation_end(0, simulate);
 		}
 
+		if (function == "viewfile") {
+			operation_start("ViewFile");
+			gui_cls();
+			TWFunc::cat_file(arg, 47);
+			operation_end(0, simulate);
+		}
+
 		if (function == "getfoldersize") {
 			float Size = 0;
 

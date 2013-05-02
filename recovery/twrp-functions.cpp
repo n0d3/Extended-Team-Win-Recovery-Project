@@ -512,6 +512,30 @@ int TWFunc::TarEntryExists(string tarfn, string entry) {
 	return 0;
 }
 
+int TWFunc::cat_file(string fn, int print_line_length) {
+	if (fn.empty() || print_line_length == 0)
+		return 0;
+
+	int i, j, line_length, lines_read;
+	vector<string> lines;
+	lines_read = read_file_line_by_line(fn, lines, false);
+	if (lines_read && lines.size() > 0) {
+		for (i = 0; i < (int)lines.size(); i++) {
+			line_length = lines[i].length();
+			if (line_length > print_line_length) {
+				string tmp;
+				for (j=0; j<line_length; j+=print_line_length) {
+					tmp = lines[i].substr(j, print_line_length);
+					gui_print("%s\n", tmp.c_str());
+				}
+			} else {
+				gui_print("%s\n", lines[i].c_str());
+			}
+		}
+	}
+	return 0;
+}
+
 int TWFunc::read_file_line_by_line(string fn, vector<string>& lines, bool skip_empty) {
 	if (fn.empty())
 		return 0;
