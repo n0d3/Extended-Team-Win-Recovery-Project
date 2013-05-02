@@ -86,9 +86,6 @@ class TWPartition {
 		virtual unsigned int FS_Type_Via_statfs();
 		// When formatting card's partitions to different fs
 		virtual void Change_FS_Type(string type);
-		// Used in restoring tar
-		virtual int TarExtract(string tarfn, string tardir);
-		virtual int TarFindEntry(string tarfn, string entry);
 		virtual void Change_Restore_Display_Name(string name);
 		virtual int Setup_Extra_Boot(string name, string mtd_num);
 

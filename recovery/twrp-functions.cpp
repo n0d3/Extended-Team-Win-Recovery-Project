@@ -18,6 +18,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include "twrpTar.hpp"
 #include "twrp-functions.hpp"
 #include "partitions.hpp"
 #include "twcommon.h"
@@ -490,6 +491,25 @@ int TWFunc::read_file(string fn, string& results) {
 	}
 	LOGINFO("Cannot find file %s\n", fn.c_str());
 	return -1;
+}
+
+int TWFunc::TarExtract(string tarfn, string tardir) {
+	twrpTar tar;
+	tar.setfn(tarfn);
+	tar.setdir(tardir);
+	if (tar.extractTarFork() == 0)
+		return 1;
+
+	return 0;
+}
+
+int TWFunc::TarEntryExists(string tarfn, string entry) {
+	twrpTar tar;
+	tar.setfn(tarfn);
+	if (tar.entryExists(entry))
+		return 1;
+
+	return 0;
 }
 
 int TWFunc::read_file_line_by_line(string fn, vector<string>& lines, bool skip_empty) {

@@ -2179,21 +2179,10 @@ bool TWPartition::Restore_Tar(string restore_folder, string Restore_File_System)
 		LOGINFO("Backup is multiple archives.\n");
 		sprintf(split_index, "%03i", index);
 		Full_FileName += split_index;
-		string tarDir = Backup_Path;
-		if (Backup_Path == "/sd-ext") {
-			if (TarFindEntry(Full_FileName, "sd-ext/"))
-				tarDir = "/";
-		} else if (Backup_Path == "/system") {
-			if (TarFindEntry(Full_FileName, "system/"))
-				tarDir = "/";
-		} else if (Backup_Path == "/data") {
-			if (TarFindEntry(Full_FileName, "data/"))
-				tarDir = "/";
-		}
 		while (TWFunc::Path_Exists(Full_FileName)) {
 			gui_print("Restoring archive %i...\n", index+1);
 			LOGINFO("Restoring '%s'...\n", Full_FileName.c_str());
-			if (!TarExtract(Full_FileName, tarDir))
+			if (!TWFunc::TarExtract(Full_FileName, Backup_Path))
 				return false;
 			index++;		
 			sprintf(split_index, "%03i", index);
@@ -2207,14 +2196,14 @@ bool TWPartition::Restore_Tar(string restore_folder, string Restore_File_System)
 		string tarDir = Backup_Path;
 		if (Backup_Path == "/sd-ext") {
 			// Check needed for restoring a CWM backup of sd-ext
-			if (TarFindEntry(Full_FileName, "sd-ext/"))
+			if (TWFunc::TarEntryExists(Full_FileName, "sd-ext/"))
 				tarDir = "/";
 		} else if (Backup_Path == "/and-sec" || Backup_Path == Mount_Point + "/.android_secure") {
 			// Check needed for restoring a CWM backup of android_secure
-			if (TarFindEntry(Full_FileName, ".android_secure/"))
+			if (TWFunc::TarEntryExists(Full_FileName, ".android_secure/"))
 				tarDir = Storage_Path;
 		}
-		if (!TarExtract(Full_FileName, tarDir))
+		if (!TWFunc::TarExtract(Full_FileName, tarDir))
 			return false;
 	}
 	return true;
@@ -2313,28 +2302,6 @@ void TWPartition::Change_FS_Type(string type) {
 void TWPartition::Change_Restore_Display_Name(string name) {
 	Restore_Display_Name = name;
 	return;
-}
-
-/************************************************************************************
- * Some Tar wrappers used in restore
- */
-int TWPartition::TarExtract(string tarfn, string tardir) {
-	twrpTar tar;
-	tar.setfn(tarfn);
-	tar.setdir(tardir);
-	if (tar.extractTarFork() == 0)
-		return 1;
-
-	return 0;
-}
-
-int TWPartition::TarFindEntry(string tarfn, string entry) {
-	twrpTar tar;
-	tar.setfn(tarfn);
-	if (tar.entryExists(entry))
-		return 1;
-
-	return 0;
 }
 
 /************************************************************************************
