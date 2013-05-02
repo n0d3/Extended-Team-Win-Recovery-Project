@@ -24,6 +24,9 @@ extern "C"
 {
 #endif
 
+#ifdef TAR_DEBUG_INFO
+	#undef TAR_DEBUG_VERBOSE
+#endif
 /* Also available for debugging */
 //#define DEBUG_GLOB
 //#define DEBUG_ENCODE

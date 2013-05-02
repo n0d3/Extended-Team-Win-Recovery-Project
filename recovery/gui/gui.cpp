@@ -291,14 +291,15 @@ static void *input_thread(void *cookie)
 		touch_and_hold = 0;
 		touch_repeat = 0;
 		dontwait = 0;
-		if(offmode_charge &&
-		  (ev.code == power_key || ev.code == 102 || ev.code == 114
-		|| ev.code == 114 || ev.code == 139 || ev.code == 158
-		|| ev.code == 231)) {
+		if(offmode_charge) {
+			if(ev.code == power_key || ev.code == 102 || ev.code == 114
+			|| ev.code == 114 || ev.code == 139 || ev.code == 158
+			|| ev.code == 231) {
 #ifdef _EVENT_LOGGING
-		    LOGERR("Hard-Key[%d] wakes up device.\n", ev.code);
+		    		LOGERR("Hard-Key[%d] wakes up device.\n", ev.code);
 #endif
-		    key_pressed = 1;
+		    		key_pressed = 1;
+			}
 		} else {
 		    TWFunc::Vibrate(button_pressed);
 		    blankTimer.resetTimerAndUnblank();
