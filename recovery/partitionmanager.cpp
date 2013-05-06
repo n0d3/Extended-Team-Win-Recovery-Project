@@ -796,6 +796,7 @@ int TWPartitionManager::Run_Backup(void) {
 					file_bytes += backup_part->Backup_Size;
 				else
 					img_bytes += backup_part->Backup_Size;
+    				LOGINFO("%s's backup_size ~ %lluMB\n", backup_path.c_str(), backup_part->Backup_Size / 1024 / 1024);
 				if (backup_part->Has_SubPartition) {
 					std::vector<TWPartition*>::iterator subpart;
 
@@ -806,6 +807,7 @@ int TWPartitionManager::Run_Backup(void) {
 								file_bytes += (*subpart)->Backup_Size;
 							else
 								img_bytes += (*subpart)->Backup_Size;
+    							LOGINFO("Subpartition of %s backup_size ~ %lluMB\n", backup_path.c_str(), (*subpart)->Backup_Size / 1024 / 1024);
 						}
 					}
 				}
