@@ -528,10 +528,13 @@ extern "C" int gui_init()
 
     gr_init();
 
-    if (res_create_surface("/res/images/curtain.jpg", &gCurtain))
-    {
-	printf("Unable to locate '/res/images/curtain.jpg'\nDid you set a DEVICE_RESOLUTION in your config files?\n");
-	return -1;
+    // First try to use the curtain.jpg extracted from the selected theme's ui.zip to /tmp during booting up (check init.rc & prerecoveryboot.sh)
+    if (res_create_surface("/tmp/images/curtain.jpg", &gCurtain)) {
+	// If no curtain.jpg is found use the built-in
+	if (res_create_surface("/res/images/curtain.jpg", &gCurtain)) {
+	    printf("Unable to locate '/res/images/curtain.jpg'\nDid you set a DEVICE_RESOLUTION in your config files?\n");
+	    return -1;
+	}
     }
 
     curtainSet();
@@ -578,15 +581,12 @@ extern "C" int gui_loadResources()
 
 		// TEST: Load a pre-selected theme
 		DataManager::GetValue(TW_SEL_THEME_PATH, theme_path);
-		if (theme_path.empty())
-			theme_path = "/res/ui.xml";	
-		if (check || PageManager::LoadPackage("TWRP", theme_path, "main"))
-		{
-			if (PageManager::LoadPackage("TWRP", "/res/ui.xml", "main"))
-			{
-				LOGERR("Failed to load base packages.\n");
-				goto error;
-			}
+		if (check != 0 || theme_path.empty()) {
+			theme_path = "/res/ui.xml";
+		}
+		if (PageManager::LoadPackage("TWRP", theme_path, "main")) {
+			LOGERR("Failed to load base packages.\n");
+			goto error;
 		}
 	}
 

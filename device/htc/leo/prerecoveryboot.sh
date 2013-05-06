@@ -18,3 +18,13 @@ c\
 }
 ' /etc/recovery.fstab
 fi
+
+#############################################
+# Extract theme's curtain.jpg from ui.zip
+#
+busybox mount -t auto /dev/block/mmcblk0p1 /sdcard
+if [ -f "/sdcard/TWRP/theme/.current" ]; then
+ui_zip=`cat /sdcard/TWRP/theme/.current`
+busybox unzip -oq "$ui_zip" images/curtain.jpg -d /tmp
+fi
+busybox umount /sdcard

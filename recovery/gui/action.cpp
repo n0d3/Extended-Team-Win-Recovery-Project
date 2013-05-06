@@ -360,6 +360,8 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 		int check = 0, ret_val = 0;
 		std::string root_path;
 		std::string theme_path;
+		std::string res;
+		std::string cmd = "rm -f /sdcard/TWRP/theme/.current";
 
 		operation_start("Reload Theme");
 		blankTimer.setBlank(0);
@@ -372,15 +374,18 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 
 		// Load a pre-selected theme
 		DataManager::GetValue(TW_SEL_THEME_PATH, theme_path);
-		if (theme_path.empty())
+		if (check != 0 || theme_path.empty()) {
 			theme_path = "/res/ui.xml";
-		if (check != 0 || PageManager::ReloadPackage("TWRP", theme_path) != 0) {
-			// Loading the custom theme failed - try loading the stock theme
-			LOGINFO("Attempting to reload stock theme...\n");
-			if (PageManager::ReloadPackage("TWRP", "/res/ui.xml")) {
-				LOGERR("Failed to load base packages.\n");
-				ret_val = 1;
-			}
+			if (check == 0)	TWFunc::Exec_Cmd(cmd, res);
+		}
+		if (PageManager::ReloadPackage("TWRP", theme_path) != 0) {
+			LOGERR("Failed to load base packages.\n");
+			ret_val = 1;
+		} else {
+			if (check == 0) {
+				cmd = "echo " + theme_path + ">/sdcard/TWRP/theme/.current";
+				TWFunc::Exec_Cmd(cmd, res);
+			}		
 		}
 		if (ret_val == 0) {
 			int timeout;
@@ -1515,6 +1520,8 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 							int check = 0;
 							std::string root_path;
 							std::string theme_path;
+							std::string res;
+							std::string cmd = "rm -f /sdcard/TWRP/theme/.current";
 
 							root_path = DataManager::GetSettingsStoragePath();
 							if (PartitionManager.Mount_By_Path(root_path.c_str(), 1) < 0) {
@@ -1524,17 +1531,17 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 
 							// TEST: Load a pre-selected theme
 							DataManager::GetValue(TW_SEL_THEME_PATH, theme_path);
-							if (theme_path.empty())
+							if (check != 0 || theme_path.empty()) {
 								theme_path = "/res/ui.xml";
+								if (check == 0)	TWFunc::Exec_Cmd(cmd, res);
+							}
 							if (check == 0 && stat(theme_path.c_str(), &st) == 0) {
-								if (PageManager::ReloadPackage("TWRP", theme_path) != 0)
-								{
+								if (PageManager::ReloadPackage("TWRP", theme_path) != 0) {
 									// Loading the custom theme failed - try loading the stock theme
-									LOGINFO("Attempting to reload stock theme...\n");
-									if (PageManager::ReloadPackage("TWRP", "/res/ui.xml"))
-									{
-										LOGERR("Failed to load base packages.\n");
-									}
+									LOGERR("Failed to load base packages.\n");
+								} else {
+									cmd = "echo " + theme_path + ">/sdcard/TWRP/theme/.current";
+									TWFunc::Exec_Cmd(cmd, res);
 								}
 							}
 						}

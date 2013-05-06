@@ -109,7 +109,7 @@ int res_create_surface_png(const char* name, gr_surface* pSurface) {
           ((channels == 3 && color_type == PNG_COLOR_TYPE_RGB) ||
            (channels == 4 && color_type == PNG_COLOR_TYPE_RGBA) ||
            (channels == 1 && color_type == PNG_COLOR_TYPE_PALETTE)))) {
-        return -7;
+        result = -7;
         goto exit;
     }
 
