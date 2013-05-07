@@ -235,7 +235,7 @@
       <object type="text" color="%text_color%">
         <condition var1="tw_simulate_actions" var2="1" />
         <font resource="font_small" />
-        <placement x="150" y="45" />
+        <placement x="%center_x%" y="45" placement="5" />
         <text>Simulating Actions...</text>
       </object>
 
@@ -248,7 +248,7 @@
 
       <object type="text" color="%text_color%">
         <font resource="font" />
-        <placement x="380" y="40" />
+        <placement x="%center_x%" y="70" placement="5" />
         <text>%tw_time%</text>
       </object>
 
