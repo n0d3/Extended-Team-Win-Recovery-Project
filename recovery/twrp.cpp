@@ -160,11 +160,14 @@ int main(int argc, char **argv) {
 
 	// Load default values to set DataManager constants and handle ifdefs
 	DataManager::SetDefaultValues();
+
+	// Wait for the prerecoveryboot.sh to finish
 	char preboot_svc[PROPERTY_VALUE_MAX];
 	do {
 		property_get("init.svc.preboot", preboot_svc, "running");
 		usleep(100);
 	} while (strcmp(preboot_svc, "stopped") != 0);
+
 	printf("Starting the UI...\n");
 	gui_init();
 	printf("=> Linking mtab\n");

@@ -291,21 +291,19 @@ static void *input_thread(void *cookie)
 		touch_and_hold = 0;
 		touch_repeat = 0;
 		dontwait = 0;
-		if(offmode_charge) {
-			if(ev.code == power_key || ev.code == 102 || ev.code == 114
-			|| ev.code == 114 || ev.code == 139 || ev.code == 158
-			|| ev.code == 231) {
-#ifdef _EVENT_LOGGING
-		    		LOGERR("Hard-Key[%d] wakes up device.\n", ev.code);
-#endif
-		    		key_pressed = 1;
-			}
-		} else {
+		if (!offmode_charge) {
 		    TWFunc::Vibrate(button_pressed);
 		    blankTimer.resetTimerAndUnblank();
 #ifdef _EVENT_LOGGING
 		    LOGERR("Screen unblank & Timer reset.\n");
 #endif
+		} else if (ev.code == power_key || ev.code == 102 || ev.code == 114
+			|| ev.code == 114 || ev.code == 139 || ev.code == 158
+			|| ev.code == 231) {
+#ifdef _EVENT_LOGGING
+		    	LOGERR("Hard-Key[%d] wakes up device.\n", ev.code);
+#endif
+		    	key_pressed = 1;
 		}
 	    }
     	}
@@ -555,8 +553,7 @@ extern "C" int gui_loadResources()
 	int check = 0;
 	DataManager::GetValue(TW_IS_ENCRYPTED, check);
 	if (check) {
-		if (PageManager::LoadPackage("TWRP", "/res/ui.xml", "decrypt"))
-		{
+		if (PageManager::LoadPackage("TWRP", "/res/ui.xml", "decrypt")) {
 			LOGERR("Failed to load base packages.\n");
 			goto error;
 		} else
@@ -564,9 +561,13 @@ extern "C" int gui_loadResources()
 	}
 	if (check == 0 && PageManager::LoadPackage("TWRP", "/script/ui.xml", "main")) {
 		std::string theme_path;
-		std::string root_path;
-
-		root_path = DataManager::GetSettingsStoragePath();
+		theme_path = DataManager::GetStrValue(TW_SEL_THEME_PATH);
+		// Get the pre-selected theme
+		if (theme_path.empty()) {
+			// Built-in theme
+			theme_path = "/res/ui.xml";
+		}
+		// Mount storage
 		if (!PartitionManager.Mount_Settings_Storage(false)) {
 			int retry_count = 5;
 			while (retry_count > 0 && !PartitionManager.Mount_Settings_Storage(false)) {
@@ -574,16 +575,11 @@ extern "C" int gui_loadResources()
 				retry_count--;
 			}
 			if (!PartitionManager.Mount_Settings_Storage(false)) {
-				LOGERR("Unable to mount %s during GUI startup.\n", theme_path.c_str());
-				check = 1;
+				LOGERR("Unable to mount storage during GUI startup.\n");
+				theme_path = "/res/ui.xml";
 			}
 		}
-
-		// TEST: Load a pre-selected theme
-		DataManager::GetValue(TW_SEL_THEME_PATH, theme_path);
-		if (check != 0 || theme_path.empty()) {
-			theme_path = "/res/ui.xml";
-		}
+		// Load theme
 		if (PageManager::LoadPackage("TWRP", theme_path, "main")) {
 			LOGERR("Failed to load base packages.\n");
 			goto error;

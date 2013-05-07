@@ -49,7 +49,7 @@ GUISliderValue::GUISliderValue(xml_node<>* node) : Conditional(node)
 	mLabel = NULL;
 	ConvertStrToColor("white", &mTextColor);
 	ConvertStrToColor("white", &mLineColor);
-	ConvertStrToColor("blue", &mSliderColor);
+	ConvertStrToColor("red", &mSliderColor);
 
 	if (!node)
 	{

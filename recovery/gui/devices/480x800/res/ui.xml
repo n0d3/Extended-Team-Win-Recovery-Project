@@ -137,7 +137,7 @@
     <variable name="fileselector_medium_height" value="310" />
     <variable name="fileselector_header_background" value="#474747" />
     <variable name="fileselector_header_textcolor" value="#FFFFFF" />
-    <variable name="fileselector_header_separatorcolor" value="#33B5E5" />
+    <variable name="fileselector_header_separatorcolor" value="#FF0101" />
     <variable name="fileselector_header_separatorheight" value="3" />
     <variable name="fileselector_separatorcolor" value="#494949" />
     <variable name="fileselector_separatorheight" value="2" />
@@ -184,7 +184,7 @@
     <variable name="wipe_list_height" value="530" />
     <variable name="slidervalue_w" value="460" />
     <variable name="slidervalue_line_clr" value="#FFFFFF" />
-    <variable name="slidervalue_slider_clr" value="#33B5E5" />
+    <variable name="slidervalue_slider_clr" value="#FF0101" />
     <variable name="slidervalue_lineh" value="1" />
     <variable name="slidervalue_padding" value="10" />
     <variable name="slidervalue_sliderw" value="7" />
