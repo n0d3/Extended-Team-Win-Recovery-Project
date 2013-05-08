@@ -1648,10 +1648,9 @@ int TWPartitionManager::Wipe_All_But_SDCARD(void) {
 
 int TWPartitionManager::Wipe_Dalvik_Cache(void) {
 #ifdef TW_DEVICE_IS_HTC_LEO
-	int dataonext, dalvikonnand;
+	int dataonext;
 	string data_pth;
 	DataManager::GetValue(TW_DATA_ON_EXT, dataonext);
-	DataManager::GetValue(TW_BACKUP_NAND_DATA, dalvikonnand);
 	DataManager::GetValue(TW_DATA_PATH, data_pth);
 #endif
 	gui_print("\nWiping Dalvik Cache Directories...\n");
@@ -1672,9 +1671,31 @@ int TWPartitionManager::Wipe_Dalvik_Cache(void) {
 			if (Data->Mount(true)) {
 #ifdef TW_DEVICE_IS_HTC_LEO
 				if (dataonext) {
-					if (dalvikonnand) {
-						TWFunc::removeDir("/data", false);
-						gui_print("Cleaned: DalvikOnNand...\n");
+					// Check /data for *.dex files.
+					// If any found, then this partition is entirely used for dalvik-cache (DalvikOnNand)
+					DIR* Dir = opendir(Data->Mount_Point.c_str());
+					if (Dir != NULL) {
+						int dalvikonnand = 0;
+						struct dirent* DirEntry;
+						string search_str = ".", extn;
+						while ((DirEntry = readdir(Dir)) != NULL) {
+							if (!strcmp(DirEntry->d_name, ".") || !strcmp(DirEntry->d_name, ".."))
+								continue;
+							string dname = DirEntry->d_name;
+							if (DirEntry->d_type == DT_REG) {
+								size_t last_occur = dname.rfind(search_str);
+								if (last_occur == string::npos)
+									continue;
+								extn = dname.substr((last_occur + 1), (dname.size() - last_occur - 1));
+								if (strncmp(extn.c_str(), "dex", 3) == 0)
+									dalvikonnand++;
+							}							
+						}
+						closedir(Dir);
+						if (dalvikonnand > 0) {
+							TWFunc::removeDir("/data", false);
+							gui_print("Cleaned: DalvikOnNand...\n");
+						}
 					}
 				} else {
 #endif

@@ -55,7 +55,6 @@
 #define TW_SKIP_SD_FREE_SZ_CHECK	"tw_skip_sd_free_sz_check"
 
 // DataOnExt
-#define TW_BACKUP_NAND_DATA         	"tw_backup_nand_data"
 #define TW_DATA_PATH		    	"tw_data_path"
 #define TW_DATA_ON_EXT			"tw_data_on_ext"
 #define TW_DATA_ON_EXT_CHECK	    	"tw_data_on_ext_check"

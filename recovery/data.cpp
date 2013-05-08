@@ -682,7 +682,6 @@ void DataManager::SetDefaultValues()
     	mValues.insert(make_pair(TW_SD_SKIP_MD5_CHECK_VAR, make_pair("0", 1)));
     	mValues.insert(make_pair(TW_SD_SKIP_MD5_GENERATE_VAR, make_pair("0", 1)));
 	mValues.insert(make_pair(TW_SDBOOT_PARTITION, make_pair("", 1)));
-	mValues.insert(make_pair(TW_BACKUP_NAND_DATA, make_pair("0", 1)));
     	mValues.insert(make_pair(TW_DATA_PATH, make_pair("/sd-ext", 1)));
 	mValues.insert(make_pair(TW_DATA_ON_EXT, make_pair("0", 1)));
 	mValues.insert(make_pair(TW_DATA_ON_EXT_CHECK, make_pair("0", 1)));

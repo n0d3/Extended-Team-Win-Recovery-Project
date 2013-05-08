@@ -2560,10 +2560,30 @@ void TWPartition::CheckFor_Dalvik_Cache(void) {
 			// Don't unmount /cache
 		} else if (Mount_Point == "/data") {
 			if (dataonext) {
-				int dalvikonnand;
-				DataManager::GetValue(TW_BACKUP_NAND_DATA, dalvikonnand);
-				if (dalvikonnand) {
-					Dalvik_Cache_Size = TWFunc::Get_Folder_Size("/data", true);
+				// Check /data for *.dex files.
+				// If any found, then this partition is entirely used for dalvik-cache (DalvikOnNand)
+				DIR* Dir = opendir(Mount_Point.c_str());
+				if (Dir != NULL) {
+					int dalvikonnand = 0;
+					struct dirent* DirEntry;
+					string search_str = ".", extn;
+					while ((DirEntry = readdir(Dir)) != NULL) {
+						if (!strcmp(DirEntry->d_name, ".") || !strcmp(DirEntry->d_name, ".."))
+							continue;
+						string dname = DirEntry->d_name;
+						if (DirEntry->d_type == DT_REG) {
+							size_t last_occur = dname.rfind(search_str);
+							if (last_occur == string::npos)
+								continue;
+							extn = dname.substr((last_occur + 1), (dname.size() - last_occur - 1));
+							if (strncmp(extn.c_str(), "dex", 3) == 0)
+								dalvikonnand++;
+						}							
+					}
+					closedir(Dir);
+					if (dalvikonnand > 0) {
+						Dalvik_Cache_Size = TWFunc::Get_Folder_Size("/data", true);
+					}
 				}
 			} else {
 				if (TWFunc::Path_Exists("/data/dalvik-cache"))
