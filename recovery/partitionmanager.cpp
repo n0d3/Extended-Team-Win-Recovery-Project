@@ -938,7 +938,7 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 	time(&rStart);
 	// Needed for any size checks
 	string Full_FileName, part_size, parts, Command, data_size, dalvik_nfo, dalvik_host;
-	int restore_data = 0, restore_sdext = 0, restore_sdext2 = 0, dataonext, dalvik_found_on_data = 1, dalvik_found_on_sdext = 1, dalvik_found_on_sdext2 = 1, nodalvikcache = 0;
+	int restore_data = 0, restore_sdext = 0, restore_sdext2 = 0, dataonext = 0, dalvik_found_on_data = 1, dalvik_found_on_sdext = 1, dalvik_found_on_sdext2 = 1, nodalvikcache = 0;
 	unsigned long long min_size = 0, dt_size = 0, dc_size = 0, tar_size = 0, file_size = 0;
 	unsigned long long multiple = 1048576;
 
@@ -947,8 +947,10 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 	if (!Mount_Current_Storage(true))
 		return false;
 
+#ifdef TW_DEVICE_IS_HTC_LEO
 	// Backup has DataOnExt?
-	DataManager::GetValue(TW_RESTORE_IS_DATAONEXT, dataonext);
+	dataonext = DataManager::GetIntValue(TW_RESTORE_IS_DATAONEXT);
+#endif
 	// Skip md5 check?
 	DataManager::GetValue(TW_SKIP_MD5_CHECK_VAR, skip_md5_check);
 	if (skip_md5_check > 0)
@@ -1025,6 +1027,7 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 							partition_count++;
 						} else {
 							LOGINFO("Size mismatch for %s.\n", restore_part->Backup_Name.c_str());
+#ifdef TW_DEVICE_IS_HTC_LEO
 							// cLK can deal with this case
 							// TWRP just needs to call later clkpartmgr
 							if (DataManager::Detect_BLDR() == 1) {
@@ -1034,6 +1037,9 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 								LOGERR("Skipping '%s' from restoring process.\n", restore_part->Backup_Name.c_str());
 							} else if (DataManager::Detect_BLDR() == 0)
 								partition_count++;
+#else
+							restore_part->Skip_From_Restore = true;
+#endif
 						}
 						parts += restore_part->ORS_Mark;
 					} else {
@@ -1047,6 +1053,7 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 				} else if (restore_path == "/boot") {
 					DataManager::GetValue(TW_RESTORE_BOOT_VAR, tw_restore_boot);
 					LOGINFO("TW_RESTORE_BOOT_VAR = %i\n", tw_restore_boot);
+#ifdef TW_DEVICE_IS_HTC_LEO
 					if (tw_restore_boot == 2) {
 						if (!TWFunc::Path_Exists(Restore_Name + "/boot.mtd.win")) {
 							string cmd = "cd '" + Restore_Name + "' && tar -xf " + restore_part->Backup_FileName + " ./initrd.gz ./zImage";
@@ -1110,6 +1117,7 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 							}
 						}
 					}
+#endif
 					if (handle_size_errors > 0) {
 						LOGINFO("Comparing %s's size to %s's size...\n", restore_part->Backup_FileName.c_str(), restore_part->Backup_Name.c_str());
 						min_size = 0;
@@ -1132,6 +1140,7 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 							partition_count++;
 						} else {
 							LOGINFO("Size mismatch for %s.\n", restore_part->Backup_Name.c_str());
+#ifdef TW_DEVICE_IS_HTC_LEO
 							// cLK can help us deal with this case
 							// TWRP just needs to call later clkpartmgr
 							if (DataManager::Detect_BLDR() == 1) {
@@ -1141,12 +1150,16 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 								LOGERR("Skipping '%s' from restoring process.\n", restore_part->Backup_Name.c_str());
 							} else if (DataManager::Detect_BLDR() == 0)
 								partition_count++;
+#else
+							restore_part->Skip_From_Restore = true;
+#endif
 						}
 						parts += restore_part->ORS_Mark;
 					} else {
 						partition_count++;
 					}
 				} else
+#ifdef TW_DEVICE_IS_HTC_LEO
 				if(restore_path == "/sboot"
 				|| restore_path == "/tboot"
 				|| restore_path == "/vboot"
@@ -1182,6 +1195,7 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 						partition_count++;
 					}
 				} else
+#endif
 				if(restore_path == "/sd-ext"
 				|| restore_path == "/sdext2") {
 					if (handle_size_errors > 0) {
@@ -1256,6 +1270,7 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 	if (skip_md5_check <= 0)
 		gui_print("Done verifying MD5.\n");
 
+#ifdef TW_DEVICE_IS_HTC_LEO
 	if (handle_size_errors > 0 && DataManager::Detect_BLDR() == 1) {
 		if (!data_size.empty()) {
 			// .nodalvikcache file was not found
@@ -1300,7 +1315,7 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 		} else
 			return false;
 	}
-
+#endif
 	if (partition_count == 0) {
 		LOGERR("No partitions selected for restore.\n");
 		return false;
@@ -1334,10 +1349,12 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 	UnMount_Main_Partitions();
 	time(&rStop);
 	gui_print("[RESTORE COMPLETED IN %d SECONDS]\n\n",(int)difftime(rStop,rStart));
+#ifdef TW_DEVICE_IS_HTC_LEO
 	// handle_size_errors will be negative if we are restoring via OpenRecoveryScript
 	// reset to 1, the pre-restore selected value
 	if (handle_size_errors < 0)
 		DataManager::SetValue("tw_handle_restore_size", 1);
+#endif
 	return true;
 }
 
@@ -1359,7 +1376,9 @@ void TWPartitionManager::Set_Restore_Files(string Restore_Name) {
 		LOGERR("Error opening '%s'\n", Restore_Name.c_str());
 		return;
 	}
+#ifdef TW_DEVICE_IS_HTC_LEO
 	tw_restore_is_dataonext = TWFunc::Path_Exists(Restore_Name + "/.dataonext");
+#endif
 	struct dirent* de;
 	while ((de = readdir(d)) != NULL) {
 		if (!strcmp(de->d_name, ".") || !strcmp(de->d_name, "..") || !strcmp(de->d_name, "recovery.log"))
@@ -1464,6 +1483,7 @@ void TWPartitionManager::Set_Restore_Files(string Restore_Name) {
 
 			// HD2's boot partition depends on which bootloader we have
 			if (Part->Backup_Path == "/boot") {
+#ifdef TW_DEVICE_IS_HTC_LEO
 				// cLK installed
 				if (DataManager::Detect_BLDR() == 1) {
 					if (fstype == "mtd")
@@ -1482,6 +1502,7 @@ void TWPartitionManager::Set_Restore_Files(string Restore_Name) {
 					else if (fstype == "mtd" && Part->Current_File_System == "yaffs2")
 						tw_restore_boot = 3;
 				} else
+#endif
 					tw_restore_boot = 1;
 			} else if (Part->Backup_Path == "/system") {
 				if (tw_restore_boot == 0)
@@ -1515,7 +1536,9 @@ void TWPartitionManager::Set_Restore_Files(string Restore_Name) {
 
 	// Set the final values
 	DataManager::SetValue(TW_RESTORE_BOOT_VAR, tw_restore_boot);
+#ifdef TW_DEVICE_IS_HTC_LEO
 	DataManager::SetValue(TW_RESTORE_IS_DATAONEXT, tw_restore_is_dataonext);
+#endif
 	DataManager::SetValue("tw_restore_list", Restore_List);
 	DataManager::SetValue("tw_restore_selected", Restore_List);
 	return;
@@ -1624,12 +1647,13 @@ int TWPartitionManager::Wipe_All_But_SDCARD(void) {
 }
 
 int TWPartitionManager::Wipe_Dalvik_Cache(void) {
+#ifdef TW_DEVICE_IS_HTC_LEO
 	int dataonext, dalvikonnand;
 	string data_pth;
 	DataManager::GetValue(TW_DATA_ON_EXT, dataonext);
 	DataManager::GetValue(TW_BACKUP_NAND_DATA, dalvikonnand);
 	DataManager::GetValue(TW_DATA_PATH, data_pth);
-
+#endif
 	gui_print("\nWiping Dalvik Cache Directories...\n");
 	// cache
 	TWPartition* Cache = Find_Partition_By_Path("/cache");
@@ -1646,15 +1670,19 @@ int TWPartitionManager::Wipe_Dalvik_Cache(void) {
 	if (Data != NULL) {	
 		if (Data->Dalvik_Cache_Size > 0) {
 			if (Data->Mount(true)) {
+#ifdef TW_DEVICE_IS_HTC_LEO
 				if (dataonext) {
 					if (dalvikonnand) {
 						TWFunc::removeDir("/data", false);
 						gui_print("Cleaned: DalvikOnNand...\n");
 					}
 				} else {
+#endif
 					TWFunc::removeDir("/data/dalvik-cache", false);
 					gui_print("Cleaned: /data/dalvik-cache...\n");
+#ifdef TW_DEVICE_IS_HTC_LEO
 				}
+#endif
 				Data->Dalvik_Cache_Size = 0;
 			}
 		}	
@@ -1665,8 +1693,10 @@ int TWPartitionManager::Wipe_Dalvik_Cache(void) {
 		if (SDext->Is_Present) {
 			if (SDext->Mount(true)) {
 				string dalvik_pth = "/sd-ext/dalvik-cache";
+#ifdef TW_DEVICE_IS_HTC_LEO
 				if (dataonext)
 					dalvik_pth = data_pth + "/dalvik-cache";
+#endif
 				if (TWFunc::Path_Exists(dalvik_pth)) {
 					TWFunc::removeDir(dalvik_pth, false);
 					gui_print("Cleaned: %s...\n", dalvik_pth.c_str());
@@ -1771,7 +1801,6 @@ int TWPartitionManager::Wipe_Media_From_Data(void) {
 
 void TWPartitionManager::Refresh_Sizes(bool Display_Msg) {
 	std::vector<TWPartition*>::iterator iter;
-	int data_size = 0;
 
 	for (iter = Partitions.begin(); iter != Partitions.end(); iter++) {
 		if ((*iter)->Can_Be_Mounted) {
@@ -1780,65 +1809,50 @@ void TWPartitionManager::Refresh_Sizes(bool Display_Msg) {
 				int backup_display_size = (int)((*iter)->Backup_Size / 1048576LLU);
 				DataManager::SetValue(TW_BACKUP_SYSTEM_SIZE, backup_display_size);
 			} else if ((*iter)->Mount_Point == "/data" || (*iter)->Mount_Point == "/datadata") {
-				data_size += (int)((*iter)->Backup_Size / 1048576LLU);
+				//data_size += (int)((*iter)->Backup_Size / 1048576LLU);
 			} else if ((*iter)->Mount_Point == "/cache") {
-				int backup_display_size = (int)((*iter)->Backup_Size / 1048576LLU);
-				DataManager::SetValue(TW_BACKUP_CACHE_SIZE, backup_display_size);
+				//int backup_display_size = (int)((*iter)->Backup_Size / 1048576LLU);
+				//DataManager::SetValue(TW_BACKUP_CACHE_SIZE, backup_display_size);
 			} else if ((*iter)->Mount_Point == "/sd-ext") {
 				int backup_display_size = (int)((*iter)->Backup_Size / 1048576LLU);
-				DataManager::SetValue(TW_BACKUP_SDEXT_SIZE, backup_display_size);
-				if ((*iter)->Backup_Size == 0)
-					DataManager::SetValue(TW_BACKUP_SDEXT_VAR, 0);
-				else
+				//DataManager::SetValue(TW_BACKUP_SDEXT_SIZE, backup_display_size);
+				if ((*iter)->Backup_Size > 0)
 					DataManager::SetValue(TW_HAS_SDEXT_PARTITION, 1);
 			} else if ((*iter)->Mount_Point == "/sdext2") {
 				int backup_display_size = (int)((*iter)->Backup_Size / 1048576LLU);
-				DataManager::SetValue(TW_BACKUP_SDEXT2_SIZE, backup_display_size);
-				if ((*iter)->Backup_Size == 0)
-					DataManager::SetValue(TW_BACKUP_SDEXT2_VAR, 0);
-				else
+				//DataManager::SetValue(TW_BACKUP_SDEXT2_SIZE, backup_display_size);
+				if ((*iter)->Backup_Size > 0)
 					DataManager::SetValue(TW_HAS_SDEXT2_PARTITION, 1);
 			} else if ((*iter)->Has_Android_Secure) {
 				int backup_display_size = (int)((*iter)->Backup_Size / 1048576LLU);
-				DataManager::SetValue(TW_BACKUP_ANDSEC_SIZE, backup_display_size);
-				if ((*iter)->Backup_Size == 0)
-					DataManager::SetValue(TW_BACKUP_ANDSEC_VAR, 0);
-				else
+				//DataManager::SetValue(TW_BACKUP_ANDSEC_SIZE, backup_display_size);
+				if ((*iter)->Backup_Size > 0)
 					DataManager::SetValue(TW_HAS_ANDROID_SECURE, 1);
 			} else if ((*iter)->Mount_Point == "/boot") {
 				int backup_display_size = (int)((*iter)->Backup_Size / 1048576LLU);
-				DataManager::SetValue(TW_BACKUP_BOOT_SIZE, backup_display_size);
-				if ((*iter)->Backup_Size == 0) {
+				//DataManager::SetValue(TW_BACKUP_BOOT_SIZE, backup_display_size);
+				if ((*iter)->Backup_Size == 0)
 					DataManager::SetValue("tw_has_boot_partition", 0);
-					DataManager::SetValue(TW_BACKUP_BOOT_VAR, 0);
-				} else
+				else
 					DataManager::SetValue("tw_has_boot_partition", 1);
 			}
 		} else {
 			// Handle unmountable partitions in case we reset defaults
 			if ((*iter)->Mount_Point == "/boot") {
 				int backup_display_size = (int)((*iter)->Backup_Size / 1048576LLU);
-				DataManager::SetValue(TW_BACKUP_BOOT_SIZE, backup_display_size);
-				if ((*iter)->Backup_Size == 0)
-					DataManager::SetValue(TW_BACKUP_BOOT_VAR, 0);
-				else
+				//DataManager::SetValue(TW_BACKUP_BOOT_SIZE, backup_display_size);
+				if ((*iter)->Backup_Size > 0)
 					DataManager::SetValue(TW_HAS_BOOT_PARTITION, 1);
 			} else if ((*iter)->Mount_Point == "/recovery") {
 				int backup_display_size = (int)((*iter)->Backup_Size / 1048576LLU);
-				DataManager::SetValue(TW_BACKUP_RECOVERY_SIZE, backup_display_size);
-				if ((*iter)->Backup_Size == 0)
-					DataManager::SetValue(TW_BACKUP_RECOVERY_VAR, 0);
-				else
+				//DataManager::SetValue(TW_BACKUP_RECOVERY_SIZE, backup_display_size);
+				if ((*iter)->Backup_Size > 0)
 					DataManager::SetValue(TW_HAS_RECOVERY_PARTITION, 1);
-			} else if ((*iter)->Mount_Point == "/data")
-				data_size += (int)((*iter)->Backup_Size / 1048576LLU);
-			else if ((*iter)->Mount_Point == "/sd-ext")
-				DataManager::SetValue(TW_BACKUP_SDEXT_VAR, 0);
-			else if ((*iter)->Mount_Point == "/sdext2")
-				DataManager::SetValue(TW_BACKUP_SDEXT2_VAR, 0);
+			} else if ((*iter)->Mount_Point == "/data") {
+				//data_size += (int)((*iter)->Backup_Size / 1048576LLU);
+			}
 		}
 	}
-	DataManager::SetValue(TW_BACKUP_DATA_SIZE, data_size);
 
 	string current_storage_path = DataManager::GetCurrentStoragePath();
 	TWPartition* FreeStorage = Find_Partition_By_Path(current_storage_path);
@@ -2017,7 +2031,7 @@ int TWPartitionManager::Decrypt_Device(string Password) {
 
 int TWPartitionManager::Fix_Permissions(void) {
 	int result = 0, sdext_mounted = 0;
-	int dataonext, data_size = 0;
+	int data_size = 0;
 	Update_System_Details(false);
 
 	TWPartition* SDext = Find_Partition_By_Path("/sd-ext");
@@ -2027,9 +2041,8 @@ int TWPartitionManager::Fix_Permissions(void) {
 				sdext_mounted == 1;
 		}
 	}
-	if (sdext_mounted) LOGERR("Fix_Permissions(sdext mounted)");
-	DataManager::GetValue(TW_DATA_ON_EXT, dataonext);
-	if (dataonext) {
+#ifdef TW_DEVICE_IS_HTC_LEO
+	if (DataManager::GetIntValue(TW_DATA_ON_EXT)) {
 		string data_pth;
 		DataManager::GetValue(TW_DATA_PATH, data_pth);
 		if (Is_Mounted_By_Path("/data"))
@@ -2038,9 +2051,12 @@ int TWPartitionManager::Fix_Permissions(void) {
 		system(("busybox mount -o bind " + data_pth + " /data").c_str());
 		sleep(2);	
 	} else {
+#endif
 		if (!Mount_By_Path("/data", true))
 			return -1;
+#ifdef TW_DEVICE_IS_HTC_LEO
 	}
+#endif
 	if (!Mount_By_Path("/system", true))
 		return -1;
 

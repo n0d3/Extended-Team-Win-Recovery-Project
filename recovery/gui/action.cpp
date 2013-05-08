@@ -40,7 +40,6 @@
 
 #include "../adb_install.h"
 #include "blanktimer.hpp"
-#include "../nativeSDmanager.hpp"
 
 extern "C" {
 #include "../twcommon.h"
@@ -50,6 +49,10 @@ extern "C" {
 #include "cutils/properties.h"
 #include "../minadbd/adb.h"
 
+#ifdef TW_DEVICE_IS_HTC_LEO
+	#include "../nativeSDmanager.hpp"
+	TWNativeSDManager NativeSDManager;
+#endif
 int TWinstall_zip(const char* path, int* wipe_cache);
 void run_script(const char *str1, const char *str2, const char *str3, const char *str4, const char *str5, const char *str6, const char *str7, int request_confirm);
 int gui_console_only();
@@ -60,7 +63,6 @@ int gui_start();
 #include "objects.hpp"
 
 extern blanktimer blankTimer;
-TWNativeSDManager NativeSDManager;
 void curtainClose(void);
 
 GUIAction::GUIAction(xml_node<>* node)
@@ -980,6 +982,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 
 			return 0;
 		}
+#ifdef TW_DEVICE_IS_HTC_LEO
 		if (function == "nativeboot_run") {
 			int ret = 0;
 			string tmp, sdrompath;
@@ -1244,6 +1247,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 
 			return 0;
 		}
+#endif
 		if (function == "restoredefaultsettings") {
 			operation_start("Restore Defaults");
 			if (simulate) // Simulated so that people don't accidently wipe out the "simulation is on" setting

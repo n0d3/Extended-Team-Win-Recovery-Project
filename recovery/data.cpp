@@ -667,51 +667,59 @@ void DataManager::SetDefaultValues()
 
 	mConstValues.insert(make_pair(TW_VERSION_VAR, TW_VERSION_STR));
 // Extended-start
+#ifdef TW_DEVICE_IS_HTC_LEO
+	mValues.insert(make_pair(TW_HTC_LEO, make_pair("1", 1)));
+	// Bootloader check
+	if (Detect_BLDR() == 1) // cLK detected
+		PartitionManager.Process_Extra_Boot_Partitions();
 	mValues.insert(make_pair(TW_BOOT_IS_MTD, make_pair("0", 1)));
-
-	mValues.insert(make_pair(TW_SKIP_DALVIK, make_pair("0", 1)));
 	mValues.insert(make_pair(TW_SD_SKIP_DALVIK, make_pair("0", 1)));
 	mValues.insert(make_pair(TW_SKIP_NATIVESD, make_pair("0", 1)));
-
-	mValues.insert(make_pair(TW_BACKUP_SDEXT2_VAR, make_pair("0", 1)));
-	mValues.insert(make_pair(TW_BACKUP_SDEXT2_SIZE, make_pair("0", 1)));
-    	mValues.insert(make_pair(TW_SDEXT2_SIZE, make_pair("0", 1)));
-    	mValues.insert(make_pair(TW_RESTORE_SDEXT2_VAR, make_pair("0", 1)));
-	mValues.insert(make_pair(TW_HAS_SDEXT_PARTITION, make_pair("0", 1)));
-	mValues.insert(make_pair(TW_HAS_SDEXT2_PARTITION, make_pair("0", 1)));
-    	mValues.insert(make_pair(TW_USE_SDEXT2_PARTITION, make_pair("0", 1)));
-	mValues.insert(make_pair("tw_sdcard_file_system", make_pair("vfat", 1)));
-    	mValues.insert(make_pair("tw_sdpart2_file_system", make_pair("ext4", 1)));
-
-    	mValues.insert(make_pair(TW_SCREENSHOT_VAR, make_pair("0", 1)));
-
 	mValues.insert(make_pair(TW_SD_BACKUP_RESTORE_SYSTEM, make_pair("1", 1)));
     	mValues.insert(make_pair(TW_SD_BACKUP_RESTORE_DATA, make_pair("1", 1)));
     	mValues.insert(make_pair(TW_SD_BACKUP_RESTORE_BOOT, make_pair("1", 1)));
 	mValues.insert(make_pair(TW_SD_USE_COMPRESSION_VAR, make_pair("0", 1)));
     	mValues.insert(make_pair(TW_SD_SKIP_MD5_CHECK_VAR, make_pair("0", 1)));
     	mValues.insert(make_pair(TW_SD_SKIP_MD5_GENERATE_VAR, make_pair("0", 1)));
-
-	// Bootloader check
-	if (Detect_BLDR() == 1) // cLK detected
-		PartitionManager.Process_Extra_Boot_Partitions();
-
-	mValues.insert(make_pair(TW_SEL_THEME_PATH, make_pair("", 1)));
 	mValues.insert(make_pair(TW_SDBOOT_PARTITION, make_pair("", 1)));
 	mValues.insert(make_pair(TW_BACKUP_NAND_DATA, make_pair("0", 1)));
     	mValues.insert(make_pair(TW_DATA_PATH, make_pair("/sd-ext", 1)));
 	mValues.insert(make_pair(TW_DATA_ON_EXT, make_pair("0", 1)));
 	mValues.insert(make_pair(TW_DATA_ON_EXT_CHECK, make_pair("0", 1)));
 	mValues.insert(make_pair(TW_RESTORE_IS_DATAONEXT, make_pair("0", 1)));
-
+	mValues.insert(make_pair(TW_VIBRATE_AFTER_SDBACKUP, make_pair("1", 1)));
+	mValues.insert(make_pair(TW_SDBACKUP_FEEDBACK_DURATION_MS, make_pair("100", 1)));
+	mValues.insert(make_pair(TW_VIBRATE_AFTER_SDRESTORE, make_pair("1", 1)));
+	mValues.insert(make_pair(TW_SDRESTORE_FEEDBACK_DURATION_MS, make_pair("100", 1)));
+	mValues.insert(make_pair(TW_SET_DROP_CACHES_AT_BOOT, make_pair("0", 1)));
+	mValues.insert(make_pair(TW_DROP_CACHES, make_pair("0", 1)));
+	mValues.insert(make_pair(TW_SET_IO_SCHED_AT_BOOT, make_pair("0", 1)));
+	mValues.insert(make_pair(TW_IO_SCHED, make_pair("deadline", 1)));
+	mValues.insert(make_pair(TW_SET_CPU_F_AT_BOOT, make_pair("0", 1)));
+	mValues.insert(make_pair(TW_MAX_CPU_F, make_pair("998400", 1)));
+	mValues.insert(make_pair(TW_MIN_CPU_F, make_pair("245000", 1)));
+	mValues.insert(make_pair(TW_SET_CPU_GOV_AT_BOOT, make_pair("0", 1)));
+	mValues.insert(make_pair(TW_CPU_GOV, make_pair("performance", 1)));
+#else
+	mValues.insert(make_pair(TW_HTC_LEO, make_pair("0", 1)));
+	LOGINFO("=> Extended build for different device.\n");
+#endif
+    	mValues.insert(make_pair(TW_RESTORE_BOOT_VAR, make_pair("0", 1)));
+	mValues.insert(make_pair(TW_SKIP_DALVIK, make_pair("0", 1)));
+    	mValues.insert(make_pair(TW_SDEXT2_SIZE, make_pair("0", 1)));
+	mValues.insert(make_pair(TW_HAS_SDEXT_PARTITION, make_pair("0", 1)));
+	mValues.insert(make_pair(TW_HAS_SDEXT2_PARTITION, make_pair("0", 1)));
+    	mValues.insert(make_pair(TW_USE_SDEXT2_PARTITION, make_pair("0", 1)));
+	mValues.insert(make_pair("tw_sdcard_file_system", make_pair("vfat", 1)));
+    	mValues.insert(make_pair("tw_sdpart2_file_system", make_pair("ext4", 1)));
+    	mValues.insert(make_pair(TW_SCREENSHOT_VAR, make_pair("0", 1)));
+	mValues.insert(make_pair(TW_SEL_THEME_PATH, make_pair("", 1)));
 	mValues.insert(make_pair(TW_NUM_OF_MOUNTS_FOR_FS_CHK, make_pair("16", 1)));
 	mValues.insert(make_pair(TW_INCR_SIZE, make_pair("40", 1)));
 	mValues.insert(make_pair(TW_SKIP_SD_FREE_SZ_CHECK, make_pair("0", 1)));
-
 	mValues.insert(make_pair(TW_RESCUE_EXT_CONTENTS, make_pair("0", 1)));
 	mValues.insert(make_pair(TW_HANDLE_RESTORE_SIZE, make_pair("0", 1)));
 	mValues.insert(make_pair(TW_HANDLE_SU, make_pair("0", 1)));
-
 	mValues.insert(make_pair(TW_VIBRATE_AFTER_BUTTON_PRESS, make_pair("1", 1)));
 	mValues.insert(make_pair(TW_BUTTON_FEEDBACK_DURATION_MS, make_pair("25", 1)));
 	mValues.insert(make_pair(TW_VIBRATE_AFTER_BACKUP, make_pair("1", 1)));
@@ -722,21 +730,6 @@ void DataManager::SetDefaultValues()
 	mValues.insert(make_pair(TW_INSTALL_FEEDBACK_DURATION_MS, make_pair("100", 1)));
 	mValues.insert(make_pair(TW_VIBRATE_AFTER_PARTED, make_pair("1", 1)));
 	mValues.insert(make_pair(TW_PARTED_FEEDBACK_DURATION_MS, make_pair("100", 1)));
-	mValues.insert(make_pair(TW_VIBRATE_AFTER_SDBACKUP, make_pair("1", 1)));
-	mValues.insert(make_pair(TW_SDBACKUP_FEEDBACK_DURATION_MS, make_pair("100", 1)));
-	mValues.insert(make_pair(TW_VIBRATE_AFTER_SDRESTORE, make_pair("1", 1)));
-	mValues.insert(make_pair(TW_SDRESTORE_FEEDBACK_DURATION_MS, make_pair("100", 1)));
-
-	mValues.insert(make_pair(TW_SET_DROP_CACHES_AT_BOOT, make_pair("0", 1)));
-	mValues.insert(make_pair(TW_DROP_CACHES, make_pair("0", 1)));
-	mValues.insert(make_pair(TW_SET_IO_SCHED_AT_BOOT, make_pair("0", 1)));
-	mValues.insert(make_pair(TW_IO_SCHED, make_pair("deadline", 1)));
-	mValues.insert(make_pair(TW_SET_CPU_F_AT_BOOT, make_pair("0", 1)));
-	mValues.insert(make_pair(TW_MAX_CPU_F, make_pair("998400", 1)));
-	mValues.insert(make_pair(TW_MIN_CPU_F, make_pair("245000", 1)));
-	mValues.insert(make_pair(TW_SET_CPU_GOV_AT_BOOT, make_pair("0", 1)));
-	mValues.insert(make_pair(TW_CPU_GOV, make_pair("performance", 1)));
-
 	mValues.insert(make_pair(TW_MKNTFS_QUICK_FORMAT, make_pair("0", 1)));
 // Extended-End
 
@@ -975,26 +968,7 @@ void DataManager::SetDefaultValues()
 #endif
 	mConstValues.insert(make_pair(TW_MIN_SYSTEM_VAR, TW_MIN_SYSTEM_SIZE));
 	mValues.insert(make_pair(TW_BACKUP_NAME, make_pair("(Current Date)", 0)));
-	mValues.insert(make_pair(TW_BACKUP_SYSTEM_VAR, make_pair("1", 1)));
-	mValues.insert(make_pair(TW_BACKUP_DATA_VAR, make_pair("1", 1)));
-	mValues.insert(make_pair(TW_BACKUP_BOOT_VAR, make_pair("1", 1)));
-	mValues.insert(make_pair(TW_BACKUP_RECOVERY_VAR, make_pair("0", 1)));
-	mValues.insert(make_pair(TW_BACKUP_CACHE_VAR, make_pair("0", 1)));
-	mValues.insert(make_pair(TW_BACKUP_SP1_VAR, make_pair("0", 1)));
-	mValues.insert(make_pair(TW_BACKUP_SP2_VAR, make_pair("0", 1)));
-	mValues.insert(make_pair(TW_BACKUP_SP3_VAR, make_pair("0", 1)));
-	mValues.insert(make_pair(TW_BACKUP_ANDSEC_VAR, make_pair("0", 1)));
-	mValues.insert(make_pair(TW_BACKUP_SDEXT_VAR, make_pair("0", 1)));
 	mValues.insert(make_pair(TW_BACKUP_SYSTEM_SIZE, make_pair("0", 0)));
-	mValues.insert(make_pair(TW_BACKUP_DATA_SIZE, make_pair("0", 0)));
-	mValues.insert(make_pair(TW_BACKUP_BOOT_SIZE, make_pair("0", 0)));
-	mValues.insert(make_pair(TW_BACKUP_RECOVERY_SIZE, make_pair("0", 0)));
-	mValues.insert(make_pair(TW_BACKUP_CACHE_SIZE, make_pair("0", 0)));
-	mValues.insert(make_pair(TW_BACKUP_ANDSEC_SIZE, make_pair("0", 0)));
-	mValues.insert(make_pair(TW_BACKUP_SDEXT_SIZE, make_pair("0", 0)));
-	mValues.insert(make_pair(TW_BACKUP_SP1_SIZE, make_pair("0", 0)));
-	mValues.insert(make_pair(TW_BACKUP_SP2_SIZE, make_pair("0", 0)));
-	mValues.insert(make_pair(TW_BACKUP_SP3_SIZE, make_pair("0", 0)));
 	mValues.insert(make_pair(TW_STORAGE_FREE_SIZE, make_pair("0", 0)));
 	
 	mValues.insert(make_pair(TW_REBOOT_AFTER_FLASH_VAR, make_pair("0", 1)));

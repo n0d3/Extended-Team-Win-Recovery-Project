@@ -882,12 +882,20 @@ void GUIPartitionList::MatchList(void) {
 	size_t pos;
 
 	DataManager::GetValue(mVariable, variablelist);
-
+#ifdef TW_DEVICE_IS_HTC_LEO
+	int dataonext = DataManager::GetIntValue(TW_DATA_ON_EXT);
+	DataManager::SetValue(TW_BACKUP_NAND_DATA, 0);
+#endif
 	for (i=0; i<listSize; i++) {
 		searchvalue = mList.at(i).Mount_Point;
 		TWPartition* Part = PartitionManager.Find_Partition_By_Path(searchvalue);
 		if (Part == NULL)
 			continue;
+#ifdef TW_DEVICE_IS_HTC_LEO
+		// TODO: Revise this!
+		if (dataonext && searchvalue == "/data")
+			DataManager::SetValue(TW_BACKUP_NAND_DATA, 1);
+#endif
 		char backup_size[255];
 		sprintf(backup_size, "%llu", Part->Backup_Size / 1024 / 1024);
 		mList.at(i).Display_Name = Part->Backup_Display_Name + " (";

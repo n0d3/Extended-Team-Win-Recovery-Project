@@ -20,8 +20,7 @@ LOCAL_SRC_FILES := \
     twrp.cpp \
     fixPermissions.cpp \
     twrpTar.cpp \
-    twrpDigest.cpp \
-    nativeSDmanager.cpp
+    twrpDigest.cpp
 
 LOCAL_SRC_FILES += \
     data.cpp \
@@ -31,6 +30,11 @@ LOCAL_SRC_FILES += \
     twrp-functions.cpp \
     openrecoveryscript.cpp \
     tarWrite.c
+
+ifeq ($(TARGET_DEVICE),leo)
+    LOCAL_CFLAGS += -DTW_DEVICE_IS_HTC_LEO
+    LOCAL_SRC_FILES += nativeSDmanager.cpp
+endif
 
 ifneq ($(TARGET_RECOVERY_REBOOT_SRC),)
     LOCAL_SRC_FILES += $(TARGET_RECOVERY_REBOOT_SRC)
@@ -322,7 +326,9 @@ include $(commands_recovery_local_path)/libjpegtwrp/Android.mk \
     $(commands_recovery_local_path)/libblkid/Android.mk \
     $(commands_recovery_local_path)/minuitwrp/Android.mk
 
-include $(commands_recovery_local_path)/clkpartmgr/Android.mk
+ifeq ($(TARGET_DEVICE),leo)
+    include $(commands_recovery_local_path)/clkpartmgr/Android.mk
+endif
 
 ifeq ($(TW_INCLUDE_CRYPTO_SAMSUNG), true)
     include $(commands_recovery_local_path)/crypto/libcrypt_samsung/Android.mk

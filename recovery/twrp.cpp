@@ -147,6 +147,7 @@ int main(int argc, char **argv) {
 
 	time_t StartupTime = time(NULL);
 	printf("Starting Extended TWRP %s on %s", TW_VERSION_STR, ctime(&StartupTime));
+#ifdef TW_DEVICE_IS_HTC_LEO
 	// Detect bootloader
 	if (DataManager::Detect_BLDR() == 1) {
 		printf("I:=> Detected bootloader: cLK\n");
@@ -157,17 +158,18 @@ int main(int argc, char **argv) {
 	} else if (DataManager::Detect_BLDR() == 0) {
 		printf("I:=> Detected bootloader: HARET\n");
 	}
-
+#endif
 	// Load default values to set DataManager constants and handle ifdefs
 	DataManager::SetDefaultValues();
 
+#ifdef TW_DEVICE_IS_HTC_LEO
 	// Wait for the prerecoveryboot.sh to finish
 	char preboot_svc[PROPERTY_VALUE_MAX];
 	do {
 		property_get("init.svc.preboot", preboot_svc, "running");
 		usleep(100);
 	} while (strcmp(preboot_svc, "stopped") != 0);
-
+#endif
 	printf("Starting the UI...\n");
 	gui_init();
 	printf("=> Linking mtab\n");
@@ -370,6 +372,7 @@ int main(int argc, char **argv) {
 		TWFunc::tw_reboot(rb_bootloader);
 	else if (Reboot_Arg == "download")
 		TWFunc::tw_reboot(rb_download);
+#ifdef TW_DEVICE_IS_HTC_LEO
 	else if (Reboot_Arg == "sboot")
 		TWFunc::tw_reboot(rb_sboot);
 	else if (Reboot_Arg == "tboot")
@@ -384,6 +387,7 @@ int main(int argc, char **argv) {
 		TWFunc::tw_reboot(rb_yboot);
 	else if (Reboot_Arg == "zboot")
 		TWFunc::tw_reboot(rb_zboot);
+#endif
 	else
 		TWFunc::tw_reboot(rb_system);
 

@@ -157,12 +157,14 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 		} else if (item_index == 1) {
 			// Primary Block Device
 			if (Fstab_File_System == "mtd" || Fstab_File_System == "yaffs2") {
+#ifdef TW_DEVICE_IS_HTC_LEO
 				// Force "mtd" filesystem in case of magldr rboot format
 				if (Mount_Point == "/boot" && DataManager::GetIntValue(TW_BOOT_IS_MTD) > 0) {
 					Fstab_File_System = "mtd";
 					Current_File_System = "mtd";
 					LOGINFO("Boot partition's file-system forced to 'mtd'.\n");
 				}
+#endif
 				MTD_Name = ptr;
 				Find_MTD_Block_Device(MTD_Name);
 				if (!Primary_Block_Device.empty())
@@ -225,7 +227,9 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 				Storage_Name = Display_Name;
 				Wipe_Available_in_GUI = true;
 				Can_Be_Backed_Up = true;
+#ifdef TW_DEVICE_IS_HTC_LEO
 				Check_BuildProp();
+#endif
 			}
 		} else if (Mount_Point == "/data") {
 			if (Is_Present) {
@@ -341,10 +345,14 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 				DataManager::SetValue(TW_HAS_SDEXT_PARTITION, 1);
 				//DataManager::SetValue(TW_SDEXT_SIZE, (int)(Size / 1048576));
 				//DataManager::SetValue("tw_sdpart_file_system", Current_File_System, 1);
+#ifdef TW_DEVICE_IS_HTC_LEO
 				CheckFor_DataOnExt(); // check if data_path is valid and try to fix otherwise
 				CheckFor_Dalvik_Cache(); // check for dalvik-cache in /sd-ext
 				CheckFor_NativeSD(); // check for NativeSD installations in /sd-ext
 				DataManager::GetValue(TW_DATA_PATH, Path_For_DataOnExt); // save TW_DATA_PATH to Path_For_DataOnExt
+#else
+				CheckFor_Dalvik_Cache(); // check for dalvik-cache in /sd-ext
+#endif
 			} else {
 				DataManager::SetValue(TW_HAS_SDEXT_PARTITION, 0);
 				DataManager::SetValue(TW_SDEXT_SIZE, 0);
@@ -1005,6 +1013,7 @@ bool TWPartition::Get_Size_Via_statfs(bool Display_Error) {
 	if (Mount_Point == "/sd-ext") {
 		if (Size == 0)
 			DataManager::SetValue(TW_HAS_SDEXT_PARTITION, 0);
+#ifdef TW_DEVICE_IS_HTC_LEO
 		// sd-ext is a special case due to DataOnExt & NativeSD features
 		int dataonext, skip_native;
 		DataManager::GetValue(TW_SKIP_NATIVESD, skip_native);
@@ -1040,18 +1049,27 @@ bool TWPartition::Get_Size_Via_statfs(bool Display_Error) {
 				Backup_Size -= NativeSD_Size;
 		} else {
 			//LOGINFO("DataOnExt mode: OFF\n");
+#else
+			CheckFor_Dalvik_Cache();
+#endif
 			Backup_Display_Name = "SD-Ext";
 			Backup_Size = Used;
+#ifdef TW_DEVICE_IS_HTC_LEO
 			if (Backup_Size > 0 && skip_native)
 				Backup_Size -= NativeSD_Size;
 		}
+#endif
 	} else {
+#ifdef TW_DEVICE_IS_HTC_LEO
 		if (Mount_Point == "/data") {
 			if (DataManager::GetIntValue(TW_DATA_ON_EXT))
 				Backup_Display_Name = "DataOnNand";
 			else
 				Backup_Display_Name = "Data";
 		}
+#else
+		Backup_Display_Name = "Data";
+#endif
 		Backup_Size = Used;
 	}
 	if (Backup_Size > 0 && skip_dalvik)
@@ -1108,6 +1126,7 @@ bool TWPartition::Get_Size_Via_df(bool Display_Error) {
 	Command = "cd /tmp && rm -f dfoutput.txt";
 	TWFunc::Exec_Cmd(Command, result);
 	if (Mount_Point == "/sd-ext") {
+#ifdef TW_DEVICE_IS_HTC_LEO
 		// sd-ext is a special case due to DataOnExt & NativeSD features
 		int dataonext, skip_native;
 		DataManager::GetValue(TW_SKIP_NATIVESD, skip_native);
@@ -1143,18 +1162,27 @@ bool TWPartition::Get_Size_Via_df(bool Display_Error) {
 				Backup_Size -= NativeSD_Size;
 		} else {
 			//LOGINFO("DataOnExt mode: OFF\n");
+#else
+			CheckFor_Dalvik_Cache();
+#endif
 			Backup_Display_Name = "SD-Ext";
 			Backup_Size = Used;
+#ifdef TW_DEVICE_IS_HTC_LEO
 			if (Backup_Size > 0 && skip_native)
 				Backup_Size -= NativeSD_Size;
 		}
+#endif
 	} else {
+#ifdef TW_DEVICE_IS_HTC_LEO
 		if (Mount_Point == "/data") {
 			if (DataManager::GetIntValue(TW_DATA_ON_EXT))
 				Backup_Display_Name = "DataOnNand";
 			else
 				Backup_Display_Name = "Data";
 		}
+#else
+		Backup_Display_Name = "Data";
+#endif
 		Backup_Size = Used;
 	}
 	if (Backup_Size > 0 && skip_dalvik)
@@ -1638,7 +1666,9 @@ bool TWPartition::Wipe_EXT23(string File_System) {
 		if (TWFunc::Exec_Cmd(command, result) == 0) {
 			Current_File_System = File_System;
 			Recreate_AndSec_Folder();
+#ifdef TW_DEVICE_IS_HTC_LEO
 			Recreate_DataOnExt_Folder();
+#endif
 			gui_print("[%s wipe done]\n", Display_Name.c_str());
 			return true;
 		} else {
@@ -1673,7 +1703,9 @@ bool TWPartition::Wipe_EXT4() {
 		if (TWFunc::Exec_Cmd(Command, result) == 0) {
 			Current_File_System = "ext4";
 			Recreate_AndSec_Folder();
+#ifdef TW_DEVICE_IS_HTC_LEO
 			Recreate_DataOnExt_Folder();
+#endif
 			gui_print("[%s wipe done]\n", Display_Name.c_str());
 			return true;
 		} else {
@@ -1699,7 +1731,9 @@ bool TWPartition::Wipe_NILFS2() {
 		if (TWFunc::Exec_Cmd(command, result) == 0) {
 			Current_File_System = "nilfs2";
 			Recreate_AndSec_Folder();
+#ifdef TW_DEVICE_IS_HTC_LEO
 			Recreate_DataOnExt_Folder();
+#endif
 			gui_print("[%s wipe done]\n", Display_Name.c_str());
 			return true;
 		} else {
@@ -1849,7 +1883,9 @@ bool TWPartition::Wipe_RMRF() {
 	gui_print("Removing all files under '%s' ...\n", Mount_Point.c_str());
 	TWFunc::removeDir(Mount_Point, true);
 	Recreate_AndSec_Folder();
+#ifdef TW_DEVICE_IS_HTC_LEO
 	Recreate_DataOnExt_Folder();
+#endif
 	gui_print("[%s wipe done]\n", Display_Name.c_str());
 	return true;
 }
@@ -1921,8 +1957,8 @@ string TWPartition::Backup_Method_By_Name() {
 
 bool TWPartition::Backup_Tar(string backup_folder) {
 	char back_name[255], split_index[5];
-	string Full_FileName, Split_FileName, Tar_Args = "", Tar_Excl = "", Command, result, data_pth, pathTodatafolder;
-	int use_compression, index, backup_count, dataonext, skip_dalvik, skip_native;
+	string Full_FileName, Split_FileName, Tar_Args = "", Tar_Excl = "", Command, result;
+	int use_compression, index, backup_count, skip_dalvik;
 	struct stat st;
 	unsigned long long total_bsize = 0, file_size;
 	twrpTar tar;
@@ -1930,9 +1966,11 @@ bool TWPartition::Backup_Tar(string backup_folder) {
 	if (!Mount(true))
 		return false;
 
-	DataManager::GetValue(TW_SKIP_NATIVESD, skip_native);
 	DataManager::GetValue(TW_SKIP_DALVIK, skip_dalvik);
-	DataManager::GetValue(TW_DATA_ON_EXT, dataonext);
+#ifdef TW_DEVICE_IS_HTC_LEO
+	string data_pth, pathTodatafolder;
+	int skip_native = DataManager::GetIntValue(TW_SKIP_NATIVESD);
+	int dataonext = DataManager::GetIntValue(TW_DATA_ON_EXT);
 	if (Backup_Path == "/sd-ext" && dataonext) {	
 		TWFunc::GUI_Operation_Text(TW_BACKUP_TEXT, "DataOnExt", "Backing Up");
 		gui_print("Backing up DataOnExt...\n");
@@ -1942,10 +1980,12 @@ bool TWPartition::Backup_Tar(string backup_folder) {
 		else
 			pathTodatafolder = "";
 	} else {
+#endif
 		TWFunc::GUI_Operation_Text(TW_BACKUP_TEXT, Backup_Display_Name, "Backing Up");
 		gui_print("Backing up %s...\n", Backup_Display_Name.c_str());
+#ifdef TW_DEVICE_IS_HTC_LEO
 	}
-
+#endif
 	// Skip dalvik-cache during backup?
 	if ((Backup_Path == "/data" || Backup_Path == "/sd-ext" || Backup_Path == "/sdext2") && skip_dalvik) {
 		Tar_Excl += "dalvik-cache";
@@ -1966,9 +2006,11 @@ bool TWPartition::Backup_Tar(string backup_folder) {
 	if (Backup_Size > MAX_ARCHIVE_SIZE) {
 		// This backup needs to be split into multiple archives
 		gui_print("Breaking backup file into multiple archives...\n");
+#ifdef TW_DEVICE_IS_HTC_LEO
 		if (Backup_Path == "/sd-ext" && dataonext)
 			sprintf(back_name, "%s", data_pth.c_str());
-		else 
+		else
+#endif
 			sprintf(back_name, "%s", Backup_Path.c_str());		
 		tar.setexcl(Tar_Excl);
 		tar.setdir(back_name);
@@ -1981,9 +2023,11 @@ bool TWPartition::Backup_Tar(string backup_folder) {
 	} else {
 		Full_FileName = backup_folder + Backup_FileName;
 		tar.setexcl(Tar_Excl);
+#ifdef TW_DEVICE_IS_HTC_LEO
 		if (Backup_Path == "/sd-ext" && dataonext)
 			tar.setdir(Backup_Path + pathTodatafolder);
 		else
+#endif
 			tar.setdir(Backup_Path);
 		tar.setfn(Full_FileName);
 		if (use_compression) {
@@ -2000,11 +2044,13 @@ bool TWPartition::Backup_Tar(string backup_folder) {
 			return false;
 		}
 	}
+#ifdef TW_DEVICE_IS_HTC_LEO
 	if (Backup_Path == "/sd-ext" && dataonext) {
 		// Create a file to recognize that this is DataOnExt and not a typical sd-ext backup
 		Command = "echo /sd-ext" + pathTodatafolder + ">" + backup_folder + ".dataonext";
 		TWFunc::Exec_Cmd(Command, result);
 	}
+#endif
 	if (skip_dalvik && Dalvik_Cache_Size > 0) {
 		// Create a file to recognize that this is a backup without dalvik-cache
 		// and store the size of dalvik-cache inside for restore purposes
@@ -2113,6 +2159,7 @@ bool TWPartition::Restore_Tar(string restore_folder, string Restore_File_System)
 
 	Current_File_System = Restore_File_System;
 	if (Backup_Name == "sd-ext") {
+#ifdef TW_DEVICE_IS_HTC_LEO
 		// Check if this is a sd-ext backup featuring DataOnExt
 		dataonext = TWFunc::Path_Exists(restore_folder + "/.dataonext");
 		if (dataonext) {
@@ -2146,10 +2193,13 @@ bool TWPartition::Restore_Tar(string restore_folder, string Restore_File_System)
 			DataManager::SetValue(TW_DATA_ON_EXT, 1);
 			DataManager::SetValue(TW_DATA_PATH, data_pth);
 		} else {
+#endif
 			Wipe();
 			// Set TWRP value
 			DataManager::SetValue(TW_DATA_ON_EXT, 0);
+#ifdef TW_DEVICE_IS_HTC_LEO
 		}
+#endif
 	} else {
 		if (Has_Android_Secure) {
 			if (!Wipe_AndSec())
@@ -2161,11 +2211,15 @@ bool TWPartition::Restore_Tar(string restore_folder, string Restore_File_System)
 	}
 
 	if (Backup_Name == "sd-ext" || Backup_Name == "sdext2") {
+#ifdef TW_DEVICE_IS_HTC_LEO
 		if ((!dataonext) || (dataonext && data_pth == Backup_Path)) {
+#endif
 			// Set number of mounts that will trigger a filesystem check from settings
 			Command = "tune2fs -c " + DataManager::GetStrValue("tw_num_of_mounts_for_fs_check") + " " + Primary_Block_Device;
 			TWFunc::Exec_Cmd(Command, result);
+#ifdef TW_DEVICE_IS_HTC_LEO
 		}
+#endif
 	}
 
 	if (!Mount(true))
@@ -2493,8 +2547,11 @@ void TWPartition::CheckFor_Dalvik_Cache(void) {
 	if (!Mount(true)) {
 		LOGINFO("Unable to check %s for dalvik-cache.\n", Mount_Point.c_str());
 	} else {
-		int dataonext;
-		DataManager::GetValue(TW_DATA_ON_EXT, dataonext);
+#ifdef TW_DEVICE_IS_HTC_LEO
+		int dataonext =	DataManager::GetIntValue(TW_DATA_ON_EXT);
+#else
+		int dataonext =	0;
+#endif
 		if (Mount_Point == "/cache") {
 			if (TWFunc::Path_Exists("/cache/dalvik-cache"))
 				Dalvik_Cache_Size = TWFunc::Get_Folder_Size("/cache/dalvik-cache", true);

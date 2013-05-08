@@ -663,7 +663,9 @@ static void *battery_thread(void *cookie)
 			usb_cable_connected = 1;
 
 		if (usb_cable_connected == 1) {
+#ifdef TW_DEVICE_IS_HTC_LEO
 			TWFunc::power_restore(offmode_charge);
+#endif
 			if (TWFunc::read_file(status, battery_status) == 0) {
 				if (battery_status == "Full") {
 					TWFunc::write_file(solid_amber, off);
@@ -676,10 +678,14 @@ static void *battery_thread(void *cookie)
 		} else {
 			TWFunc::write_file(solid_green, off);
 			if (bat_capacity > 10) {
+#ifdef TW_DEVICE_IS_HTC_LEO
 				TWFunc::power_restore(offmode_charge);
+#endif
 				TWFunc::write_file(solid_amber, off);
 			} else {
+#ifdef TW_DEVICE_IS_HTC_LEO
 				TWFunc::power_save();
+#endif
 				if (blink)
 					TWFunc::write_file(solid_amber, on);
 				else
@@ -714,9 +720,11 @@ extern "C" int gui_start()
     // Set the default package
     PageManager::SelectPackage("TWRP");
 
-    if (!gGuiInputRunning) {	
+    if (!gGuiInputRunning) {
+#ifdef TW_DEVICE_IS_HTC_LEO
 	// If set, apply tweaks
 	TWFunc::apply_system_tweaks(offmode_charge);
+#endif
 	// Input handler
 	pthread_t t;
 	pthread_create(&t, NULL, input_thread, NULL);

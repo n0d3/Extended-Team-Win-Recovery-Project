@@ -2486,7 +2486,10 @@
     	</object>
 
     	<object type="checkbox">
-          <condition var1="tw_has_sdext_partition" var2="1" />
+          <conditions>
+            <condition var1="tw_htc_leo" var2="1" />
+            <condition var1="tw_has_sdext_partition" var2="1" />
+          </conditions>
           <placement x="%col1_x%" y="%row4_text_y%" />
           <font resource="font" color="%text_color%" />
           <text>Setup recovery for DataOnExt.</text>
@@ -2652,6 +2655,7 @@
           <highlight color="%highlight_color%" />
           <placement x="%ext_col2_x%" y="675" />
           <font resource="font" color="%button_text_color%" />
+          <condition var1="tw_htc_leo" var2="1" />
           <text>System Tweaks</text>
           <image resource="ext_main_button_small" />
           <action function="page">tweaks</action>
@@ -3365,6 +3369,7 @@
       <object type="button">
         <highlight color="%highlight_color%" />
         <conditions>
+          <condition var1="tw_htc_leo" var2="1" />
           <condition var1="tw_has_sdext_partition" var2="1" />
           <condition var1="fileexists" var2="/sdcard/NativeSD" />
         </conditions>

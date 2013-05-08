@@ -17,6 +17,9 @@
 #ifndef _VARIABLES_HEADER_
 #define _VARIABLES_HEADER_
 
+// Flag for hd2-specific options in the ui 
+#define TW_HTC_LEO			"tw_htc_leo"
+
 // Set to run the preboot.sh which edits the recovery.fstab according to bootloader
 #define TW_BOOT_IS_MTD			"tw_boot_is_mtd"
 
@@ -25,10 +28,7 @@
 #define TW_SKIP_NATIVESD	    	"tw_skip_nativesd"
 
 // 2nd ext-partition
-#define TW_BACKUP_SDEXT2_VAR        	"tw_backup_sdext2"
-#define TW_BACKUP_SDEXT2_SIZE       	"tw_backup_sdext2_size"
 #define TW_SDEXT2_SIZE              	"tw_sdext2_size"
-#define TW_RESTORE_SDEXT2_VAR       	"tw_restore_sdext2"
 #define TW_HAS_SDEXT2_PARTITION    	"tw_has_sdext2_partition"
 #define TW_USE_SDEXT2_PARTITION     	"tw_use_sdext2_partition"
 #define TW_SDPART2_FILE_SYSTEM      	"tw_sdpart2_file_system"
@@ -129,43 +129,16 @@
 #define MAX_BACKUP_NAME_LEN 64
 #define TW_BACKUP_TEXT              	"tw_backup_text"
 #define TW_BACKUP_NAME		        "tw_backup_name"
-#define TW_BACKUP_SYSTEM_VAR        	"tw_backup_system"
-#define TW_BACKUP_DATA_VAR          	"tw_backup_data"
-#define TW_BACKUP_BOOT_VAR          	"tw_backup_boot"
-#define TW_BACKUP_RECOVERY_VAR      	"tw_backup_recovery"
-#define TW_BACKUP_CACHE_VAR         	"tw_backup_cache"
-#define TW_BACKUP_ANDSEC_VAR        	"tw_backup_andsec"
-#define TW_BACKUP_SDEXT_VAR         	"tw_backup_sdext"
-#define TW_BACKUP_SP1_VAR           	"tw_backup_sp1"
-#define TW_BACKUP_SP2_VAR           	"tw_backup_sp2"
-#define TW_BACKUP_SP3_VAR           	"tw_backup_sp3"
 #define TW_BACKUP_AVG_IMG_RATE      	"tw_backup_avg_img_rate"
 #define TW_BACKUP_AVG_FILE_RATE     	"tw_backup_avg_file_rate"
 #define TW_BACKUP_AVG_FILE_COMP_RATE    "tw_backup_avg_file_comp_rate"
 #define TW_BACKUP_SYSTEM_SIZE       	"tw_backup_system_size"
-#define TW_BACKUP_DATA_SIZE         	"tw_backup_data_size"
-#define TW_BACKUP_BOOT_SIZE         	"tw_backup_boot_size"
-#define TW_BACKUP_RECOVERY_SIZE     	"tw_backup_recovery_size"
-#define TW_BACKUP_CACHE_SIZE        	"tw_backup_cache_size"
-#define TW_BACKUP_ANDSEC_SIZE       	"tw_backup_andsec_size"
-#define TW_BACKUP_SDEXT_SIZE        	"tw_backup_sdext_size"
-#define TW_BACKUP_SP1_SIZE          	"tw_backup_sp1_size"
-#define TW_BACKUP_SP2_SIZE          	"tw_backup_sp2_size"
-#define TW_BACKUP_SP3_SIZE          	"tw_backup_sp3_size"
+
 #define TW_STORAGE_FREE_SIZE        	"tw_storage_free_size"
 #define TW_GENERATE_MD5_TEXT        	"tw_generate_md5_text"
 
 #define TW_RESTORE_TEXT             	"tw_restore_text"
-#define TW_RESTORE_SYSTEM_VAR       	"tw_restore_system"
-#define TW_RESTORE_DATA_VAR         	"tw_restore_data"
 #define TW_RESTORE_BOOT_VAR         	"tw_restore_boot"
-#define TW_RESTORE_RECOVERY_VAR     	"tw_restore_recovery"
-#define TW_RESTORE_CACHE_VAR        	"tw_restore_cache"
-#define TW_RESTORE_ANDSEC_VAR       	"tw_restore_andsec"
-#define TW_RESTORE_SDEXT_VAR        	"tw_restore_sdext"
-#define TW_RESTORE_SP1_VAR          	"tw_restore_sp1"
-#define TW_RESTORE_SP2_VAR          	"tw_restore_sp2"
-#define TW_RESTORE_SP3_VAR          	"tw_restore_sp3"
 #define TW_RESTORE_AVG_IMG_RATE     	"tw_restore_avg_img_rate"
 #define TW_RESTORE_AVG_FILE_RATE    	"tw_restore_avg_file_rate"
 #define TW_RESTORE_AVG_FILE_COMP_RATE   "tw_restore_avg_file_comp_rate"
@@ -187,10 +160,6 @@
 #define TW_RM_RF_VAR                	"tw_rm_rf"
 
 #define TW_BACKUPS_FOLDER_VAR       	"tw_backups_folder"
-
-#define TW_SP1_PARTITION_NAME_VAR   	"tw_sp1_name"
-#define TW_SP2_PARTITION_NAME_VAR   	"tw_sp2_name"
-#define TW_SP3_PARTITION_NAME_VAR   	"tw_sp3_name"
 
 #define TW_SDEXT_SIZE               	"tw_sdext_size"
 #define TW_SWAP_SIZE                	"tw_swap_size"
@@ -259,9 +228,6 @@
 //   tw_sdcext_is_mountable
 //   tw_sdcint_is_mountable
 //   tw_sd-ext_is_mountable
-//   tw_sp1_is_mountable
-//   tw_sp2_is_mountable
-//   tw_sp3_is_mountable
 
 #ifndef CUSTOM_LUN_FILE
 #define CUSTOM_LUN_FILE "/sys/devices/platform/usb_mass_storage/lun%d/file"

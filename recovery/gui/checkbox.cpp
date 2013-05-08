@@ -163,9 +163,11 @@ int GUICheckbox::NotifyTouch(TOUCH_STATE state, int x, int y)
         DataManager::GetValue(mVarName, lastState);
         lastState = (lastState == 0) ? 1 : 0;
         DataManager::SetValue(mVarName, lastState, 0);
+#ifdef TW_DEVICE_IS_HTC_LEO
 	// Auto-update system details when we change DataOnExt mode
 	if (mVarName == "tw_data_on_ext")
 		PartitionManager.Update_System_Details(false);
+#endif
     }
     return 0;
 }
