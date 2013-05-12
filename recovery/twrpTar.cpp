@@ -550,12 +550,12 @@ int twrpTar::tarDirs(bool include_root) {
 #endif
 			strcpy(buf, subfolder.c_str());
 			if (de->d_type == DT_DIR) {
-				char* charTarPath;
+				char charTarPath[1024];
 				if (include_root) {
-					charTarPath = NULL;
+					charTarPath[0] = '0';
 				} else {
 					string temp = Strip_Root_Dir(buf);
-					charTarPath = (char*) temp.c_str();
+					strcpy(charTarPath, temp.c_str());
 				}
 				if (tar_append_tree(t, buf, charTarPath, excl) != 0) {
 #ifdef TAR_DEBUG_VERBOSE
@@ -633,8 +633,8 @@ int twrpTar::createTar() {
 		LOGINFO("Creating gzipped archive...\n");
 		string cmd = "pigz - > '" + tarfn + "'";
 		p = popen(cmd.c_str(), "w");
-		fd = fileno(p);
 		if (!p) return -1;
+		fd = fileno(p);
 		if(tar_fdopen(&t, fd, charRootDir, &type, O_RDONLY | O_LARGEFILE, 0644, TAR_GNU) != 0) {
 			pclose(p);
 			return -1;
@@ -677,7 +677,7 @@ int twrpTar::openTar(bool gzip) {
 }
 
 string twrpTar::Strip_Root_Dir(string Path) {
-	string temp;
+	string stripped, temp;
 	size_t slash;
 
 	if (Path.substr(0, 1) == "/")
@@ -686,14 +686,11 @@ string twrpTar::Strip_Root_Dir(string Path) {
 		temp = Path;
 	slash = temp.find("/");
 	if (slash == string::npos)
-		return temp;
-	else {
-		string stripped;
-
+		stripped = temp;
+	else
 		stripped = temp.substr(slash, temp.size() - slash);
-		return stripped;
-	}
-	return temp;
+
+	return stripped;
 }
 
 int twrpTar::addFile(string fn, bool include_root) {
