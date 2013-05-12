@@ -3606,63 +3606,7 @@
       </object>
 
       <object type="checkbox">
-        <placement x="%col1_x%" y="%row2_text_y%" />
-        <font resource="font" color="%text_color%" />
-        <text>Backup-restore /system.</text>
-        <data variable="tw_sd_backup_restore_system" />
-        <image checked="checkbox_true" unchecked="checkbox_false" />
-      </object>
-
-      <object type="checkbox">
         <placement x="%col1_x%" y="%row3_text_y%" />
-        <font resource="font" color="%text_color%" />
-        <text>Backup-restore /data.</text>
-        <data variable="tw_sd_backup_restore_data" />
-        <image checked="checkbox_true" unchecked="checkbox_false" />
-      </object>
-
-      <object type="checkbox">
-        <placement x="%col1_x%" y="%row4_text_y%" />
-        <font resource="font" color="%text_color%" />
-        <text>Backup-restore /boot.</text>
-        <data variable="tw_sd_backup_restore_boot" />
-        <image checked="checkbox_true" unchecked="checkbox_false" />
-      </object>
-
-      <object type="checkbox">
-        <placement x="%col1_x%" y="%row5_text_y%" />
-        <font resource="font" color="%text_color%" />
-        <text>Exclude dalvik-cache from backup.</text>
-        <data variable="tw_sd_skip_dalvik" />
-        <image checked="checkbox_true" unchecked="checkbox_false" />
-      </object>
-
-      <object type="checkbox">
-        <placement x="%col1_x%" y="%row6_text_y%" />
-        <font resource="font" color="%text_color%" />
-        <text>Skip MD5 generation during backup.</text>
-        <data variable="tw_sd_skip_md5_generate" />
-        <image checked="checkbox_true" unchecked="checkbox_false" />
-      </object>
-
-      <object type="checkbox">
-        <placement x="%col1_x%" y="%row7_text_y%" />
-        <font resource="font" color="%text_color%" />
-        <text>Skip MD5 verification of backup files.</text>
-        <data variable="tw_sd_skip_md5_check" />
-        <image checked="checkbox_true" unchecked="checkbox_false" />
-      </object>
-
-      <object type="checkbox">
-        <placement x="%col1_x%" y="%row8_text_y%" />
-        <font resource="font" color="%text_color%" />
-        <text>Enable compression.</text>
-        <data variable="tw_sd_use_compression" />
-        <image checked="checkbox_true" unchecked="checkbox_false" />
-      </object>
-
-      <object type="checkbox">
-        <placement x="%col1_x%" y="%row9_text_y%" />
         <font resource="font" color="%text_color%" />
         <text>Vibrate at backup completion.</text>
         <data variable="tw_vibrate_after_sdbackup" />
@@ -3671,7 +3615,7 @@
 
       <object type="slidervalue">
         <condition var1="tw_vibrate_after_sdbackup" var2="1" />
-        <placement x="col1_x" y="%row10_text_y%" w="%slidervalue_w%" />
+        <placement x="col1_x" y="%row4_text_y%" w="%slidervalue_w%" />
         <font resource="font" color="%text_color%" />
         <colors line="%slidervalue_line_clr%" slider="%slidervalue_slider_clr%" />
         <dimensions lineh="%slidervalue_lineh%" linepadding="%slidervalue_padding%" sliderw="%slidervalue_sliderw%" sliderh="%slidervalue_sliderh%" />
@@ -3680,7 +3624,7 @@
       </object>
 
       <object type="checkbox">
-        <placement x="%col1_x%" y="%row13_text_y%" />
+        <placement x="%col1_x%" y="%row8_text_y%" />
         <font resource="font" color="%text_color%" />
         <text>Vibrate at restore completion.</text>
         <data variable="tw_vibrate_after_sdrestore" />
@@ -3689,7 +3633,7 @@
 
       <object type="slidervalue">
         <condition var1="tw_vibrate_after_sdrestore" var2="1" />
-        <placement x="col1_x" y="%row14_text_y%" w="%slidervalue_w%" />
+        <placement x="col1_x" y="%row9_text_y%" w="%slidervalue_w%" />
         <font resource="font" color="%text_color%" />
         <colors line="%slidervalue_line_clr%" slider="%slidervalue_slider_clr%" />
         <dimensions lineh="%slidervalue_lineh%" linepadding="%slidervalue_padding%" sliderw="%slidervalue_sliderw%" sliderh="%slidervalue_sliderh%" />
@@ -3851,7 +3795,7 @@
       <object type="template" name="header" />
 
       <object type="fileselector">
-        <placement x="%fileselector_x%" y="%row1_y%" w="%fileselector_width%" h="%fileselector_install_height%" />
+        <placement x="%fileselector_x%" y="%row1_y%" w="%fileselector_width%" h="%fileselector_medium_height%" />
         <header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
         <fastscroll linecolor="%fastscroll_linecolor%" rectcolor="%fastscroll_rectcolor%" w="%fastscroll_w%" linew="%fastscroll_linew%" rectw="%fastscroll_rectw%" recth="%fastscroll_recth%" />
         <text>Select NativeSD ROM to backup:</text>
@@ -3865,6 +3809,54 @@
         <path name="sd_rom_location" default="/sdcard/NativeSD" />
         <data name="sd_rom" default="" />
         <selection name="sd_rom_selection" />
+      </object>
+
+      <object type="checkbox">
+        <placement x="%col1_x%" y="%row12_text_y%" />
+        <font resource="font" color="%text_color%" />
+        <text>Backup /system.</text>
+        <data variable="tw_sd_backup_system" />
+        <image checked="checkbox_true" unchecked="checkbox_false" />
+      </object>
+
+      <object type="checkbox">
+        <placement x="%col1_x%" y="%row13_text_y%" />
+        <font resource="font" color="%text_color%" />
+        <text>Backup /data.</text>
+        <data variable="tw_sd_backup_data" />
+        <image checked="checkbox_true" unchecked="checkbox_false" />
+      </object>
+
+      <object type="checkbox">
+        <placement x="%col1_x%" y="%row14_text_y%" />
+        <font resource="font" color="%text_color%" />
+        <text>Backup /boot.</text>
+        <data variable="tw_sd_backup_boot" />
+        <image checked="checkbox_true" unchecked="checkbox_false" />
+      </object>
+
+      <object type="checkbox">
+        <placement x="%col1_x%" y="%row15_text_y%" />
+        <font resource="font" color="%text_color%" />
+        <text>Enable compression.</text>
+        <data variable="tw_sd_use_compression" />
+        <image checked="checkbox_true" unchecked="checkbox_false" />
+      </object>
+
+      <object type="checkbox">
+        <placement x="%col1_x%" y="%row16_text_y%" />
+        <font resource="font" color="%text_color%" />
+        <text>Exclude dalvik-cache from backup.</text>
+        <data variable="tw_sd_skip_dalvik" />
+        <image checked="checkbox_true" unchecked="checkbox_false" />
+      </object>
+
+      <object type="checkbox">
+        <placement x="%col1_x%" y="%row17_text_y%" />
+        <font resource="font" color="%text_color%" />
+        <text>Skip MD5 generation during backup.</text>
+        <data variable="tw_sd_skip_md5_generate" />
+        <image checked="checkbox_true" unchecked="checkbox_false" />
       </object>
 
       <object type="template" name="sort_options" />
@@ -3900,7 +3892,7 @@
       <object type="template" name="header" />
 
       <object type="fileselector">
-        <placement x="%fileselector_x%" y="%row1_y%" w="%fileselector_width%" h="%fileselector_install_height%" />
+        <placement x="%fileselector_x%" y="%row1_y%" w="%fileselector_width%" h="%fileselector_medium_height%" />
         <header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
         <fastscroll linecolor="%fastscroll_linecolor%" rectcolor="%fastscroll_rectcolor%" w="%fastscroll_w%" linew="%fastscroll_linew%" rectw="%fastscroll_rectw%" recth="%fastscroll_recth%" />
         <text>Select NativeSD ROM to restore:</text>
@@ -3914,6 +3906,38 @@
         <path name="tw_sdbackups_folder" />
         <data name="sd_rom2" default="" />
         <selection name="sd_rom_selection2" />
+      </object>
+
+      <object type="checkbox">
+        <placement x="%col1_x%" y="%row12_text_y%" />
+        <font resource="font" color="%text_color%" />
+        <text>Restore /system.</text>
+        <data variable="tw_sd_restore_system" />
+        <image checked="checkbox_true" unchecked="checkbox_false" />
+      </object>
+
+      <object type="checkbox">
+        <placement x="%col1_x%" y="%row13_text_y%" />
+        <font resource="font" color="%text_color%" />
+        <text>Restore /data.</text>
+        <data variable="tw_sd_restore_data" />
+        <image checked="checkbox_true" unchecked="checkbox_false" />
+      </object>
+
+      <object type="checkbox">
+        <placement x="%col1_x%" y="%row14_text_y%" />
+        <font resource="font" color="%text_color%" />
+        <text>Restore /boot.</text>
+        <data variable="tw_sd_restore_boot" />
+        <image checked="checkbox_true" unchecked="checkbox_false" />
+      </object>
+
+      <object type="checkbox">
+        <placement x="%col1_x%" y="%row15_text_y%" />
+        <font resource="font" color="%text_color%" />
+        <text>Skip MD5 verification of backup files.</text>
+        <data variable="tw_sd_skip_md5_check" />
+        <image checked="checkbox_true" unchecked="checkbox_false" />
       </object>
 
       <object type="template" name="sort_options" />

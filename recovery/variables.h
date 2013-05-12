@@ -38,9 +38,12 @@
 
 // NativeSD Manager
 #define TW_SDBACKUPS_FOLDER_VAR     	"tw_sdbackups_folder"
-#define TW_SD_BACKUP_RESTORE_SYSTEM 	"tw_sd_backup_restore_system"
-#define TW_SD_BACKUP_RESTORE_DATA   	"tw_sd_backup_restore_data"
-#define TW_SD_BACKUP_RESTORE_BOOT   	"tw_sd_backup_restore_boot"
+#define TW_SD_BACKUP_SYSTEM 		"tw_sd_backup_system"
+#define TW_SD_BACKUP_DATA   		"tw_sd_backup_data"
+#define TW_SD_BACKUP_BOOT   		"tw_sd_backup_boot"
+#define TW_SD_RESTORE_SYSTEM 		"tw_sd_restore_system"
+#define TW_SD_RESTORE_DATA   		"tw_sd_restore_data"
+#define TW_SD_RESTORE_BOOT   		"tw_sd_restore_boot"
 #define TW_SD_USE_COMPRESSION_VAR      	"tw_sd_use_compression"
 #define TW_SD_SKIP_MD5_CHECK_VAR       	"tw_sd_skip_md5_check"
 #define TW_SD_SKIP_MD5_GENERATE_VAR    	"tw_sd_skip_md5_generate"
@@ -114,7 +117,7 @@
 #define TW_CPU_GOV			"tw_cpu_gov"
 
 // Default definitions
-#define TW_VERSION_STR			"2.5.0.4"
+#define TW_VERSION_STR			"2.5.0.5"
 
 #define TW_USE_COMPRESSION_VAR      	"tw_use_compression"
 #define TW_SKIP_MD5_CHECK_VAR       	"tw_skip_md5_check"

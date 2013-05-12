@@ -675,9 +675,12 @@ void DataManager::SetDefaultValues()
 	mValues.insert(make_pair(TW_BOOT_IS_MTD, make_pair("0", 1)));
 	mValues.insert(make_pair(TW_SD_SKIP_DALVIK, make_pair("0", 1)));
 	mValues.insert(make_pair(TW_SKIP_NATIVESD, make_pair("0", 1)));
-	mValues.insert(make_pair(TW_SD_BACKUP_RESTORE_SYSTEM, make_pair("1", 1)));
-    	mValues.insert(make_pair(TW_SD_BACKUP_RESTORE_DATA, make_pair("1", 1)));
-    	mValues.insert(make_pair(TW_SD_BACKUP_RESTORE_BOOT, make_pair("1", 1)));
+	mValues.insert(make_pair(TW_SD_BACKUP_SYSTEM, make_pair("1", 1)));
+    	mValues.insert(make_pair(TW_SD_BACKUP_DATA, make_pair("1", 1)));
+    	mValues.insert(make_pair(TW_SD_BACKUP_BOOT, make_pair("1", 1)));
+	mValues.insert(make_pair(TW_SD_RESTORE_SYSTEM, make_pair("1", 1)));
+    	mValues.insert(make_pair(TW_SD_RESTORE_DATA, make_pair("1", 1)));
+    	mValues.insert(make_pair(TW_SD_RESTORE_BOOT, make_pair("1", 1)));
 	mValues.insert(make_pair(TW_SD_USE_COMPRESSION_VAR, make_pair("0", 1)));
     	mValues.insert(make_pair(TW_SD_SKIP_MD5_CHECK_VAR, make_pair("0", 1)));
     	mValues.insert(make_pair(TW_SD_SKIP_MD5_GENERATE_VAR, make_pair("0", 1)));
