@@ -56,41 +56,41 @@ int tar_append_file(TAR *t, char *realname, char *savename) {
 	tar_ino_t *ti = NULL;
 	char path[MAXPATHLEN];
 
-#ifdef TAR_DEBUG_VERBOSE
+#ifdef DEBUG_APPEND
 	printf("==> tar_append_file(TAR=0x%lx (\"%s\"), realname=\"%s\", "
 	       "savename=\"%s\")\n", t, t->pathname, realname,
 	       (savename ? savename : "[NULL]"));
 #endif
 
 	if (lstat(realname, &s) != 0) {
-#ifdef TAR_DEBUG_VERBOSE
+#ifdef DEBUG_APPEND
 		perror("lstat()");
 #endif
 		return -1;
 	}
 
 	/* set header block */
-#ifdef TAR_DEBUG_VERBOSE
+#ifdef DEBUG_APPEND
 	puts("    tar_append_file(): setting header block...");
 #endif
 	memset(&(t->th_buf), 0, sizeof(struct tar_header));
 	th_set_from_stat(t, &s);
 
 	/* set the header path */
-#ifdef TAR_DEBUG_VERBOSE
+#ifdef DEBUG_APPEND
 	puts("    tar_append_file(): setting header path...");
 #endif
 	th_set_path(t, (savename ? savename : realname));
 
 	/* check if it's a hardlink */
-#ifdef TAR_DEBUG_VERBOSE
+#ifdef DEBUG_APPEND
 	puts("    tar_append_file(): checking inode cache for hardlink...");
 #endif
 	libtar_hashptr_reset(&hp);
 	if (libtar_hash_getkey(t->h, &hp, &(s.st_dev), (libtar_matchfunc_t)dev_match) != 0)
 		td = (tar_dev_t *)libtar_hashptr_data(&hp);
 	else {
-#ifdef TAR_DEBUG_VERBOSE
+#ifdef DEBUG_APPEND
 		printf("+++ adding hash for device (0x%lx, 0x%lx)...\n",
 		       major(s.st_dev), minor(s.st_dev));
 #endif
@@ -105,14 +105,14 @@ int tar_append_file(TAR *t, char *realname, char *savename) {
 	libtar_hashptr_reset(&hp);
 	if (libtar_hash_getkey(td->td_h, &hp, &(s.st_ino), (libtar_matchfunc_t)ino_match) != 0) {
 		ti = (tar_ino_t *)libtar_hashptr_data(&hp);
-#ifdef TAR_DEBUG_VERBOSE
+#ifdef DEBUG_APPEND
 		printf("    tar_append_file(): encoding hard link \"%s\" "
 		       "to \"%s\"...\n", realname, ti->ti_name);
 #endif
 		t->th_buf.typeflag = LNKTYPE;
 		th_set_link(t, ti->ti_name);
 	} else {
-#ifdef TAR_DEBUG_VERBOSE
+#ifdef DEBUG_APPEND
 		printf("+++ adding entry: device (0x%lx,0x%lx), inode %ld "
 		       "(\"%s\")...\n", major(s.st_dev), minor(s.st_dev),
 		       s.st_ino, realname);
@@ -133,7 +133,7 @@ int tar_append_file(TAR *t, char *realname, char *savename) {
 		if (i >= MAXPATHLEN)
 			i = MAXPATHLEN - 1;
 		path[i] = '\0';
-#ifdef TAR_DEBUG_VERBOSE
+#ifdef DEBUG_APPEND
 		printf("    tar_append_file(): encoding symlink \"%s\" -> "
 		       "\"%s\"...\n", realname, path);
 #endif
@@ -144,17 +144,17 @@ int tar_append_file(TAR *t, char *realname, char *savename) {
 	if (t->options & TAR_VERBOSE)
 		th_print_long_ls(t);
 
-#ifdef TAR_DEBUG_VERBOSE
+#ifdef DEBUG_APPEND
 	puts("    tar_append_file(): writing header");
 #endif
 	/* write header */
 	if (th_write(t) != 0) {
-#ifdef TAR_DEBUG_VERBOSE
+#ifdef DEBUG_APPEND
 		printf("t->fd = %d\n", t->fd);
 #endif
 		return -1;
 	}
-#ifdef TAR_DEBUG_VERBOSE
+#ifdef DEBUG_APPEND
 	puts("    tar_append_file(): back from th_write()");
 #endif
 
@@ -194,7 +194,7 @@ int tar_append_regfile(TAR *t, char *realname) {
 
 	filefd = open(realname, O_RDONLY);
 	if (filefd == -1) {
-#ifdef TAR_DEBUG_VERBOSE
+#ifdef DEBUG_APPEND
 		perror("open()");
 #endif
 		return -1;

@@ -31,6 +31,7 @@ extern "C"
 //#define DEBUG_GLOB
 //#define DEBUG_ENCODE
 //#define DEBUG_BLOCK
+//#define DEBUG_APPEND
 
 /* useful constants */
 #define T_BLOCKSIZE		512
