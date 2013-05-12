@@ -2161,7 +2161,10 @@
 
       <object type="button">
         <highlight color="%highlight_color%" />
-        <condition var1="tw_reboot_recovery" var2="1" />
+        <conditions>
+          <condition var1="tw_bldr_is_clk" var2="1" />
+          <condition var1="tw_reboot_recovery" var2="1" />
+        </conditions>
         <placement x="%ext_col1_x%" y="%ext_row3_y%" />
         <font resource="font_big" color="%button_text_color%" />
         <text>Recovery</text>
@@ -2171,7 +2174,10 @@
 
       <object type="button">
         <highlight color="%highlight_color%" />
-        <condition var1="tw_reboot_bootloader" var2="1" />
+        <conditions>
+          <condition var1="tw_bldr_is_clk" var2="1" />
+          <condition var1="tw_reboot_bootloader" var2="1" />
+        </conditions>
         <placement x="%ext_col1_x%" y="%ext_row4_y%" />
         <font resource="font_big" color="%button_text_color%" />
         <text>Bootloader</text>
