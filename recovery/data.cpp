@@ -970,6 +970,15 @@ void DataManager::SetDefaultValues()
 	mConstValues.insert(make_pair(TW_HAS_CRYPTO, "1"));
 	LOGINFO("=> Device has crypto support compiled into recovery.\n");
 #endif
+
+	mValues.insert(make_pair("tw_encrypt_backup", make_pair("0", 0)));
+#ifdef TW_EXCLUDE_ENCRYPTED_BACKUPS
+	mValues.insert(make_pair("tw_include_encrypted_backup", make_pair("0", 0)));
+#else
+	LOGINFO("=> Encrypted backups support compiled into recovery.\n");
+	mValues.insert(make_pair("tw_include_encrypted_backup", make_pair("1", 0)));
+#endif
+
 #ifdef TW_SDEXT_NO_EXT4
 	mConstValues.insert(make_pair(TW_SDEXT_DISABLE_EXT4, "1"));
 #else

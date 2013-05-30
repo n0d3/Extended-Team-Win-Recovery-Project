@@ -270,6 +270,12 @@ void TWPartitionManager::Output_Partition(TWPartition* Part) {
 		printf("Is_Encrypted ");
 	if (Part->Is_Decrypted)
 		printf("Is_Decrypted ");
+#ifndef TW_EXCLUDE_ENCRYPTED_BACKUPS
+	if (Part->Can_Encrypt_Backup)
+		printf("Can_Encrypt_Backup ");
+	if (Part->Use_Userdata_Encryption)
+		printf("Use_Userdata_Encryption ");
+#endif
 	if (Part->Has_Data_Media)
 		printf("Has_Data_Media ");
 	if (Part->Has_Android_Secure)
@@ -1370,6 +1376,8 @@ void TWPartitionManager::Set_Restore_Files(string Restore_Name) {
 	bool get_date = true;
 	bool split_archive = false;
 
+	DataManager::SetValue("tw_restore_encrypted", 0);
+
 	DIR* d;
 	d = opendir(Restore_Name.c_str());
 	if (d == NULL) {
@@ -1438,6 +1446,12 @@ void TWPartitionManager::Set_Restore_Files(string Restore_Name) {
 				first_occur = dname.find_first_of(search_str);
 			}
 
+			// Check if file is encrypted
+			if (TWFunc::Get_File_Type(Restore_Name + "/" + filename) == 2) {
+				LOGINFO("'%s' is encrypted.\n", filename.c_str());
+				DataManager::SetValue("tw_restore_encrypted", 1);
+			}
+			
 			// Get the name of the partition
 			label = dname.substr(0, first_occur);
 			// If this is a CWM backup containing an '.android_secure.vfat.tar' change the label to TWRP standards
@@ -1461,7 +1475,6 @@ void TWPartitionManager::Set_Restore_Files(string Restore_Name) {
 				fstype = "mtd";
 			else
 				fstype = dname.substr((first_occur + 1), (last_occur - first_occur - 1));
-			
 			// Check if the backed up partition exists in current ptable
 			TWPartition* Part = Find_Partition_By_Path(label);
 			if (Part == NULL) {

@@ -291,10 +291,15 @@ int OpenRecoveryScript::run_script_file(void) {
 				} else {
 					DataManager::SetValue("tw_restore_selected", Partition_List);
 				}
-				if (!PartitionManager.Run_Restore(folder_path))
+				if (DataManager::GetIntValue("tw_restore_encrypted")) {
+					gui_print("Encrypted backup not supported\n");
 					ret_val = 1;
-				else
-					gui_print("Restore complete!\n");
+				} else {
+					if (!PartitionManager.Run_Restore(folder_path))
+						ret_val = 1;
+					else
+						gui_print("Restore complete!\n");
+				}
 			} else if (strcmp(command, "mount") == 0) {
 				// Mount
 				DataManager::SetValue("tw_action_text2", "Mounting");

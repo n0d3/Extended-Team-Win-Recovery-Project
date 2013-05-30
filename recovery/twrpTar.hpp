@@ -30,27 +30,44 @@ extern "C" {
 
 using namespace std;
 
+struct TarListStruct {
+	std::string fn;
+	unsigned thread_id;
+};
+
+struct thread_data_struct {
+	std::vector<TarListStruct> *TarList;
+	unsigned thread_id;
+};
+
 class twrpTar {
 	public:
-		int extract();
-		int compress(string fn);
-		int uncompress(string fn);
-                int addFilesToExistingTar(vector <string> files, string tarFile);
-		int createTar();
-		int addFile(string fn, bool include_root);
-		int entryExists(string entry);
-		unsigned long long uncompressedSize();
-		int closeTar(bool gzip);
-		int createTarGZFork();
+		twrpTar();
+		virtual ~twrpTar();
 		int createTarFork();
 		int extractTarFork();
 		int splitArchiveFork();
-                void setfn(string fn);
-                void setdir(string dir);
+		int entryExists(string entry);
 		void setexcl(string exclude);
+		void setfn(string fn);
+		void setdir(string dir);
+		unsigned long long uncompressedSize();
+		
+	public:
+		int use_encryption;
+		int userdata_encryption;
+		int use_compression;
+		int has_data_media;
 
 	private:
-		int createTGZ();
+		pid_t pigz_pid;
+		pid_t oaes_pid;
+
+		int extract();
+		int addFilesToExistingTar(vector <string> files, string tarFile);
+		int createTar();
+		int addFile(string fn, bool include_root);
+		int closeTar();
 		int create();
 		int Split_Archive();
 		int removeEOT(string tarFile);
@@ -58,23 +75,25 @@ class twrpTar {
 		int tarDirs(bool include_root);
 		int Generate_Multiple_Archives(string Path);
 		string Strip_Root_Dir(string Path);
-		int extractTGZ();
-		int openTar(bool gzip);
-		int has_data_media;
+		int openTar();
 		int Archive_File_Count;
+		int Archive_Current_Type;
 		unsigned long long Archive_Current_Size;
-		int Archive_Current_Type;	// the type of the archive currently chosen to be extracted
-		int getArchiveType();		// 1 for compressed - 0 for uncompressed
+		int skip(char* name, char* type);
+
 		TAR *t;
-		// for creating
-		FILE* p;
 		int fd;
-		// for opening
-		FILE* rp;	
-		int rfd;
 
 		string tardir;
-		string tarexclude;
 		string tarfn;
 		string basefn;
+		string tarexclude;
+		vector<string> Excluded;
+
+		int Generate_TarList(string Path, std::vector<TarListStruct> *TarList, unsigned long long *Target_Size, unsigned *thread_id);
+		static void* createList(void *cookie);
+		static void* extractMulti(void *cookie);
+		int tarList(bool include_root, std::vector<TarListStruct> *TarList, unsigned thread_id);
+		std::vector<TarListStruct> *ItemList;
+		unsigned thread_id;
 }; 

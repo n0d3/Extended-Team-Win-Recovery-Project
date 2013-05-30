@@ -100,6 +100,10 @@ class TWFunc {
 		static bool loadTheme();
 		static bool reloadTheme();
 		static string getUIxml(int rotation);
+		static int Get_File_Type(string fn);
+		static int Try_Decrypting_File(string fn, string password);
+		static bool Try_Decrypting_Backup(string Restore_Path, string password);
+		static int Wait_For_Child(pid_t pid, int *status, string Child_Name);
 
 		// Extended functions
 		static void Update_Rotation_File(int r);

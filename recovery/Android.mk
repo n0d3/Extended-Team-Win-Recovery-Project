@@ -244,6 +244,11 @@ endif
 ifeq ($(TARGET_BOARD_PLATFORM),rk30xx)
     LOCAL_CFLAGS += -DRK3066
 endif
+ifneq ($(TW_EXCLUDE_ENCRYPTED_BACKUPS), true)
+    LOCAL_SHARED_LIBRARIES += libopenaes
+else
+    LOCAL_CFLAGS += -DTW_EXCLUDE_ENCRYPTED_BACKUPS
+endif
 ifneq ($(LANDSCAPE_RESOLUTION),)
     LOCAL_CFLAGS += -DTW_HAS_LANDSCAPE
 endif
@@ -346,6 +351,10 @@ include $(commands_recovery_local_path)/libjpegtwrp/Android.mk \
 
 ifeq ($(TARGET_DEVICE),leo)
     include $(commands_recovery_local_path)/clkpartmgr/Android.mk
+endif
+
+ifneq ($(TW_EXCLUDE_ENCRYPTED_BACKUPS), true)
+    include $(commands_recovery_local_path)/openaes/Android.mk
 endif
 
 ifeq ($(TW_INCLUDE_CRYPTO_SAMSUNG), true)

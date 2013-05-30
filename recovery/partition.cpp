@@ -98,6 +98,10 @@ TWPartition::TWPartition(void) {
 	MTD_Name = "";
 	MTD_Dev = "";
 	Backup_Method = NONE;
+#ifndef TW_EXCLUDE_ENCRYPTED_BACKUPS
+	Can_Encrypt_Backup = false;
+	Use_Userdata_Encryption = false;
+#endif
 	Has_Data_Media = false;
 	Has_Android_Secure = false;
 	Is_Storage = false;
@@ -244,7 +248,10 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 				Wipe_Available_in_GUI = true;
 				Wipe_During_Factory_Reset = true;
 				Can_Be_Backed_Up = true;
-				CheckFor_Dalvik_Cache(); // check for dalvik-cache in /data
+#ifndef TW_EXCLUDE_ENCRYPTED_BACKUPS
+				Can_Encrypt_Backup = true;
+				Use_Userdata_Encryption = true;
+#endif
 #ifdef RECOVERY_SDCARD_ON_DATA
 				Storage_Name = "Internal Storage";
 				Has_Data_Media = true;
@@ -301,6 +308,7 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 				Recreate_Media_Folder();
 	#endif
 #endif
+				CheckFor_Dalvik_Cache(); // check for dalvik-cache in /data
 			}
 		} else if (Mount_Point == "/cache") {
 			if (Is_Present) {
@@ -326,6 +334,10 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 				SubPartition_Of = "/data";
 				DataManager::SetValue(TW_HAS_DATADATA, 1);
 				Can_Be_Backed_Up = true;
+#ifndef TW_EXCLUDE_ENCRYPTED_BACKUPS
+				Can_Encrypt_Backup = true;
+				Use_Userdata_Encryption = true;
+#endif
 			} else
 				DataManager::SetValue(TW_HAS_DATADATA, 0);
 		} else if (Mount_Point == "/sd-ext") {
@@ -342,6 +354,10 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 				Wipe_Available_in_GUI = true;
 				Removable = true;
 				Can_Be_Backed_Up = true;
+#ifndef TW_EXCLUDE_ENCRYPTED_BACKUPS
+				Can_Encrypt_Backup = true;
+				Use_Userdata_Encryption = true;
+#endif
 				DataManager::SetValue(TW_HAS_SDEXT_PARTITION, 1);
 				//DataManager::SetValue(TW_SDEXT_SIZE, (int)(Size / 1048576));
 				//DataManager::SetValue("tw_sdpart_file_system", Current_File_System, 1);
@@ -371,6 +387,10 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 				Wipe_Available_in_GUI = true;
 				Removable = true;
 				Can_Be_Backed_Up = true;
+#ifndef TW_EXCLUDE_ENCRYPTED_BACKUPS
+				Can_Encrypt_Backup = true;
+				Use_Userdata_Encryption = true;
+#endif
 				DataManager::SetValue(TW_HAS_SDEXT2_PARTITION, 1);
 				//DataManager::SetValue(TW_SDEXT2_SIZE, (int)(Size / 1048576));
 				//DataManager::SetValue("tw_sdpart2_file_system", Current_File_System, 1);
@@ -577,6 +597,22 @@ bool TWPartition::Process_Flags(string Flags, bool Display_Error) {
 		} else if (ptr_len > 7 && strncmp(ptr, "length=", 7) == 0) {
 			ptr += 7;
 			Length = atoi(ptr);
+#ifndef TW_EXCLUDE_ENCRYPTED_BACKUPS
+		} else if (ptr_len > 17 && strncmp(ptr, "canencryptbackup=", 17) == 0) {
+			ptr += 17;
+			if (*ptr == '1' || *ptr == 'y' || *ptr == 'Y')
+				Can_Encrypt_Backup = true;
+			else
+				Can_Encrypt_Backup = false;
+		} else if (ptr_len > 21 && strncmp(ptr, "userdataencryptbackup=", 21) == 0) {
+			ptr += 21;
+			if (*ptr == '1' || *ptr == 'y' || *ptr == 'Y') {
+				Can_Encrypt_Backup = true;
+				Use_Userdata_Encryption = true;
+			} else {
+				Use_Userdata_Encryption = false;
+			}
+#endif
 		} else {
 			if (Display_Error)
 				LOGERR("Unhandled flag: '%s'\n", ptr);
@@ -1576,8 +1612,10 @@ bool TWPartition::Wipe(string New_File_System) {
 				rename(tmp_path.c_str(), theme_path.c_str());
 		}
 
-		if (Mount_Point == "/cache")
+		if (Mount_Point == "/cache") {
 			DataManager::Output_Version();
+			TWFunc::Update_Rotation_File(DataManager::GetIntValue(TW_ROTATION));
+		}
 
 		if (TWFunc::Path_Exists("/.layout_version") && Mount(false))
 			TWFunc::copy_file("/.layout_version", Layout_Filename, 0600);
@@ -1958,7 +1996,7 @@ string TWPartition::Backup_Method_By_Name() {
 bool TWPartition::Backup_Tar(string backup_folder) {
 	char back_name[255], split_index[5];
 	string Full_FileName, Split_FileName, Tar_Args = "", Tar_Excl = "", Command, result;
-	int use_compression, index, backup_count, skip_dalvik;
+	int use_compression, use_encryption = 0, index, backup_count, skip_dalvik;
 	struct stat st;
 	unsigned long long total_bsize = 0, file_size;
 	twrpTar tar;
@@ -1998,11 +2036,20 @@ bool TWPartition::Backup_Tar(string backup_folder) {
 
 	// Use Compression?
 	DataManager::GetValue(TW_USE_COMPRESSION_VAR, use_compression);
-
+	tar.use_compression = use_compression;
+#ifndef TW_EXCLUDE_ENCRYPTED_BACKUPS
+	DataManager::GetValue("tw_encrypt_backup", use_encryption);
+	if (Can_Encrypt_Backup && use_encryption) {
+		tar.use_encryption = use_encryption;
+		if (Use_Userdata_Encryption)
+			tar.userdata_encryption = use_encryption;
+	}
+#endif
 	// Set Backup_FileName
 	sprintf(back_name, "%s.%s.win", Backup_Name.c_str(), Current_File_System.c_str());
 	Backup_FileName = back_name;
 	Full_FileName = backup_folder + Backup_FileName;
+	tar.has_data_media = Has_Data_Media;
 	if (Backup_Size > MAX_ARCHIVE_SIZE) {
 		// This backup needs to be split into multiple archives
 		gui_print("Breaking backup file into multiple archives...\n");
@@ -2030,15 +2077,16 @@ bool TWPartition::Backup_Tar(string backup_folder) {
 #endif
 			tar.setdir(Backup_Path);
 		tar.setfn(Full_FileName);
-		if (use_compression) {
-			if (tar.createTarGZFork() != 0)
-				return -1;
+		if (tar.createTarFork() != 0)
+			return false;
+		if (use_compression && !use_encryption) {
 			string gzname = Full_FileName + ".gz";
 			rename(gzname.c_str(), Full_FileName.c_str());
-		} else {
-			if (tar.createTarFork() != 0)
-				return -1;
 		}
+#ifndef TW_EXCLUDE_ENCRYPTED_BACKUPS
+		if (Can_Encrypt_Backup && use_encryption)
+			Full_FileName += "000";
+#endif
 		if (TWFunc::Get_File_Size(Full_FileName) == 0) {
 			LOGERR("Backup file size for '%s' is 0 bytes.\n", Full_FileName.c_str());
 			return false;
@@ -2228,7 +2276,7 @@ bool TWPartition::Restore_Tar(string restore_folder, string Restore_File_System)
 	TWFunc::GUI_Operation_Text(TW_RESTORE_TEXT, Restore_Display_Name, "Restoring");
 	gui_print("Restoring %s...\n", Restore_Display_Name.c_str());
 	Full_FileName = restore_folder + "/" + Backup_FileName;
-	if (!TWFunc::Path_Exists(Full_FileName)) {
+	/*if (!TWFunc::Path_Exists(Full_FileName)) {
 		// Backup is multiple archives
 		LOGINFO("Backup is multiple archives.\n");
 		sprintf(split_index, "%03i", index);
@@ -2246,20 +2294,20 @@ bool TWPartition::Restore_Tar(string restore_folder, string Restore_File_System)
 			LOGERR("Error locating restore file: '%s'\n", Full_FileName.c_str());
 			return false;
 		}
-	} else {
+	} else {*/
 		string tarDir = Backup_Path;
 		if (Backup_Path == "/sd-ext") {
 			// Check needed for restoring a CWM backup of sd-ext
 			if (TWFunc::TarEntryExists(Full_FileName, "sd-ext/"))
 				tarDir = "/";
-		} else if (Backup_Path == "/and-sec" || Backup_Path == Mount_Point + "/.android_secure") {
+		} else if (Backup_Path == "/and-sec") {
 			// Check needed for restoring a CWM backup of android_secure
 			if (TWFunc::TarEntryExists(Full_FileName, ".android_secure/"))
 				tarDir = Storage_Path;
 		}
 		if (!TWFunc::TarExtract(Full_FileName, tarDir))
 			return false;
-	}
+	//}
 	return true;
 }
 

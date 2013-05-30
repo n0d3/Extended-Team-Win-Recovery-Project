@@ -188,6 +188,12 @@ class TWPartition {
 		string Backup_FileName;
 		// Method used for backup
 		Backup_Method_enum Backup_Method;
+#ifndef TW_EXCLUDE_ENCRYPTED_BACKUPS
+		// Indicates if this item can be encrypted during backup
+		bool Can_Encrypt_Backup;
+		// Indicates if we will use userdata encryption splitting on an encrypted backup
+		bool Use_Userdata_Encryption;
+#endif
 		// Indicates presence of /data/media, may affect wiping and backup methods
 		bool Has_Data_Media;
 		// Indicates the presence of .android_secure on this partition

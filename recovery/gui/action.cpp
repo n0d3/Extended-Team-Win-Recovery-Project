@@ -1689,9 +1689,61 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			operation_end(op_status, simulate);
 			return 0;
 		}
+		if (function == "decrypt_backup")
+		{
+			int op_status = 0;
+
+			operation_start("Try Restore Decrypt");
+			if (simulate) {
+				simulate_progress_bar();
+			} else {
+				string Restore_Path, Filename, Password;
+				DataManager::GetValue("tw_restore", Restore_Path);
+				Restore_Path += "/";
+				DataManager::GetValue("tw_restore_password", Password);
+				if (TWFunc::Try_Decrypting_Backup(Restore_Path, Password))
+					op_status = 0; // success
+				else
+					op_status = 1; // fail
+			}
+
+			operation_end(op_status, simulate);
+			return 0;
+		}
 	} else {
 		pthread_t t;
-		pthread_create(&t, NULL, thread_start, this);
+		pthread_attr_t tattr;
+
+		if (pthread_attr_init(&tattr)) {
+			LOGERR("Unable to pthread_attr_init\n");
+			return -1;
+		}
+		if (pthread_attr_setdetachstate(&tattr, PTHREAD_CREATE_JOINABLE)) {
+			LOGERR("Error setting pthread_attr_setdetachstate\n");
+			return -1;
+		}
+		if (pthread_attr_setscope(&tattr, PTHREAD_SCOPE_SYSTEM)) {
+			LOGERR("Error setting pthread_attr_setscope\n");
+			return -1;
+		}
+		/*if (pthread_attr_setstacksize(&tattr, 524288)) {
+			LOGERR("Error setting pthread_attr_setstacksize\n");
+			return -1;
+		}
+		*/
+		int ret = pthread_create(&t, &tattr, thread_start, this);
+		if (ret) {
+			LOGERR("Unable to create more threads for actions... continuing in same thread! %i\n", ret);
+			thread_start(this);
+		} else {
+			if (pthread_join(t, NULL)) {
+				LOGERR("Error joining threads\n");
+			}
+		}
+		if (pthread_attr_destroy(&tattr)) {
+			LOGERR("Failed to pthread_attr_destroy\n");
+			return -1;
+		}
 		return 0;
 	}
 	return -1;
