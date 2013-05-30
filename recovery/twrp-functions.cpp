@@ -646,111 +646,122 @@ void TWFunc::toggle_keybacklight(unsigned int usec) {
 
 // Screen off
 void TWFunc::screen_off(void) {
-	if (screen_state != TW_SCRN_OFF) {
-		screen_state = TW_SCRN_OFF;
-		string lcd_brightness;
-		string off = "0\n";
-		string brightness_file = EXPAND(TW_BRIGHTNESS_PATH);
+	if (screen_state == TW_SCRN_OFF)
+		return;
+
+	screen_state = TW_SCRN_OFF;
+	string lcd_brightness;
+	string off = "0\n";
+	string brightness_file = EXPAND(TW_BRIGHTNESS_PATH);
 #ifndef TW_NO_SCREEN_BLANK
-		gr_fb_blank(1);
+	gr_fb_blank(1);
 #endif
-		write_file(brightness_file, off);
-		LOGINFO("Screen turned off to save power.\n");
-	}
+	write_file(brightness_file, off);
+	LOGINFO("Screen turned off to save power.\n");
 }
 
 // Powersave cpu settings
 void TWFunc::power_save(void) {
-	if (cpu_settings != TW_POWER_SAVE_MODE) {
-		cpu_settings = TW_POWER_SAVE_MODE;
-		string powersave = "powersave\n";
-		string cpu_governor = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor";
-		write_file(cpu_governor, powersave);
-		string low_power_freq = "245000\n";
-		string cpu_max_freq = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq";
-		write_file(cpu_max_freq, low_power_freq);
-		string cpu_min_freq = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq";
-		write_file(cpu_min_freq, low_power_freq);
-		LOGINFO("Powersave cpu settings loaded.\n");
-		sync();
-	}
+	if (cpu_settings == TW_POWER_SAVE_MODE)
+		return;
+
+	cpu_settings = TW_POWER_SAVE_MODE;
+	string powersave = "powersave\n";
+	string cpu_governor = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor";
+	write_file(cpu_governor, powersave);
+	string low_power_freq = "245000\n";
+	string cpu_max_freq = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq";
+	write_file(cpu_max_freq, low_power_freq);
+	string cpu_min_freq = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq";
+	write_file(cpu_min_freq, low_power_freq);
+	LOGINFO("Powersave cpu settings loaded.\n");
+	sync();
 }
 
 // Restore default cpu settings
 void TWFunc::power_restore(int charge_mode) {
-	if (cpu_settings != TW_DEFAULT_POWER_MODE && charge_mode == 0) {
-		cpu_settings = TW_DEFAULT_POWER_MODE;
-		int set_cpu_gov = 0, set_cpu_f = 0;
-		string default_gov, max_power_freq, low_power_freq;
-		string cpu_governor = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor";
-		string cpu_max_freq = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq";
-		string cpu_min_freq = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq";
+	if (charge_mode != 0 || cpu_settings == TW_DEFAULT_POWER_MODE)
+		return;
 
-		set_cpu_gov = DataManager::GetIntValue(TW_SET_CPU_GOV_AT_BOOT);
-		if (set_cpu_gov)
-			default_gov = DataManager::GetStrValue(TW_CPU_GOV) + "\n";
-		else
-			default_gov = "performance\n";
+	cpu_settings = TW_DEFAULT_POWER_MODE;
+	int set_cpu_gov = 0, set_cpu_f = 0;
+	string default_gov, max_power_freq, low_power_freq;
+	string cpu_governor = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor";
+	string cpu_max_freq = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq";
+	string cpu_min_freq = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq";
 
-		set_cpu_f = DataManager::GetIntValue(TW_SET_CPU_F_AT_BOOT);
-		if (set_cpu_f) {
-			max_power_freq = DataManager::GetStrValue(TW_MAX_CPU_F) + "\n";
-			low_power_freq = DataManager::GetStrValue(TW_MIN_CPU_F) + "\n";
-		} else {
-			max_power_freq = "998400\n";
-			low_power_freq = "245000\n";
-		}
+	set_cpu_gov = DataManager::GetIntValue(TW_SET_CPU_GOV_AT_BOOT);
+	if (set_cpu_gov)
+		default_gov = DataManager::GetStrValue(TW_CPU_GOV) + "\n";
+	else
+		default_gov = "performance\n";
 
-		write_file(cpu_governor, default_gov);
-		write_file(cpu_max_freq, max_power_freq);
-		write_file(cpu_min_freq, low_power_freq);
-		LOGINFO("Default cpu settings loaded.\n");
-		sync();
+	set_cpu_f = DataManager::GetIntValue(TW_SET_CPU_F_AT_BOOT);
+	if (set_cpu_f) {
+		max_power_freq = DataManager::GetStrValue(TW_MAX_CPU_F) + "\n";
+		low_power_freq = DataManager::GetStrValue(TW_MIN_CPU_F) + "\n";
+	} else {
+		max_power_freq = "998400\n";
+		low_power_freq = "245000\n";
 	}
+
+	write_file(cpu_governor, default_gov);
+	write_file(cpu_max_freq, max_power_freq);
+	write_file(cpu_min_freq, low_power_freq);
+	LOGINFO("Default cpu settings loaded.\n");
+	sync();
 }
 
 void TWFunc::apply_system_tweaks(int charge_mode) {
-	if (charge_mode == 0) {
-		int set_drop_caches = 0, set_io_sched = 0, set_cpu_gov = 0, set_cpu_f = 0;
-		string default_io_sched, default_gov, max_power_freq, low_power_freq, cmd, res;
-		
-		set_io_sched = DataManager::GetIntValue(TW_SET_IO_SCHED_AT_BOOT);
-		set_cpu_gov = DataManager::GetIntValue(TW_SET_CPU_GOV_AT_BOOT);
-		set_cpu_f = DataManager::GetIntValue(TW_SET_CPU_F_AT_BOOT);
-		set_drop_caches = DataManager::GetIntValue(TW_SET_DROP_CACHES_AT_BOOT);
-		if (set_io_sched || set_cpu_gov || set_cpu_f || set_drop_caches)
-			LOGINFO("Applying system tweaks...\n");
-		if (set_io_sched) {
-			string io_scheduler = "/sys/block/mmcblk0/queue/scheduler";
-			default_io_sched = DataManager::GetStrValue(TW_IO_SCHED);
-			cmd = "echo \"" + default_io_sched + "\" > " + io_scheduler;
-			Exec_Cmd(cmd, res);
-			LOGINFO("I/O Scheduler: %s\n", default_io_sched.c_str());
-		}
-		if (set_cpu_gov) {
-			string cpu_governor = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor";
-			default_gov = DataManager::GetStrValue(TW_CPU_GOV) + "\n";
-			write_file(cpu_governor, default_gov);
-			LOGINFO("CPU Governor: %s", default_gov.c_str());
-		}
-		if (set_cpu_f) {
-			string cpu_max_freq = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq";
-			string cpu_min_freq = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq";
-			max_power_freq = DataManager::GetStrValue(TW_MAX_CPU_F) + "\n";
-			low_power_freq = DataManager::GetStrValue(TW_MIN_CPU_F) + "\n";
-			write_file(cpu_max_freq, max_power_freq);
-			write_file(cpu_min_freq, low_power_freq);
-			LOGINFO("Max cpu freq: %s", max_power_freq.c_str());
-			LOGINFO("Min cpu freq: %s", low_power_freq.c_str());
-		}
-		if (set_drop_caches) {
-			DataManager::SetValue(TW_DROP_CACHES, 1);
-			LOGINFO("Drop caches after backup/restore completion: true\n");
-		} else {
-			DataManager::SetValue(TW_DROP_CACHES, 0);
-		}
-		sync();
+	if (charge_mode != 0)
+		return;
+
+	int set_drop_caches = 0, set_io_sched = 0, set_cpu_gov = 0, set_cpu_f = 0;
+	string default_io_sched, default_gov, max_power_freq, low_power_freq, cmd, res;
+	
+	set_io_sched = DataManager::GetIntValue(TW_SET_IO_SCHED_AT_BOOT);
+	set_cpu_gov = DataManager::GetIntValue(TW_SET_CPU_GOV_AT_BOOT);
+	set_cpu_f = DataManager::GetIntValue(TW_SET_CPU_F_AT_BOOT);
+	set_drop_caches = DataManager::GetIntValue(TW_SET_DROP_CACHES_AT_BOOT);
+	if (set_io_sched || set_cpu_gov || set_cpu_f || set_drop_caches)
+		LOGINFO("Applying system tweaks...\n");
+	if (set_io_sched) {
+		string io_scheduler = "/sys/block/mmcblk0/queue/scheduler";
+		default_io_sched = DataManager::GetStrValue(TW_IO_SCHED);
+		cmd = "echo \"" + default_io_sched + "\" > " + io_scheduler;
+		Exec_Cmd(cmd, res);
+		LOGINFO("I/O Scheduler: %s\n", default_io_sched.c_str());
+	} else {
+		DataManager::SetValue(TW_IO_SCHED, "deadline");
 	}
+	if (set_cpu_gov) {
+		string cpu_governor = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor";
+		default_gov = DataManager::GetStrValue(TW_CPU_GOV) + "\n";
+		write_file(cpu_governor, default_gov);
+		LOGINFO("CPU Governor: %s", default_gov.c_str());
+	} else {
+		DataManager::SetValue(TW_CPU_GOV, "performance");
+	}
+	if (set_cpu_f) {
+		string cpu_max_freq = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq";
+		string cpu_min_freq = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq";
+		max_power_freq = DataManager::GetStrValue(TW_MAX_CPU_F) + "\n";
+		low_power_freq = DataManager::GetStrValue(TW_MIN_CPU_F) + "\n";
+		write_file(cpu_max_freq, max_power_freq);
+		write_file(cpu_min_freq, low_power_freq);
+		LOGINFO("Max cpu freq: %s", max_power_freq.c_str());
+		LOGINFO("Min cpu freq: %s", low_power_freq.c_str());
+	} else {
+		DataManager::SetValue(TW_MIN_CPU_F, "245000");
+		DataManager::SetValue(TW_MAX_CPU_F, "998400");
+	}
+	if (set_drop_caches) {
+		DataManager::SetValue(TW_DROP_CACHES, 1);
+		LOGINFO("Drop caches after backup/restore completion: true\n");
+	} else {
+		DataManager::SetValue(TW_DROP_CACHES, 0);
+	}
+	sync();
 }
 
 bool TWFunc::replace_string(string& str, const string& search_str, const string& replace_str) {

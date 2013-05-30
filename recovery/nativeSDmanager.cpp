@@ -121,7 +121,7 @@ int TWNativeSDManager::Backup(string RomPath) {
 
 	total_time = total_bytes / (unsigned long)file_bps;
 	
-	if (inc_system && system_backup_size > 0) {
+	if (inc_system > 0 && system_backup_size > 0) {
 		time_t start, stop;
 		time(&start);
 		gui_print("Backing up %s's system...\n", Rom_Name.c_str());
@@ -137,6 +137,7 @@ int TWNativeSDManager::Backup(string RomPath) {
 			gui_print("Breaking backup file into multiple archives...\n");
 			sprintf(back_name, "%s/system", RomPath.c_str());
 			twrpTar tar;
+			tar.use_compression = use_compression;
 			tar.setexcl("");
 			tar.setdir(back_name);
 			tar.setfn(Full_FileName);
@@ -149,16 +150,14 @@ int TWNativeSDManager::Backup(string RomPath) {
 			Full_FileName = Full_Backup_Path + SYS_Backup_FileName;
 			twrpTar tar;
 			tar.setexcl("");
+			tar.use_compression = use_compression;
 			tar.setdir(extpath + "/" + Rom_Name + "/system");
 			tar.setfn(Full_FileName);
+			if (tar.createTarFork() != 0)
+				return false;
 			if (use_compression) {
-				if (tar.createTarGZFork() != 0)
-					return -1;
 				string gzname = Full_FileName + ".gz";
 				rename(gzname.c_str(), Full_FileName.c_str());
-			} else {
-				if (tar.createTarFork() != 0)
-					return -1;
 			}
 			if (TWFunc::Get_File_Size(Full_FileName) == 0) {
 				LOGERR("Backup file size for '%s' is 0 bytes.\n", Full_FileName.c_str());
@@ -173,7 +172,7 @@ int TWNativeSDManager::Backup(string RomPath) {
 		if (do_md5)
 			PartitionManager.Make_MD5(true, Full_Backup_Path, SYS_Backup_FileName);
 	}
-	if (inc_data && data_backup_size > 0) {
+	if (inc_data > 0 && data_backup_size > 0) {
 		time_t start, stop;
 		time(&start);
 		int skip_dalvik;
@@ -193,6 +192,7 @@ int TWNativeSDManager::Backup(string RomPath) {
 			gui_print("Breaking backup file into multiple archives...\n");
 			sprintf(back_name, "%s/data", RomPath.c_str());
 			twrpTar tar;
+			tar.use_compression = use_compression;
 			tar.setexcl(Tar_Excl);
 			tar.setdir(back_name);
 			tar.setfn(Full_FileName);
@@ -204,17 +204,15 @@ int TWNativeSDManager::Backup(string RomPath) {
 		} else {
 			Full_FileName = Full_Backup_Path + DATA_Backup_FileName;
 			twrpTar tar;
+			tar.use_compression = use_compression;
 			tar.setexcl(Tar_Excl);
 			tar.setdir(extpath + "/" + Rom_Name + "/data");
 			tar.setfn(Full_FileName);
+			if (tar.createTarFork() != 0)
+				return -1;
 			if (use_compression) {
-				if (tar.createTarGZFork() != 0)
-					return -1;
 				string gzname = Full_FileName + ".gz";
 				rename(gzname.c_str(), Full_FileName.c_str());
-			} else {
-				if (tar.createTarFork() != 0)
-					return -1;
 			}
 			if (TWFunc::Get_File_Size(Full_FileName) == 0) {
 				LOGERR("Backup file size for '%s' is 0 bytes.\n", Full_FileName.c_str());
@@ -229,7 +227,7 @@ int TWNativeSDManager::Backup(string RomPath) {
 		if (do_md5)
 			PartitionManager.Make_MD5(true, Full_Backup_Path, DATA_Backup_FileName);
 	}
-	if (inc_boot && boot_backup_size > 0) {
+	if (inc_boot > 0 && boot_backup_size > 0) {
 		time_t start, stop;
 		time(&start);
 		gui_print("Backing up %s's boot...\n", Rom_Name.c_str());
@@ -242,17 +240,15 @@ int TWNativeSDManager::Backup(string RomPath) {
 		DataManager::ShowProgress(pos, section_time);
 		Full_FileName = Full_Backup_Path + BOOT_Backup_FileName;
 		twrpTar tar;
+		tar.use_compression = use_compression;
 		tar.setexcl("");
 		tar.setdir("/sdcard/NativeSD/" + Rom_Name);
 		tar.setfn(Full_FileName);
+		if (tar.createTarFork() != 0)
+			return -1;
 		if (use_compression) {
-			if (tar.createTarGZFork() != 0)
-				return -1;
 			string gzname = Full_FileName + ".gz";
 			rename(gzname.c_str(), Full_FileName.c_str());
-		} else {
-			if (tar.createTarFork() != 0)
-				return -1;
 		}
 		if (TWFunc::Get_File_Size(Full_FileName) == 0) {
 			LOGERR("Backup file size for '%s' is 0 bytes.\n", Full_FileName.c_str());
@@ -551,7 +547,7 @@ int TWNativeSDManager::Prep_Rom_To_Boot(string RomPath) {
 
 int TWNativeSDManager::Delete(string RomPath) {
 	struct stat st;
-	int z, removed;
+	int z, removed = 0;
 	string extpath, Command, result, storage_path;
 	DataManager::GetValue(TW_USE_SDEXT2_PARTITION, z);
 	if (z == 0)
@@ -628,21 +624,21 @@ int TWNativeSDManager::Fix_Perm(string RomPath) {
 			gui_print("\n[NATIVESD PERM-FIX STARTED]\n\n");
 			if (PartitionManager.Is_Mounted_By_Path("/system"))
 				PartitionManager.UnMount_By_Path("/system", false);
-			sleep(2);
+			//sleep(2);
 			if (PartitionManager.Is_Mounted_By_Path("/data"))
 				PartitionManager.UnMount_By_Path("/data", false);
-			sleep(2);
+			//sleep(2);
 			Command = "busybox mount -o bind " + RomPath + "/system /system";
 			TWFunc::Exec_Cmd(Command, result);
 			Command = "busybox mount -o bind " + RomPath + "/data /data";
 			TWFunc::Exec_Cmd(Command, result);
-			sleep(2);
+			//sleep(2);
 			fixPermissions perms;
 			perms.fixPerms(true, true);
-			sleep(2);
+			//sleep(2);
 			Command = "umount /system";
 			TWFunc::Exec_Cmd(Command, result);
-			sleep(2);
+			//sleep(2);
 			Command = "umount /data";
 			TWFunc::Exec_Cmd(Command, result);
 			gui_print("\n[NATIVESD PERM-FIX COMPLETED]\n\n");
@@ -655,7 +651,7 @@ int TWNativeSDManager::Fix_Perm(string RomPath) {
 
 int TWNativeSDManager::Wipe_Data(string RomPath) {
 	struct stat st;
-	int z, removed;
+	int z, removed = 0;
 	string extpath, Command, result;
 	DataManager::GetValue(TW_USE_SDEXT2_PARTITION, z);
 	if (z == 0)
