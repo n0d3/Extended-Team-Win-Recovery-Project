@@ -1,8 +1,7 @@
 # Copyright 2011 The Android Open Source Project
-
 LOCAL_PATH:= $(call my-dir)
+ifeq ($(TW_INCLUDE_CRYPTO), true)
 include $(CLEAR_VARS)
-
 LOCAL_SRC_FILES:= fs_mgr.c
 
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/include
@@ -30,4 +29,4 @@ include $(BUILD_STATIC_LIBRARY)
 #LOCAL_STATIC_LIBRARIES := libfs_mgr libcutils libc
 
 #include $(BUILD_EXECUTABLE)
-
+endif
