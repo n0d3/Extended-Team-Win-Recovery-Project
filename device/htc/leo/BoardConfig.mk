@@ -152,10 +152,11 @@ ENABLE_WEBGL := true
 
 #TWRP start
 DEVICE_RESOLUTION := 480x800
+LANDSCAPE_RESOLUTION := 800x480
 RECOVERY_GRAPHICS_USE_LINELENGTH := true
 TARGET_RECOVERY_PIXEL_FORMAT := "RGB_565"
-# debug levels: "verbose" - "info"
-TW_TAR_DEBUG_LEVEL := "info"
+# libtar's debug levels: "verbose" - "info" - (if ommited all msgs will be suppressed)
+TW_TAR_DEBUG_LEVEL := "verbose"
 TW_CUSTOM_POWER_BUTTON := 107
 TW_FORCE_CPUINFO_FOR_DEVICE_ID := true
 TW_INCLUDE_CRYPTO := true

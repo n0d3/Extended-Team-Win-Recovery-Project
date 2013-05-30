@@ -52,8 +52,11 @@ int res_create_surface_png(const char* name, gr_surface* pSurface) {
     FILE* fp = fopen(name, "rb");
     if (fp == NULL) {
         char resPath[256];
+        if (gr_get_rotation() % 180 == 0)
+            snprintf(resPath, sizeof(resPath)-1, "/res/portrait/%s.png", name);
+        else
+            snprintf(resPath, sizeof(resPath)-1, "/res/landscape/%s.png", name);
 
-        snprintf(resPath, sizeof(resPath)-1, "/res/images/%s.png", name);
         resPath[sizeof(resPath)-1] = '\0';
         fp = fopen(resPath, "rb");
         if (fp == NULL)
@@ -183,8 +186,11 @@ int res_create_surface_jpg(const char* name, gr_surface* pSurface) {
     FILE* fp = fopen(name, "rb");
     if (fp == NULL) {
         char resPath[256];
+        if (gr_get_rotation() % 180 == 0)
+            snprintf(resPath, sizeof(resPath)-1, "/res/portrait/%s", name);
+        else
+            snprintf(resPath, sizeof(resPath)-1, "/res/landscape/%s", name);
 
-        snprintf(resPath, sizeof(resPath)-1, "/res/images/%s", name);
         resPath[sizeof(resPath)-1] = '\0';
         fp = fopen(resPath, "rb");
         if (fp == NULL) {

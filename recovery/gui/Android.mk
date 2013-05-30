@@ -65,6 +65,50 @@ endif
 ifneq ($(TW_NO_SCREEN_BLANK),)
 	LOCAL_CFLAGS += -DTW_NO_SCREEN_BLANK
 endif
+ifneq ($(LANDSCAPE_RESOLUTION),)
+	LOCAL_CFLAGS += -DTW_HAS_LANDSCAPE
+endif
+
+TWRP_DEFAULT_UI_IS_PORTRAIT := true
+ifneq ($(TW_DEFAULT_ROTATION),)
+	ifeq ($(TW_DEFAULT_ROTATION), 0)
+		TWRP_DEFAULT_UI_IS_PORTRAIT := true
+	endif
+	ifeq ($(TW_DEFAULT_ROTATION), 90)
+		TWRP_DEFAULT_UI_IS_PORTRAIT := false
+	endif
+	ifeq ($(TW_DEFAULT_ROTATION), 180)
+		TWRP_DEFAULT_UI_IS_PORTRAIT := true
+	endif
+	ifeq ($(TW_DEFAULT_ROTATION), 270)
+		TWRP_DEFAULT_UI_IS_PORTRAIT := false
+	endif
+	LOCAL_CFLAGS += -DTW_DEFAULT_ROTATION=$(TW_DEFAULT_ROTATION)
+else
+	ifeq ($(DEVICE_RESOLUTION), 2560x1600)
+		TWRP_DEFAULT_UI_IS_PORTRAIT := false
+	endif
+	ifeq ($(DEVICE_RESOLUTION), 1920x1200)
+		TWRP_DEFAULT_UI_IS_PORTRAIT := false
+	endif
+	ifeq ($(DEVICE_RESOLUTION), 1280x800)
+		TWRP_DEFAULT_UI_IS_PORTRAIT := false
+	endif
+	ifeq ($(DEVICE_RESOLUTION), 1024x768)
+		TWRP_DEFAULT_UI_IS_PORTRAIT := false
+	endif
+	ifeq ($(DEVICE_RESOLUTION), 1024x600)
+		TWRP_DEFAULT_UI_IS_PORTRAIT := false
+	endif
+	ifeq ($(DEVICE_RESOLUTION), 800x480)
+		TWRP_DEFAULT_UI_IS_PORTRAIT := false
+	endif
+	ifeq ($(TWRP_DEFAULT_UI_IS_PORTRAIT), true)
+		LOCAL_CFLAGS += -DTW_DEFAULT_ROTATION=0
+	else
+		LOCAL_CFLAGS += -DTW_DEFAULT_ROTATION=90
+	endif
+endif
 
 LOCAL_C_INCLUDES += bionic external/stlport/stlport $(commands_recovery_local_path)/gui/devices/$(DEVICE_RESOLUTION)
 
@@ -82,8 +126,30 @@ TWRP_RES_GEN := $(intermediates)/twrp
 
 $(TWRP_RES_GEN):
 	mkdir -p $(TARGET_RECOVERY_ROOT_OUT)/res/
-	cp -fr $(TWRP_RES_LOC)/common/res/* $(TARGET_RECOVERY_ROOT_OUT)/res/
-	cp -fr $(TWRP_RES_LOC)/$(DEVICE_RESOLUTION)/res/* $(TARGET_RECOVERY_ROOT_OUT)/res/
+	mkdir -p $(TARGET_RECOVERY_ROOT_OUT)/res/fonts
+	cp -fr $(TWRP_RES_LOC)/$(DEVICE_RESOLUTION)/res/fonts/* $(TARGET_RECOVERY_ROOT_OUT)/res/fonts/
+ifneq ($(LANDSCAPE_RESOLUTION),)
+	mkdir -p $(TARGET_RECOVERY_ROOT_OUT)/res/portrait
+	cp -fr $(TWRP_RES_LOC)/common/res/images/* $(TARGET_RECOVERY_ROOT_OUT)/res/portrait/
+	cp -fr $(TWRP_RES_LOC)/$(DEVICE_RESOLUTION)/res/images/* $(TARGET_RECOVERY_ROOT_OUT)/res/portrait/
+	cp -f $(TWRP_RES_LOC)/$(DEVICE_RESOLUTION)/res/ui.xml $(TARGET_RECOVERY_ROOT_OUT)/res/portrait.xml
+	mkdir -p $(TARGET_RECOVERY_ROOT_OUT)/res/landscape
+	cp -fr $(TWRP_RES_LOC)/common/res/images/* $(TARGET_RECOVERY_ROOT_OUT)/res/landscape/
+	cp -fr $(TWRP_RES_LOC)/$(LANDSCAPE_RESOLUTION)/res/images/* $(TARGET_RECOVERY_ROOT_OUT)/res/landscape/
+	cp -f $(TWRP_RES_LOC)/$(LANDSCAPE_RESOLUTION)/res/ui.xml $(TARGET_RECOVERY_ROOT_OUT)/res/landscape.xml
+else
+ifeq ($(TWRP_DEFAULT_UI_IS_PORTRAIT), true)
+	mkdir -p $(TARGET_RECOVERY_ROOT_OUT)/res/portrait
+	cp -fr $(TWRP_RES_LOC)/common/res/images/* $(TARGET_RECOVERY_ROOT_OUT)/res/portrait/
+	cp -fr $(TWRP_RES_LOC)/$(DEVICE_RESOLUTION)/res/images/* $(TARGET_RECOVERY_ROOT_OUT)/res/portrait/
+	cp -f $(TWRP_RES_LOC)/$(DEVICE_RESOLUTION)/res/ui.xml $(TARGET_RECOVERY_ROOT_OUT)/res/portrait.xml
+else
+	mkdir -p $(TARGET_RECOVERY_ROOT_OUT)/res/landscape
+	cp -fr $(TWRP_RES_LOC)/common/res/images/* $(TARGET_RECOVERY_ROOT_OUT)/res/landscape/
+	cp -fr $(TWRP_RES_LOC)/$(LANDSCAPE_RESOLUTION)/res/images/* $(TARGET_RECOVERY_ROOT_OUT)/res/landscape/
+	cp -f $(TWRP_RES_LOC)/$(LANDSCAPE_RESOLUTION)/res/ui.xml $(TARGET_RECOVERY_ROOT_OUT)/res/landscape.xml
+endif
+endif
 	mkdir -p $(TARGET_RECOVERY_ROOT_OUT)/sbin/
 	ln -sf /sbin/busybox $(TARGET_RECOVERY_ROOT_OUT)/sbin/sh
 	ln -sf /sbin/pigz $(TARGET_RECOVERY_ROOT_OUT)/sbin/gzip

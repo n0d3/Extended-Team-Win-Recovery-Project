@@ -97,8 +97,13 @@ class TWFunc {
 		static void Update_Log_File(void);
 		static int get_bootloader_msg(struct bootloader_message *out);
 		static int set_bootloader_msg(const struct bootloader_message *in);
+		static bool loadTheme();
+		static bool reloadTheme();
+		static string getUIxml(int rotation);
 
 		// Extended functions
+		static void Update_Rotation_File(int r);
+		static int Check_Rotation_File();
 		static int CheckFor_ValidIMG(string mtdName);
 		static unsigned long RoundUpSize(unsigned long sz, unsigned long multiple);
 		static void apply_system_tweaks(int charge_mode);

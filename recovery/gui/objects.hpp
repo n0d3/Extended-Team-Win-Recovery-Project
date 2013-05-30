@@ -519,7 +519,7 @@ protected:
     bool updateFileList;
 };
 
-class GUIListBox : public RenderObject, public ActionObject
+class GUIListBox : public RenderObject, public ActionObject, public Conditional
 {
 public:
     GUIListBox(xml_node<>* node);
@@ -605,6 +605,7 @@ protected:
     int mHeaderIsStatic;
     int startSelection;
     int touchDebounce;
+	bool mRendered;
 };
 
 class GUIPartitionList : public RenderObject, public ActionObject

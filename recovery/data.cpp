@@ -656,7 +656,7 @@ void DataManager::SetupTwrpFolder() {
 
 void DataManager::SetDefaultValues()
 {
-	string str, path;
+	string path;
 
 	get_device_id();
 	
@@ -872,7 +872,7 @@ void DataManager::SetDefaultValues()
 	if (PartitionManager.Mount_By_Path("/data", false) && TWFunc::Path_Exists("/data/media/0"))
 		SetValue(TW_INTERNAL_PATH, "/data/media/0");
 #endif
-	str = GetCurrentStoragePath();
+
 #ifdef RECOVERY_SDCARD_ON_DATA
 	#ifndef TW_EXTERNAL_STORAGE_PATH
 		SetValue(TW_ZIP_LOCATION_VAR, "/sdcard", 1);
@@ -884,44 +884,53 @@ void DataManager::SetDefaultValues()
 		}
 	#endif
 #else
+	string str = GetCurrentStoragePath();
 	SetValue(TW_ZIP_LOCATION_VAR, str.c_str(), 1);
 #endif
 
 	mConstValues.insert(make_pair(TW_REBOOT_SYSTEM, "1"));
+	mConstValues.insert(make_pair(TW_REBOOT_POWEROFF, "1"));
+
 #ifdef TW_NO_REBOOT_RECOVERY
 	mConstValues.insert(make_pair(TW_REBOOT_RECOVERY, "0"));
 #else
 	mConstValues.insert(make_pair(TW_REBOOT_RECOVERY, "1"));
 #endif
-	mConstValues.insert(make_pair(TW_REBOOT_POWEROFF, "1"));
+
 #ifdef TW_NO_REBOOT_BOOTLOADER
 	mConstValues.insert(make_pair(TW_REBOOT_BOOTLOADER, "0"));
 #else
 	mConstValues.insert(make_pair(TW_REBOOT_BOOTLOADER, "1"));
 #endif
+
 #ifdef RECOVERY_SDCARD_ON_DATA
 	mConstValues.insert(make_pair(TW_HAS_DATA_MEDIA, "1"));
 #else
 	mConstValues.insert(make_pair(TW_HAS_DATA_MEDIA, "0"));
 #endif
+
 #ifdef TW_NO_BATT_PERCENT
 	mConstValues.insert(make_pair(TW_NO_BATTERY_PERCENT, "1"));
 #else
 	mConstValues.insert(make_pair(TW_NO_BATTERY_PERCENT, "0"));
 #endif
+
 #ifdef TW_CUSTOM_POWER_BUTTON
 	mConstValues.insert(make_pair(TW_POWER_BUTTON, EXPAND(TW_CUSTOM_POWER_BUTTON)));
 #else
 	mConstValues.insert(make_pair(TW_POWER_BUTTON, "0"));
 #endif
+
 #ifdef TW_ALWAYS_RMRF
 	mConstValues.insert(make_pair(TW_RM_RF_VAR, "1"));
 #endif
+
 #ifdef TW_NEVER_UNMOUNT_SYSTEM
 	mConstValues.insert(make_pair(TW_DONT_UNMOUNT_SYSTEM, "1"));
 #else
 	mConstValues.insert(make_pair(TW_DONT_UNMOUNT_SYSTEM, "0"));
 #endif
+
 #ifdef TW_NO_USB_STORAGE
 	mConstValues.insert(make_pair(TW_HAS_USB_STORAGE, "0"));
 #else
@@ -940,6 +949,7 @@ void DataManager::SetDefaultValues()
 		mConstValues.insert(make_pair(TW_HAS_USB_STORAGE, "1"));
 	}
 #endif
+
 #ifdef TW_INCLUDE_INJECTTWRP
 	mConstValues.insert(make_pair(TW_HAS_INJECTTWRP, "1"));
 	mValues.insert(make_pair(TW_INJECT_AFTER_ZIP, make_pair("1", 1)));
@@ -947,12 +957,15 @@ void DataManager::SetDefaultValues()
 	mConstValues.insert(make_pair(TW_HAS_INJECTTWRP, "0"));
 	mValues.insert(make_pair(TW_INJECT_AFTER_ZIP, make_pair("0", 1)));
 #endif
+
 #ifdef TW_FLASH_FROM_STORAGE
 	mConstValues.insert(make_pair(TW_FLASH_ZIP_IN_PLACE, "1"));
 #endif
+
 #ifdef TW_HAS_DOWNLOAD_MODE
 	mConstValues.insert(make_pair(TW_DOWNLOAD_MODE, "1"));
 #endif
+
 #ifdef TW_INCLUDE_CRYPTO
 	mConstValues.insert(make_pair(TW_HAS_CRYPTO, "1"));
 	LOGINFO("=> Device has crypto support compiled into recovery.\n");
@@ -966,7 +979,7 @@ void DataManager::SetDefaultValues()
 #ifdef TW_HAS_NO_BOOT_PARTITION
 	mValues.insert(make_pair("tw_backup_list", make_pair("/system;/data;", 1)));
 #else
-	mValues.insert(make_pair("tw_backup_list", make_pair("/system;/data;/boot;", 1)));
+	mValues.insert(make_pair("tw_backup_list", make_pair("/boot;/system;/data;", 1)));
 #endif
 	mConstValues.insert(make_pair(TW_MIN_SYSTEM_VAR, TW_MIN_SYSTEM_SIZE));
 	mValues.insert(make_pair(TW_BACKUP_NAME, make_pair("(Current Date)", 0)));
@@ -1035,6 +1048,12 @@ void DataManager::SetDefaultValues()
 	}
 #endif
 	mValues.insert(make_pair(TW_MILITARY_TIME, make_pair("1", 1)));
+	mValues.insert(make_pair(TW_ROTATION, make_pair(EXPAND(TW_DEFAULT_ROTATION), 1)));
+#ifdef TW_HAS_LANDSCAPE
+	mValues.insert(make_pair(TW_ENABLE_ROTATION, make_pair("1", 1)));
+#else
+	mValues.insert(make_pair(TW_ENABLE_ROTATION, make_pair("0", 1)));
+#endif
 }
 
 void DataManager::Output_Version(void) {

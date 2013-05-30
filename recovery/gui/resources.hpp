@@ -2,7 +2,9 @@
 
 #ifndef _RESOURCE_HEADER
 #define _RESOURCE_HEADER
-
+extern "C" {
+#include "../minuitwrp/minui.h"
+}
 // Base Objects
 class Resource
 {

@@ -52,6 +52,7 @@ extern "C" {
 #define SCROLLING_MULTIPLIER 6
 
 GUIListBox::GUIListBox(xml_node<>* node)
+	: Conditional(node)
 {
 	xml_attribute<>* attr;
 	xml_node<>* child;
@@ -78,7 +79,7 @@ GUIListBox::GUIListBox(xml_node<>* node)
 	hasFontHighlightColor = false;
 	isHighlighted = false;
 	startSelection = -1;
-
+	mRendered = false;
 	// Load header text
 	child = node->first_node("header");
 	if (child)
@@ -352,6 +353,12 @@ GUIListBox::~GUIListBox()
 
 int GUIListBox::Render(void)
 {
+	if (!isConditionTrue())
+	{
+        	mRendered = false;
+        	return 0;
+	}
+
 	// First step, fill background
 	gr_color(mBackgroundColor.red, mBackgroundColor.green, mBackgroundColor.blue, 255);
 	gr_fill(mRenderX, mRenderY + mHeaderH, mRenderW, mRenderH - mHeaderH);
@@ -516,12 +523,14 @@ int GUIListBox::Render(void)
 		gr_fill(mFastScrollRectX, mFastScrollRectY, mFastScrollRectW, mFastScrollRectH);
 	}
 
+	mRendered = true;
 	mUpdate = 0;
 	return 0;
 }
 
 int GUIListBox::Update(void)
 {
+	if (!isConditionTrue())     return (mRendered ? 2 : 0);
 	if (!mHeaderIsStatic) {
 		std::string newValue = gui_parse_text(mHeaderText);
 		if (mLastValue != newValue) {
@@ -605,6 +614,8 @@ int GUIListBox::NotifyTouch(TOUCH_STATE state, int x, int y)
 	static int lastY = 0, last2Y = 0;
 	int selection = 0;
 
+	if (!isConditionTrue())     return -1;
+
 	switch (state)
 	{
 	case TOUCH_START:
@@ -624,6 +635,7 @@ int GUIListBox::NotifyTouch(TOUCH_STATE state, int x, int y)
 		if (GetSelection(x, y) == -1) {
 			last2Y = lastY = 0;
 			if (isHighlighted) {
+				mRendered = false;
 				isHighlighted = false;
 				mUpdate = 1;
 			}
@@ -705,6 +717,7 @@ int GUIListBox::NotifyTouch(TOUCH_STATE state, int x, int y)
 
 	case TOUCH_RELEASE:
 		isHighlighted = false;
+		mRendered = false;
 		if (startSelection >= 0)
 		{
 			// We've selected an item!

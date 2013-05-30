@@ -359,48 +359,30 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 		std::string page_name = gui_parse_text(arg);
 		return gui_changePage(page_name);
 	}
-	if (function == "reload") {
-		int storage_mounted = 0, ret_val = 0;
-		std::string theme_path;
-		std::string cmd;
-		std::string res;
+	if(function == "rotation") {
+		int rot = atoi(arg.c_str());
+		if (rot == gr_get_rotation())
+			return 0;
 
+		operation_start("Rotation");
+		int res = gui_rotate(rot);
+		operation_end(res != 0, simulate);
+		return 0;
+	}
+	if (function == "reload") {
 		operation_start("Reload Theme");
+		gui_setRenderEnabled(0);
 		blankTimer.setBlank(0);
 		usleep(1100);
-		// Get the pre-selected theme
-		theme_path = DataManager::GetStrValue(TW_SEL_THEME_PATH);
-		if (theme_path.empty()) {
-			// Built-in theme
-			theme_path = "/res/ui.xml";
-		}
-		// Mount storage
-		if (!PartitionManager.Mount_Settings_Storage(false)) {
-			LOGERR("Unable to mount storage during theme reload.\n");
-			storage_mounted = 0;
-			theme_path = "/res/ui.xml";
-		} else
-			storage_mounted = 1;
-		
-		if (PageManager::ReloadPackage("TWRP", theme_path) != 0) {
-			LOGERR("Failed to load base packages.\n");
-			ret_val = 1;
-		} else {
-			if (storage_mounted) {
-				if (theme_path == "/res/ui.xml")
-					cmd = "rm -f " + DataManager::GetSettingsStoragePath() + "/TWRP/theme/.use_external";
-				else
-					cmd = "echo " + theme_path + ">" + DataManager::GetSettingsStoragePath() + "/TWRP/theme/.use_external";
-				TWFunc::Exec_Cmd(cmd, res);
-			}		
-		}
-		if (ret_val == 0) {
+		if (TWFunc::reloadTheme()) {
+			gui_setRenderEnabled(1);
 			int timeout = DataManager::GetIntValue("tw_screen_timeout_secs");
 			blankTimer.setBlank(1);
 			blankTimer.setTimerThread();
 			blankTimer.setTime(timeout);
-		}
-		operation_end(ret_val, simulate);
+			operation_end(0, simulate);
+		} else
+			operation_end(1, simulate);
 	}
 	if (function == "readBackup") {
 		string Restore_Name;
@@ -686,13 +668,18 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			Size = ((float)TWFunc::Get_File_Size(arg) / (float)1048576LLU);
 			DataManager::SetValue("tw_filename1_size", Size);
 			operation_end(0, simulate);
+			return 0;
 		}
 
 		if (function == "viewfile") {
 			operation_start("ViewFile");
 			gui_cls();
-			TWFunc::cat_file(arg, 47);
+			if (gr_get_rotation() % 180 == 0)
+				TWFunc::cat_file(arg, 47);
+			else
+				TWFunc::cat_file(arg, 90);
 			operation_end(0, simulate);
+			return 0;
 		}
 
 		if (function == "getfoldersize") {
@@ -702,6 +689,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			Size = ((float)TWFunc::Get_Folder_Size(arg, false) / (float)1048576LLU);
 			DataManager::SetValue("tw_filename1_size", Size);
 			operation_end(0, simulate);
+			return 0;
 		}
 
 		if (function == "notemptystr") {
@@ -710,6 +698,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				operation_end(0, simulate);				
 			else
 				operation_end(1, simulate);
+			return 0;
 		}
 
 		if (function == "fileexists") {
@@ -920,6 +909,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 					gui_forceRender();
 			}
 			operation_end(0, simulate);
+			return 0;
 		}
 		if (function == "nandroid") {
 			operation_start("Nandroid");
@@ -1528,18 +1518,19 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 							std::string theme_path;
 							std::string cmd;
 							std::string res;
-
+							std::string base_xml;
 							// Get the pre-selected theme
+							base_xml = TWFunc::getUIxml(gr_get_rotation());
 							theme_path = DataManager::GetStrValue(TW_SEL_THEME_PATH);
 							if (theme_path.empty()) {
 								// Built-in theme
-								theme_path = "/res/ui.xml";
+								theme_path = base_xml;
 							}
 							// Mount storage
 							if (!PartitionManager.Mount_Settings_Storage(false)) {
 								LOGERR("Unable to mount storage during theme reload.\n");
 								storage_mounted = 0;
-								theme_path = "/res/ui.xml";
+								theme_path = base_xml;
 							} else
 								storage_mounted = 1;
 		
@@ -1548,10 +1539,14 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 								op_status = 1;
 							} else {
 								if (storage_mounted) {
-									if (theme_path == "/res/ui.xml")
-										cmd = "rm -f " + DataManager::GetSettingsStoragePath() + "/TWRP/theme/.use_external";
-									else
-										cmd = "echo " + theme_path + ">" + DataManager::GetSettingsStorageMount() + "/TWRP/theme/.use_external";
+									if (theme_path == base_xml)
+										cmd = "rm -rf " + DataManager::GetSettingsStoragePath() + "/TWRP/theme/.use_external_*";
+									else {
+										if (gr_get_rotation() % 180 == 0)
+											cmd = "echo " + theme_path + ">" + DataManager::GetSettingsStoragePath() + "/TWRP/theme/.use_external_p";
+										else
+											cmd = "echo " + theme_path + ">" + DataManager::GetSettingsStoragePath() + "/TWRP/theme/.use_external_l";
+									}
 									TWFunc::Exec_Cmd(cmd, res);
 								}		
 							}
@@ -1664,6 +1659,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 					DataManager::SetValue("tw_page_done", 1);
 				}
 			}
+			return 0;
 		}
 		if (function == "installsu") {
 			int op_status = 0;

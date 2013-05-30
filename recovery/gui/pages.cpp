@@ -564,6 +564,11 @@ int PageSet::SetPage(std::string page)
     return -1;
 }
 
+std::string PageSet::GetCurrentPage()
+{
+    return mCurrentPage ? mCurrentPage->GetName() : "";
+}
+
 int PageSet::SetOverlay(Page* page)
 {
     if (mOverlayPage)   mOverlayPage->SetPageFocus(0);
@@ -723,21 +728,24 @@ int PageManager::LoadPackage(std::string name, std::string package, std::string 
     else
     {
         pZip = &zip;
-        const ZipEntry* ui_xml = mzFindZipEntry(&zip, "ui.xml");
+	const ZipEntry* ui_xml = NULL;
+	if (gr_get_rotation() % 180 == 0)
+	    ui_xml = mzFindZipEntry(&zip, "portrait.xml");
+	else
+	    ui_xml = mzFindZipEntry(&zip, "landscape.xml");
         if (ui_xml == NULL)
         {
-            LOGERR("Unable to locate ui.xml in zip file\n");
+            LOGERR("Unable to locate UI's xml in zip file\n");
             goto error;
         }
-    
-        // Allocate the buffer for the file
+	// Allocate the buffer for the file
         len = mzGetZipEntryUncompLen(ui_xml);
         xmlFile = (char*) malloc(len + 1);
         if (!xmlFile)        goto error;
     
         if (!mzExtractZipEntryToBuffer(&zip, ui_xml, (unsigned char*) xmlFile))
         {
-            LOGERR("Unable to extract ui.xml\n");
+            LOGERR("Unable to extract UI's xml\n");
             goto error;
         }
     }
@@ -822,6 +830,7 @@ int PageManager::ReloadPackage(std::string name, std::string package)
         return -1;
     }
     if (mCurrentSet == set)     SelectPackage(name);
+    if (mBaseSet == set)        mBaseSet = mCurrentSet;
     delete set;
     return 0;
 }
@@ -838,6 +847,11 @@ void PageManager::ReleasePackage(std::string name)
     mPageSets.erase(iter);
     delete set;
     return;
+}
+
+std::string PageManager::GetCurrentPage()
+{
+    return mCurrentSet ? mCurrentSet->GetCurrentPage() : "";
 }
 
 int PageManager::ChangePage(std::string name)

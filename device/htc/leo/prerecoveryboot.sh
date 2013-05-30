@@ -23,8 +23,12 @@ fi
 # Extract theme's curtain.jpg from ui.zip
 #
 busybox mount -t auto /dev/block/mmcblk0p1 /sdcard
-if [ -f "/sdcard/TWRP/theme/.use_external" ]; then
-ui_zip=`cat /sdcard/TWRP/theme/.use_external`
-busybox unzip -oq "$ui_zip" images/curtain.jpg -d /tmp
+if [ -f "/sdcard/TWRP/theme/.use_external_p" ]; then
+ui_zip=`cat /sdcard/TWRP/theme/.use_external_p`
+busybox unzip -oq "$ui_zip" portrait/curtain.jpg -d /tmp
+fi
+if [ -f "/sdcard/TWRP/theme/.use_external_l" ]; then
+ui_zip=`cat /sdcard/TWRP/theme/.use_external_l`
+busybox unzip -oq "$ui_zip" landscape/curtain.jpg -d /tmp
 fi
 busybox umount /sdcard

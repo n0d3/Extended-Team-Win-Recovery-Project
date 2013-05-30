@@ -45,12 +45,25 @@ int Resource::ExtractResource(ZipArchive* pZip,
 {
     if (!pZip)  return -1;
 
-    std::string src = folderName + "/" + fileName + fileExtn;
-
-	const ZipEntry* binary = mzFindZipEntry(pZip, src.c_str());
-    if (binary == NULL) {
+    std::string src;
+/*
+    /fonts/*.dat	<= fonts
+    /portrait/*.png	<= images
+    /landscape/*.png	<= images
+    /portrait.xml	<= ui.xml
+    /landscape.xml	<= ui.xml for landscape
+ */
+    if (folderName == "fonts")
+	src = folderName + "/" + fileName + fileExtn;
+    else {
+	if (gr_get_rotation() % 180 == 0)
+	    src = "portrait/" + fileName + fileExtn;
+	else
+	    src = "landscape/" + fileName + fileExtn;
+    }
+    const ZipEntry* binary = mzFindZipEntry(pZip, src.c_str());
+    if (binary == NULL)
         return -1;
-	}
 
     unlink(destFile.c_str());
     int fd = creat(destFile.c_str(), 0666);

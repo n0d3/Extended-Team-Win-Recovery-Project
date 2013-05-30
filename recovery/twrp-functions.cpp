@@ -25,6 +25,10 @@
 #include "data.hpp"
 #include "variables.h"
 #include "bootloader.h"
+#include "gui/objects.hpp"
+#ifndef TW_EXCLUDE_ENCRYPTED_BACKUPS
+	#include "openaes/inc/oaes_lib.h"
+#endif
 
 extern "C" {
 	#include "minuitwrp/minui.h"
@@ -174,13 +178,10 @@ int TWFunc::Recursive_Mkdir(string Path) {
 unsigned long long TWFunc::Get_Folder_Size(const string& Path, bool Display_Error) {
 	DIR* d = opendir(Path.c_str());
 	if (d == NULL) {
-		if (Display_Error) {
-			LOGERR("[Get_Folder_Size()] error opening '%s'\n", Path.c_str());
-			LOGERR("error: %s\n", strerror(errno));
-		} else {
-			LOGINFO("[Get_Folder_Size()] error opening '%s'\n", Path.c_str());
-			LOGINFO("error: %s\n", strerror(errno));
-		}
+		if (Display_Error)
+			LOGERR("Cannot open '%s'(error: %s)\n", Path.c_str(), strerror(errno));
+		else
+			LOGINFO("Cannot open '%s'(error: %s)\n", Path.c_str(), strerror(errno));
 		return 0;
 	}
 
@@ -411,7 +412,7 @@ int TWFunc::removeDir(const string path, bool skipParent) {
 	string new_path;
 
 	if (d == NULL) {
-		LOGERR("[removeDir()] Error opening '%s'\n", path.c_str());
+		LOGERR("Cannot open '%s'\n", path.c_str());
 		return -1;
 	}
 
@@ -1200,4 +1201,116 @@ bool TWFunc::Install_SuperSU(void) {
 	if (!Fix_su_Perms())
 		return false;
 	return true;
+}
+
+bool TWFunc::loadTheme() {
+#ifndef TW_HAS_LANDSCAPE
+	DataManager::SetValue(TW_ENABLE_ROTATION, 0);
+#endif
+
+	string base_xml = getUIxml(gr_get_rotation());
+
+	if (DataManager::GetIntValue(TW_IS_ENCRYPTED)) {
+		if(PageManager::LoadPackage ("TWRP", base_xml, "decrypt") != 0) {
+			LOGERR("Failed to load base packages.\n");
+			return false;
+		} else {
+#ifdef TW_HAS_LANDSCAPE
+			DataManager::SetValue(TW_ENABLE_ROTATION, 1);
+#endif
+			return true;
+		}
+	}
+
+	string theme_path = DataManager::GetStrValue(TW_SEL_THEME_PATH);
+	// Get the pre-selected theme
+	if (theme_path.empty()) {
+		// Built-in theme
+		theme_path = base_xml;
+	} else {
+		// Mount storage
+		if (!PartitionManager.Mount_Settings_Storage(false)) {
+			int retry_count = 5;
+			while (retry_count > 0 && !PartitionManager.Mount_Settings_Storage(false)) {
+				usleep(500000);
+				retry_count--;
+			}
+			if (!PartitionManager.Mount_Settings_Storage(false)) {
+				LOGERR("Unable to mount storage during GUI startup.\n");
+				theme_path = base_xml;
+			}
+		}
+	}
+	// Load theme
+	if (PageManager::LoadPackage("TWRP", theme_path, "main")) {
+		LOGERR("Failed to load base packages.\n");
+		return false;
+	} else {
+		Update_Rotation_File(gr_get_rotation());
+#ifdef TW_HAS_LANDSCAPE
+		DataManager::SetValue(TW_ENABLE_ROTATION, 1);
+#endif
+		return true;
+	}
+}
+
+bool TWFunc::reloadTheme() {
+	int storage_mounted = 0;
+	string cmd, res;
+	string base_xml = getUIxml(gr_get_rotation());
+	string theme_path = DataManager::GetStrValue(TW_SEL_THEME_PATH);
+	if (theme_path.empty()) {
+		// Built-in theme
+		theme_path = base_xml;
+	}
+	// Mount storage
+	if (!PartitionManager.Mount_Settings_Storage(false)) {
+		LOGERR("Unable to mount storage during theme reload.\n");
+		storage_mounted = 0;
+		theme_path = base_xml;
+	} else
+		storage_mounted = 1;
+
+	if (PageManager::ReloadPackage("TWRP", theme_path) != 0) {
+		LOGERR("Failed to load base packages.\n");
+		return false;
+	} else {
+		if (storage_mounted) {
+			if (theme_path == base_xml)
+				cmd = "rm -rf " + DataManager::GetSettingsStoragePath() + "/TWRP/theme/.use_external_*";
+			else {
+				if (gr_get_rotation() % 180 == 0)
+					cmd = "echo " + theme_path + ">" + DataManager::GetSettingsStoragePath() + "/TWRP/theme/.use_external_p";
+				else
+					cmd = "echo " + theme_path + ">" + DataManager::GetSettingsStoragePath() + "/TWRP/theme/.use_external_l";
+			}
+			Exec_Cmd(cmd, res);
+		}		
+	}
+	return true;
+}
+
+std::string TWFunc::getUIxml(int rotation) {
+	if (rotation % 180 == 0)
+		return "/res/portrait.xml";
+	else
+		return "/res/landscape.xml";
+}
+
+void TWFunc::Update_Rotation_File(int r) {
+	string rotation_file = "/cache/recovery/rotation";
+	string angle = to_string(r);
+	int Cache_Was_Mounted = PartitionManager.Is_Mounted_By_Path("/cache");
+	if (Cache_Was_Mounted || PartitionManager.Mount_By_Path("/cache", false))
+		TWFunc::write_file(rotation_file, angle);
+	if (!Cache_Was_Mounted)
+		PartitionManager.UnMount_By_Path("/cache", false);
+}
+
+int TWFunc::Check_Rotation_File() {
+	string result, rotation_file = "/cache/recovery/rotation";
+	if (TWFunc::Path_Exists(rotation_file) && TWFunc::read_file(rotation_file, result) == 0)
+		return atoi(result.c_str());
+
+	return TW_DEFAULT_ROTATION;
 }
