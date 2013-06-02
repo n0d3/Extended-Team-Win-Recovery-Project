@@ -749,12 +749,12 @@ int twrpTar::tarDirs(bool include_root) {
 #endif
 			strcpy(buf, subfolder.c_str());
 			if (de->d_type == DT_DIR) {
-				char* charTarPath;
+				char charTarPath[1024];
 				if (include_root) {
-					charTarPath = NULL;
+					charTarPath[0] = '0';
 				} else {
 					string temp = Strip_Root_Dir(buf);
-					charTarPath = (char*) temp.c_str();
+					strcpy(charTarPath, temp.c_str());
 				}
 				if (tar_append_tree(t, buf, charTarPath, excl) != 0) {
 #ifdef TAR_DEBUG_VERBOSE
@@ -1458,10 +1458,13 @@ int twrpTar::entryExists(string entry) {
 		LOGINFO("No matching entry found.\n");
 #endif
 
-	if (closeTar() != 0) {
+	if (tar_close(t) != 0) {
 #ifdef TAR_DEBUG_VERBOSE
 		LOGINFO("Unable to close tar file after searching for entry '%s'.\n", entry.c_str());
 #endif
+	}
+	if (Archive_Current_Type > 0) {
+		close(fd);
 	}
 
 	return ret;
