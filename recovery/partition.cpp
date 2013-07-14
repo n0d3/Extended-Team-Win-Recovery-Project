@@ -2426,8 +2426,10 @@ bool TWPartition::Check_FS_Type() {
 			if (blkid_probe_lookup_value(pr, "TYPE", &type, NULL) < 0) {
 				blkid_free_probe(pr);
 				LOGINFO("can't find filesystem on device %s\n", Actual_Block_Device.c_str());
-			} else
+			} else {
+				blkid_free_probe(pr);
 				Current_File_System = type;
+			}
 		}
 	} else if (!Is_Present)
 		return false;
