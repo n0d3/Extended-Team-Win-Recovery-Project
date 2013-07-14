@@ -665,7 +665,7 @@ bool TWPartitionManager::Make_MD5(bool generate_md5, string Backup_Folder, strin
 	return true;
 }
 
-bool TWPartitionManager::Backup_Partition(TWPartition* Part,
+int TWPartitionManager::Backup_Partition(TWPartition* Part,
 					  string Backup_Folder,
 					  bool generate_md5,
 					  unsigned long long* img_bytes_remaining,
@@ -682,7 +682,7 @@ bool TWPartitionManager::Backup_Partition(TWPartition* Part,
 	float pos;
 
 	if (Part == NULL)
-		return true;
+		return 1;
 
 	DataManager::GetValue(TW_BACKUP_AVG_IMG_RATE, img_bps);
 
@@ -712,8 +712,12 @@ bool TWPartitionManager::Backup_Partition(TWPartition* Part,
 	DataManager::ShowProgress(pos, section_time);
 
 	time(&start);
-
-	if (Part->Backup(Backup_Folder)) {
+	
+	int res = Part->Backup(Backup_Folder);
+	if (res == -1) { // 0 size backup
+		// TODO: maybe delete that file
+		return 1;
+	} else if (res == 1) {
 		if (Part->Has_SubPartition) {
 			std::vector<TWPartition*>::iterator subpart;
 
@@ -743,11 +747,11 @@ bool TWPartitionManager::Backup_Partition(TWPartition* Part,
 		}
 		return Make_MD5(generate_md5, Backup_Folder, Part->Backup_FileName);
 	} else {
-		return false;
+		return 0;
 	}
 }
 
-int TWPartitionManager::Run_Backup(void) {
+bool TWPartitionManager::Run_Backup(void) {
 	int check, skip_md5_gen, do_md5, partition_count = 0, skip_free_space_check = 0;
 	string Backup_Folder, Backup_Name, Full_Backup_Path;
 	unsigned long long total_bytes = 0, file_bytes = 0, img_bytes = 0, free_space = 0, img_bytes_remaining, file_bytes_remaining, subpart_size;

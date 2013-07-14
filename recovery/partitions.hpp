@@ -64,7 +64,7 @@ class TWPartition {
 		// Wipes android secure
 		virtual bool Wipe_AndSec();
 		// Backs up the partition to the folder specified
-		virtual bool Backup(string backup_folder);
+		virtual int Backup(string backup_folder);
 		// Checks MD5 of a backup
 		virtual bool Check_MD5(string restore_folder);
 		// Restores the partition using the backup folder provided
@@ -253,11 +253,11 @@ class TWPartition {
 		// Uses rm -rf to wipe but does not wipe /data/media
 		bool Wipe_Data_Without_Wiping_Media();
 		// Backs up using tar for file systems
-		bool Backup_Tar(string backup_folder);
+		int Backup_Tar(string backup_folder);
 		// Backs up using dd for emmc memory types
-		bool Backup_DD(string backup_folder);
+		int Backup_DD(string backup_folder);
 		// Backs up using dump_image for MTD memory types
-		bool Backup_Dump_Image(string backup_folder);
+		int Backup_Dump_Image(string backup_folder);
 		// Restore using tar for file systems
 		bool Restore_Tar(string restore_folder, string Restore_File_System);
 		// Restore using dd for emmc memory types
@@ -348,7 +348,7 @@ class TWPartitionManager {
 		// Checks the current backup name to ensure that it is valid
 		virtual int Check_Backup_Name(bool Display_Error);
 		// Initiates a backup in the current storage
-		virtual int Run_Backup();
+		virtual bool Run_Backup();
 		// Restores a backup
 		virtual int Run_Restore(string Restore_Name);
 		// Used to gather a list of available backup partitions for the user to select for a restore
@@ -394,7 +394,9 @@ class TWPartitionManager {
 		// Generates an MD5 after a backup is made
 		virtual bool Make_MD5(bool generate_md5, string Backup_Folder, string Backup_Filename);
 		virtual void Get_Partition_List(string ListType, std::vector<PartitionList> *Partition_List);
-		
+		// Creates a /cache/recovery/storage.fstab file with a list of all potential storage locations for app use
+		virtual void Output_Storage_Fstab();
+
 	// Extended functions
 		static int Fstab_Proc_Done;
 		static int SD_Partitioning_Done_Once;
@@ -407,7 +409,7 @@ class TWPartitionManager {
 		virtual void Process_Extra_Boot_Partitions(void);
 
 	private:
-		bool Backup_Partition(TWPartition* Part, string Backup_Folder, bool generate_md5,
+		int Backup_Partition(TWPartition* Part, string Backup_Folder, bool generate_md5,
 					unsigned long long* img_bytes_remaining,
 					unsigned long long* file_bytes_remaining,
 					unsigned long *img_time, unsigned long *file_time,

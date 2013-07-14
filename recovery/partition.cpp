@@ -622,9 +622,9 @@ bool TWPartition::Process_Flags(string Flags, bool Display_Error) {
 		while (index < flags_len && flags[index] != '\0')
 			index++;
 	}
-	if (has_display_name && !has_storage_name)
+	if (has_display_name && !has_storage_name && !Has_Data_Media)
 		Storage_Name = Display_Name;
-	if (!has_display_name && has_storage_name)
+	if (!has_display_name && has_storage_name && !Has_Data_Media)
 		Display_Name = Storage_Name;
 	if (has_display_name && !has_backup_name && Backup_Display_Name != "Android Secure")
 		Backup_Display_Name = Display_Name;
@@ -1968,7 +1968,7 @@ bool TWPartition::Wipe_Data_Without_Wiping_Media() {
 /************************************************************************************
  * Partition's backup stuff
  */
-bool TWPartition::Backup(string backup_folder) {
+int TWPartition::Backup(string backup_folder) {
 	if (Backup_Method == FILES)
 		return Backup_Tar(backup_folder);
 	else if (Backup_Method == DD)
@@ -1976,7 +1976,7 @@ bool TWPartition::Backup(string backup_folder) {
 	else if (Backup_Method == FLASH_UTILS)
 		return Backup_Dump_Image(backup_folder);
 	LOGERR("Unknown backup method for '%s'\n", Mount_Point.c_str());
-	return false;
+	return 0;
 }
 
 string TWPartition::Backup_Method_By_Name() {
@@ -1993,7 +1993,7 @@ string TWPartition::Backup_Method_By_Name() {
 	return "ERROR!";
 }
 
-bool TWPartition::Backup_Tar(string backup_folder) {
+int TWPartition::Backup_Tar(string backup_folder) {
 	char back_name[255], split_index[5];
 	string Full_FileName, Split_FileName, Tar_Args = "", Tar_Excl = "", Command, result;
 	int use_compression, use_encryption = 0, index, backup_count, skip_dalvik;
@@ -2002,7 +2002,7 @@ bool TWPartition::Backup_Tar(string backup_folder) {
 	twrpTar tar;
 
 	if (!Mount(true))
-		return false;
+		return 0;
 
 	DataManager::GetValue(TW_SKIP_DALVIK, skip_dalvik);
 #ifdef TW_DEVICE_IS_HTC_LEO
@@ -2065,7 +2065,7 @@ bool TWPartition::Backup_Tar(string backup_folder) {
 		backup_count = tar.splitArchiveFork();
 		if (backup_count == -1) {
 			LOGERR("Error tarring split files!\n");
-			return false;
+			return 0;
 		}
 	} else {
 		Full_FileName = backup_folder + Backup_FileName;
@@ -2078,7 +2078,7 @@ bool TWPartition::Backup_Tar(string backup_folder) {
 			tar.setdir(Backup_Path);
 		tar.setfn(Full_FileName);
 		if (tar.createTarFork() != 0)
-			return false;
+			return 0;
 		if (use_compression && !use_encryption) {
 			string gzname = Full_FileName + ".gz";
 			rename(gzname.c_str(), Full_FileName.c_str());
@@ -2089,7 +2089,7 @@ bool TWPartition::Backup_Tar(string backup_folder) {
 #endif
 		if (TWFunc::Get_File_Size(Full_FileName) == 0) {
 			LOGERR("Backup file size for '%s' is 0 bytes.\n", Full_FileName.c_str());
-			return false;
+			return -1;
 		}
 	}
 #ifdef TW_DEVICE_IS_HTC_LEO
@@ -2105,10 +2105,10 @@ bool TWPartition::Backup_Tar(string backup_folder) {
 		Command = "echo " + Backup_Path + ":" + TWFunc::to_string((int)Dalvik_Cache_Size) + ">" + backup_folder + ".nodalvikcache";
 		TWFunc::Exec_Cmd(Command, result);
 	}
-	return true;
+	return 1;
 }
 
-bool TWPartition::Backup_DD(string backup_folder) {
+int TWPartition::Backup_DD(string backup_folder) {
 	char backup_size[32];
 	string Full_FileName, Command, result, DD_BS;
 	TWFunc::GUI_Operation_Text(TW_BACKUP_TEXT, Display_Name, "Backing Up");
@@ -2124,12 +2124,12 @@ bool TWPartition::Backup_DD(string backup_folder) {
 	TWFunc::Exec_Cmd(Command, result);
 	if (TWFunc::Get_File_Size(Full_FileName) == 0) {
 		LOGERR("Backup file size for '%s' is 0 bytes.\n", Full_FileName.c_str());
-		return false;
+		return -1;
 	}
-	return true;
+	return 1;
 }
 
-bool TWPartition::Backup_Dump_Image(string backup_folder) {
+int TWPartition::Backup_Dump_Image(string backup_folder) {
 	string Full_FileName, Command, result;
 	TWFunc::GUI_Operation_Text(TW_BACKUP_TEXT, Display_Name, "Backing Up");
 	gui_print("Backing up %s...\n", Display_Name.c_str());
@@ -2143,9 +2143,9 @@ bool TWPartition::Backup_Dump_Image(string backup_folder) {
 	if (TWFunc::Get_File_Size(Full_FileName) == 0) {
 		// Actual size may not match backup size due to bad blocks on MTD devices so just check for 0 bytes
 		LOGERR("Backup file size for '%s' is 0 bytes.\n", Full_FileName.c_str());
-		return false;
+		return -1;
 	}
-	return true;
+	return 1;
 }
 
 /************************************************************************************
