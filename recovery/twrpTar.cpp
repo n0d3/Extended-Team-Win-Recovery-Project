@@ -47,6 +47,7 @@ twrpTar::twrpTar(void) {
 	use_encryption = 0;
 	userdata_encryption = 0;
 	use_compression = 0;
+	split_archives = 0;
 	has_data_media = 0;
 	pigz_pid = 0;
 	oaes_pid = 0;
@@ -112,7 +113,7 @@ int twrpTar::createTarFork() {
 	#ifdef TAR_DEBUG_VERBOSE
 				LOGERR("error opening '%s'\n", tardir.c_str());
 	#endif
-				exit(-1);
+				_exit(-1);
 			}
 			// Figure out the size of all data to be encrypted and create a list of unencrypted files
 			while ((de = readdir(d)) != NULL) {
@@ -122,13 +123,13 @@ int twrpTar::createTarFork() {
 					continue; // Skip /data/media
 				if (de->d_type == DT_BLK || de->d_type == DT_CHR)
 					continue;
-				if (de->d_type == DT_DIR && strcmp(de->d_name, ".") != 0 && strcmp(de->d_name, "..") != 0) {
+				if (de->d_type == DT_DIR && strcmp(de->d_name, ".") != 0 && strcmp(de->d_name, "..") != 0 && strcmp(de->d_name, "lost+found") != 0) {
 					item_len = strlen(de->d_name);
 					if (userdata_encryption && ((item_len >= 3 && strncmp(de->d_name, "app", 3) == 0) || (item_len >= 6 && strncmp(de->d_name, "dalvik", 6) == 0))) {
 						if (Generate_TarList(FileName, &RegularList, &target_size, &regular_thread_id) < 0) {
 							LOGERR("Error in Generate_TarList with regular list!\n");
 							closedir(d);
-							exit(-1);
+							_exit(-1);
 						}
 						regular_size += TWFunc::Get_Folder_Size(FileName, false);
 					} else {
@@ -160,7 +161,7 @@ int twrpTar::createTarFork() {
 	#ifdef TAR_DEBUG_VERBOSE
 				LOGERR("error opening '%s'\n", tardir.c_str());
 	#endif
-				exit(-1);
+				_exit(-1);
 			}
 			// Divide up the encrypted file list for threading
 			while ((de = readdir(d)) != NULL) {
@@ -170,7 +171,7 @@ int twrpTar::createTarFork() {
 					continue; // Skip /data/media
 				if (de->d_type == DT_BLK || de->d_type == DT_CHR)
 					continue;
-				if (de->d_type == DT_DIR && strcmp(de->d_name, ".") != 0 && strcmp(de->d_name, "..") != 0) {
+				if (de->d_type == DT_DIR && strcmp(de->d_name, ".") != 0 && strcmp(de->d_name, "..") != 0 && strcmp(de->d_name, "lost+found") != 0) {
 					item_len = strlen(de->d_name);
 					if (userdata_encryption && ((item_len >= 3 && strncmp(de->d_name, "app", 3) == 0) || (item_len >= 6 && strncmp(de->d_name, "dalvik", 6) == 0))) {
 						// Do nothing, we added these to RegularList earlier
@@ -180,7 +181,7 @@ int twrpTar::createTarFork() {
 						if (Generate_TarList(FileName, &EncryptList, &target_size, &enc_thread_id) < 0) {
 							LOGERR("Error in Generate_TarList with encrypted list!\n");
 							closedir(d);
-							exit(-1);
+							_exit(-1);
 						}
 					}
 				} else if (de->d_type == DT_REG || de->d_type == DT_LNK) {
@@ -196,7 +197,7 @@ int twrpTar::createTarFork() {
 			if (enc_thread_id != core_count) {
 				LOGERR("Error dividing up threads for encryption, %i threads for %i cores!\n", enc_thread_id, core_count);
 				if (enc_thread_id > core_count)
-					exit(-1);
+					_exit(-1);
 				else
 					LOGERR("Continuining anyway.");
 			}
@@ -211,25 +212,25 @@ int twrpTar::createTarFork() {
 				LOGINFO("Creating unencrypted backup...\n");
 				if (createList((void*)&reg) != 0) {
 					LOGERR("Error creating unencrypted backup.\n");
-					exit(-1);
+					_exit(-1);
 				}
 			}
 
 			if (pthread_attr_init(&tattr)) {
 				LOGERR("Unable to pthread_attr_init\n");
-				exit(-1);
+				_exit(-1);
 			}
 			if (pthread_attr_setdetachstate(&tattr, PTHREAD_CREATE_JOINABLE)) {
 				LOGERR("Error setting pthread_attr_setdetachstate\n");
-				exit(-1);
+				_exit(-1);
 			}
 			if (pthread_attr_setscope(&tattr, PTHREAD_SCOPE_SYSTEM)) {
 				LOGERR("Error setting pthread_attr_setscope\n");
-				exit(-1);
+				_exit(-1);
 			}
 			/*if (pthread_attr_setstacksize(&tattr, 524288)) {
 				LOGERR("Error setting pthread_attr_setstacksize\n");
-				exit(-1);
+				_exit(-1);
 			}*/
 
 			// Create threads for the divided up encryption lists
@@ -248,12 +249,12 @@ int twrpTar::createTarFork() {
 					LOGINFO("Unable to create %i thread for encryption! %i\nContinuing in same thread (backup will be slower).", i, ret);
 					if (createList((void*)&enc[i]) != 0) {
 						LOGERR("Error creating encrypted backup %i.\n", i);
-						exit(-1);
+						_exit(-1);
 					} else {
 						enc[i].thread_id = i + 1;
 					}
 				}
-				usleep(20000); // Need a short delay before starting the next thread or the threads will never finish for some reason.
+				usleep(100000); // Need a short delay before starting the next thread or the threads will never finish for some reason.
 			}
 			if (pthread_attr_destroy(&tattr)) {
 				LOGERR("Failed to pthread_attr_destroy\n");
@@ -262,14 +263,14 @@ int twrpTar::createTarFork() {
 				if (enc[i].thread_id == i) {
 					if (pthread_join(enc_thread[i], &thread_return)) {
 						LOGERR("Error joining thread %i\n", i);
-						exit(-1);
+						_exit(-1);
 					} else {
 						LOGINFO("Joined thread %i.\n", i);
 						ret = (int)thread_return;
 						if (ret != 0) {
 							thread_error = 1;
 							LOGERR("Thread %i returned an error %i.\n", i, ret);
-							exit(-1);
+							_exit(-1);
 						}
 					}
 				} else {
@@ -278,18 +279,18 @@ int twrpTar::createTarFork() {
 			}
 			if (thread_error) {
 				LOGERR("Error returned by one or more threads.\n");
-				exit(-1);
+				_exit(-1);
 			}
 	#ifdef TAR_DEBUG_VERBOSE
 			LOGINFO("Finished encrypted backup.\n");
 	#endif
-			exit(0);
+			_exit(0);
 		} else {
 #endif
 			if (create() != 0)
-				exit(-1);
+				_exit(-1);
 			else
-				exit(0);
+				_exit(0);
 #ifndef TW_EXCLUDE_ENCRYPTED_BACKUPS
 		}
 #endif
@@ -314,9 +315,9 @@ int twrpTar::extractTarFork() {
 				LOGINFO("Single archive\n");
 #endif
 				if (extract() != 0)
-					exit(-1);
+					_exit(-1);
 				else
-					exit(0);
+					_exit(0);
 			} else {
 #ifdef TAR_DEBUG_VERBOSE
 				LOGINFO("Multiple archives\n");
@@ -334,7 +335,7 @@ int twrpTar::extractTarFork() {
 				tarfn += "000";
 				if (!TWFunc::Path_Exists(tarfn)) {
 					LOGERR("Unable to locate '%s' or '%s'\n", basefn.c_str(), tarfn.c_str());
-					exit(-1);
+					_exit(-1);
 				}
 				if (TWFunc::Get_File_Type(tarfn) != 2) {
 #ifdef TAR_DEBUG_VERBOSE
@@ -344,7 +345,7 @@ int twrpTar::extractTarFork() {
 					tars[0].thread_id = 0;
 					if (extractMulti((void*)&tars[0]) != 0) {
 						LOGERR("Error extracting split archive.\n");
-						exit(-1);
+						_exit(-1);
 					}
 				} else {
 					start_thread_id = 0;
@@ -352,19 +353,19 @@ int twrpTar::extractTarFork() {
 				// Start threading encrypted restores
 				if (pthread_attr_init(&tattr)) {
 					LOGERR("Unable to pthread_attr_init\n");
-					exit(-1);
+					_exit(-1);
 				}
 				if (pthread_attr_setdetachstate(&tattr, PTHREAD_CREATE_JOINABLE)) {
 					LOGERR("Error setting pthread_attr_setdetachstate\n");
-					exit(-1);
+					_exit(-1);
 				}
 				if (pthread_attr_setscope(&tattr, PTHREAD_SCOPE_SYSTEM)) {
 					LOGERR("Error setting pthread_attr_setscope\n");
-					exit(-1);
+					_exit(-1);
 				}
 				/*if (pthread_attr_setstacksize(&tattr, 524288)) {
 					LOGERR("Error setting pthread_attr_setstacksize\n");
-					exit(-1);
+					_exit(-1);
 				}*/
 				for (i = start_thread_id; i < 9; i++) {
 					sprintf(actual_filename, temp.c_str(), i, 0);
@@ -378,12 +379,12 @@ int twrpTar::extractTarFork() {
 							LOGINFO("Unable to create %i thread for extraction! %i\nContinuing in same thread (restore will be slower).", i, ret);
 							if (extractMulti((void*)&tars[i]) != 0) {
 								LOGERR("Error extracting backup in thread %i.\n", i);
-								exit(-1);
+								_exit(-1);
 							} else {
 								tars[i].thread_id = i + 1;
 							}
 						}
-						usleep(20000); // Need a short delay before starting the next thread or the threads will never finish for some reason.
+						usleep(100000); // Need a short delay before starting the next thread or the threads will never finish for some reason.
 					} else {
 						break;
 					}
@@ -392,14 +393,14 @@ int twrpTar::extractTarFork() {
 					if (tars[i].thread_id == i) {
 						if (pthread_join(tar_thread[i], &thread_return)) {
 							LOGERR("Error joining thread %i\n", i);
-							exit(-1);
+							_exit(-1);
 						} else {
 							LOGINFO("Joined thread %i.\n", i);
 							ret = (int)thread_return;
 							if (ret != 0) {
 								thread_error = 1;
 								LOGERR("Thread %i returned an error %i.\n", i, ret);
-								exit(-1);
+								_exit(-1);
 							}
 						}
 					} else {
@@ -408,10 +409,10 @@ int twrpTar::extractTarFork() {
 				}
 				if (thread_error) {
 					LOGERR("Error returned by one or more threads.\n");
-					exit(-1);
+					_exit(-1);
 				}
 				LOGINFO("Finished encrypted backup.\n");
-				exit(0);
+				_exit(0);
 			}
 		}
 		else // parent process
@@ -439,10 +440,10 @@ int twrpTar::splitArchiveFork() {
 	{
 		if (pid == 0) // child process
 		{
-			if (Split_Archive() != 0)
-				exit(-1);
+			if (Split_Archive() <= 0)
+				_exit(-1);
 			else
-				exit(0);
+				_exit(0);
 		}
 		else // parent process
 		{
@@ -500,7 +501,7 @@ int twrpTar::Generate_TarList(string Path, std::vector<TarListStruct> *TarList, 
 			continue;
 		TarItem.fn = FileName;
 		TarItem.thread_id = *thread_id;
-		if (de->d_type == DT_DIR && strcmp(de->d_name, ".") != 0 && strcmp(de->d_name, "..") != 0) {
+		if (de->d_type == DT_DIR && strcmp(de->d_name, ".") != 0 && strcmp(de->d_name, "..") != 0 && strcmp(de->d_name, "lost+found") != 0) {
 			TarList->push_back(TarItem);
 			if (Generate_TarList(FileName, TarList, Target_Size, thread_id) < 0)
 				return -1;
@@ -559,7 +560,7 @@ int twrpTar::Generate_Multiple_Archives(string Path) {
 			continue; // Skip /data/media
 		if (de->d_type == DT_BLK || de->d_type == DT_CHR)
 			continue;
-		if (de->d_type == DT_DIR && strcmp(de->d_name, ".") != 0 && strcmp(de->d_name, "..") != 0)
+		if (de->d_type == DT_DIR && strcmp(de->d_name, ".") != 0 && strcmp(de->d_name, "..") != 0 && strcmp(de->d_name, "lost+found") != 0)
 		{
 			unsigned long long folder_size = TWFunc::Get_Folder_Size(FileName, false);
 			if (Archive_Current_Size + folder_size > MAX_ARCHIVE_SIZE) {
@@ -588,7 +589,6 @@ int twrpTar::Generate_Multiple_Archives(string Path) {
 				LOGINFO("Closing tar '%s', ", tarfn.c_str());
 #endif
 				closeTar();
-				reinit_libtar_buffer();
 				if (TWFunc::Get_File_Size(tarfn) == 0) {
 					LOGERR("Backup file size for '%s' is 0 bytes.\n", tarfn.c_str());
 					return -1;
@@ -634,7 +634,6 @@ int twrpTar::Split_Archive()
 	Archive_Current_Size = 0;
 	sprintf(actual_filename, temp.c_str(), Archive_File_Count);
 	tarfn = actual_filename;
-	init_libtar_buffer(0);
 	if (!tarexclude.empty())
 		Excluded = TWFunc::split_string(tarexclude, ' ', true);
 	createTar();
@@ -644,12 +643,10 @@ int twrpTar::Split_Archive()
 #ifdef TAR_DEBUG_VERBOSE
 		LOGERR("Error generating multiple archives\n");
 #endif
-		free_libtar_buffer();
 		return -1;
 	}
 	closeTar();
-	free_libtar_buffer();
-	LOGINFO("Done, created %i archives.\n", (Archive_File_Count++));
+	LOGINFO("Done, created %i archives.\n", (++Archive_File_Count));
 	return (Archive_File_Count);
 }
 
@@ -717,7 +714,7 @@ int twrpTar::tarDirs(bool include_root) {
 #ifdef RECOVERY_SDCARD_ON_DATA
 			if ((tardir == "/data" || tardir == "/data/") && strcmp(de->d_name, "media") == 0) continue;
 #endif
-			if (de->d_type == DT_BLK || de->d_type == DT_CHR || strcmp(de->d_name, "..") == 0)
+			if (de->d_type == DT_BLK || de->d_type == DT_CHR || strcmp(de->d_name, "..") == 0 || strcmp(de->d_name, "lost+found") == 0)
 				continue;
 
 			char* type = NULL;
@@ -749,7 +746,7 @@ int twrpTar::tarDirs(bool include_root) {
 #endif
 			strcpy(buf, subfolder.c_str());
 			if (de->d_type == DT_DIR) {
-				char charTarPath[1024];
+				char charTarPath[PATH_MAX];
 				if (include_root) {
 					charTarPath[0] = '0';
 				} else {
@@ -778,14 +775,12 @@ int twrpTar::tarList(bool include_root, std::vector<TarListStruct> *TarList, uns
 	char buf[PATH_MAX];
 	int list_size = TarList->size(), i = 0, archive_count = 0;
 	string temp;
-	char actual_filename[255];
+	char actual_filename[PATH_MAX];
 
 	basefn = tarfn;
 	temp = basefn + "%i%02i";
 	sprintf(actual_filename, temp.c_str(), thread_id, archive_count);
 	tarfn = actual_filename;
-	if (!use_encryption && !use_compression)
-		init_libtar_buffer(0);
 	if (createTar() != 0) {
 #ifdef TAR_DEBUG_VERBOSE
 		LOGERR("Error creating tar '%s' for thread %i\n", tarfn.c_str(), thread_id);
@@ -806,8 +801,6 @@ int twrpTar::tarList(bool include_root, std::vector<TarListStruct> *TarList, uns
 #endif
 						return -3;
 					}
-					if (!use_encryption && !use_compression)
-						free_libtar_buffer();
 					archive_count++;
 					if (archive_count > 99) {
 #ifdef TAR_DEBUG_VERBOSE
@@ -842,8 +835,6 @@ int twrpTar::tarList(bool include_root, std::vector<TarListStruct> *TarList, uns
 #endif
 		return -3;
 	}
-	if (!use_encryption && !use_compression)
-		free_libtar_buffer();
 	return 0;
 }
 
@@ -903,25 +894,21 @@ void* twrpTar::extractMulti(void *cookie) {
 
 int twrpTar::addFilesToExistingTar(vector <string> files, string fn) {
 	char* charTarFile = (char*) fn.c_str();
-	static tartype_t type = { open, close, read, write_tar };
 
-	init_libtar_buffer(0);
-	if (tar_open(&t, charTarFile, &type, O_RDONLY | O_LARGEFILE, 0644, TAR_GNU) == -1)
+	if (tar_open(&t, charTarFile, NULL, O_RDONLY | O_LARGEFILE, 0644, TAR_GNU) == -1)
 		return -1;
 	removeEOT(charTarFile);
-	if (tar_open(&t, charTarFile, &type, O_WRONLY | O_APPEND | O_LARGEFILE, 0644, TAR_GNU) == -1)
+	if (tar_open(&t, charTarFile, NULL, O_WRONLY | O_APPEND | O_LARGEFILE, 0644, TAR_GNU) == -1)
 		return -1;
 	for (unsigned int i = 0; i < files.size(); ++i) {
 		char* file = (char*) files.at(i).c_str();
 		if (tar_append_file(t, file, file) == -1)
 			return -1;
 	}
-	flush_libtar_buffer(t->fd);
 	if (tar_append_eof(t) == -1)
 		return -1;
 	if (tar_close(t) == -1)
 		return -1;
-	free_libtar_buffer();
 	return 0;
 }
 
@@ -972,7 +959,7 @@ int twrpTar::createTar() {
 	#endif
 				close(pipes[0]);
 				close(pipes[3]);
-				exit(-1);
+				_exit(-1);
 			}
 		} else {
 			// Parent
@@ -1052,7 +1039,7 @@ int twrpTar::createTar() {
 		} else if (pigz_pid == 0) {
 			// Child
 			close(pigzfd[1]);   // close unused output pipe
-			int output_fd = open(tarfn.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_LARGEFILE);
+			int output_fd = open(tarfn.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 			if (output_fd < 0) {
 #ifdef TAR_DEBUG_VERBOSE
 				LOGERR("Failed to open '%s'\n", tarfn.c_str());
@@ -1060,9 +1047,7 @@ int twrpTar::createTar() {
 				close(pigzfd[0]);
 				_exit(-1);
 			}
-			close(STDIN_FILENO);
 			dup2(pigzfd[0], STDIN_FILENO); // remap stdin
-			close(STDOUT_FILENO);
 			dup2(output_fd, STDOUT_FILENO); // remap stdout to output file
 			if (execlp("pigz", "pigz", "-", NULL) < 0) {
 #ifdef TAR_DEBUG_VERBOSE
@@ -1114,9 +1099,7 @@ int twrpTar::createTar() {
 	#endif
 				_exit(-1);
 			}
-			close(STDIN_FILENO);
 			dup2(oaesfd[0], STDIN_FILENO); // remap stdin
-			close(STDOUT_FILENO);
 			dup2(output_fd, STDOUT_FILENO); // remap stdout to output file
 			if (execlp("openaes", "openaes", "enc", "--key", Password.c_str(), NULL) < 0) {
 	#ifdef TAR_DEBUG_VERBOSE
@@ -1143,6 +1126,7 @@ int twrpTar::createTar() {
 	} else {
 		LOGINFO("Creating uncompressed archive...\n");
 		// Not compressed or encrypted
+		init_libtar_buffer(0);
 		if (tar_open(&t, charTarFile, &type, O_WRONLY | O_CREAT | O_LARGEFILE, 0644, TAR_GNU) == -1) {
 #ifdef TAR_DEBUG_VERBOSE
 			LOGERR("tar_open error opening '%s'\n", tarfn.c_str());
@@ -1230,7 +1214,7 @@ int twrpTar::openTar() {
 	#ifdef TAR_DEBUG_VERBOSE
 					LOGERR("execlp pigz ERROR!\n");
 	#endif
-					close(pipes[1]);
+					close(pipes[0]);
 					close(pipes[3]);
 					_exit(-1);
 				}
@@ -1397,8 +1381,7 @@ int twrpTar::addFile(string fn, bool include_root) {
 }
 
 int twrpTar::closeTar() {
-	if (Archive_Current_Type == 1)
-		flush_libtar_buffer(t->fd);
+	flush_libtar_buffer(t->fd);
 	if (tar_append_eof(t) != 0) {
 #ifdef TAR_DEBUG_VERBOSE
 		LOGERR("tar_append_eof(): %s\n", strerror(errno));
@@ -1412,7 +1395,7 @@ int twrpTar::closeTar() {
 #endif
 		return -1;
 	}
-	if (Archive_Current_Type > 0) {
+	if (Archive_Current_Type > 1) {
 		close(fd);
 		int status;
 		if (pigz_pid > 0 && TWFunc::Wait_For_Child(pigz_pid, &status, "pigz") != 0)
@@ -1420,6 +1403,8 @@ int twrpTar::closeTar() {
 		if (oaes_pid > 0 && TWFunc::Wait_For_Child(oaes_pid, &status, "openaes") != 0)
 			return -1;
 	}
+	free_libtar_buffer();
+	TWFunc::tw_chmod(tarfn, "644");
 	return 0;
 }
 

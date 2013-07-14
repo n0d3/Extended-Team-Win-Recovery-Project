@@ -1116,7 +1116,8 @@ bool TWFunc::Fix_su_Perms(void) {
 int TWFunc::tw_chmod(string fn, string mode) {
 	long mask = 0;
 
-	for ( std::string::size_type n = 0; n < mode.length(); ++n) {
+	std::string::size_type n = (mode.length() == 3 ? 1 : 0);
+	for (; n < mode.length(); ++n) {
 		if (n == 0) {
 			if (mode[n] == '0')
 				continue;
@@ -1460,6 +1461,7 @@ bool TWFunc::Try_Decrypting_Backup(string Restore_Path, string password) {
 		if (TWFunc::Get_File_Type(Filename) == 2) {
 			if (TWFunc::Try_Decrypting_File(Filename, password) < 2) {
 				DataManager::SetValue("tw_restore_password", ""); // Clear the bad password
+				DataManager::SetValue("tw_restore_display", "");  // Also clear the display mask
 				closedir(d);
 				return false;
 			}

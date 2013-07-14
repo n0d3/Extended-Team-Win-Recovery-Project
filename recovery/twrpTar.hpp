@@ -57,12 +57,10 @@ class twrpTar {
 		int use_encryption;
 		int userdata_encryption;
 		int use_compression;
+		int split_archives;
 		int has_data_media;
 
 	private:
-		pid_t pigz_pid;
-		pid_t oaes_pid;
-
 		int extract();
 		int addFilesToExistingTar(vector <string> files, string tarFile);
 		int createTar();
@@ -83,6 +81,8 @@ class twrpTar {
 
 		TAR *t;
 		int fd;
+		pid_t pigz_pid;
+		pid_t oaes_pid;
 
 		string tardir;
 		string tarfn;
