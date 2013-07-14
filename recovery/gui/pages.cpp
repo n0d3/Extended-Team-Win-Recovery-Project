@@ -733,8 +733,13 @@ int PageManager::LoadPackage(std::string name, std::string package, std::string 
 	const ZipEntry* ui_xml = NULL;
 	if (gr_get_rotation() % 180 == 0)
 	    ui_xml = mzFindZipEntry(&zip, "portrait.xml");
-	else
+	else {
 	    ui_xml = mzFindZipEntry(&zip, "landscape.xml");
+	    if (ui_xml == NULL) {
+		ui_xml = mzFindZipEntry(&zip, "portrait.xml");
+		gr_set_rotation(0);
+	    }
+	}
         if (ui_xml == NULL)
         {
             LOGERR("Unable to locate UI's xml in zip file\n");
