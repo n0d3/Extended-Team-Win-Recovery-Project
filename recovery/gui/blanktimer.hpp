@@ -34,6 +34,7 @@ class blanktimer {
 		int dimmed;
 		void setBlank(int blank);
 		int getBlank(void);
+		int IsScreenOff(void);
 
 	private:
 		void setTimer(void);

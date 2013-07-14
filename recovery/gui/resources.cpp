@@ -47,9 +47,9 @@ int Resource::ExtractResource(ZipArchive* pZip,
 
     std::string src;
 /*
-    /fonts/*.dat	<= fonts
-    /portrait/*.png	<= images
-    /landscape/*.png	<= images
+    /fonts/.dat		<= fonts
+    /portrait/.png	<= images
+    /landscape/.png	<= images
     /portrait.xml	<= ui.xml
     /landscape.xml	<= ui.xml for landscape
  */

@@ -79,6 +79,10 @@ int blanktimer::getBlank(void) {
 	return conblank;
 }
 
+int blanktimer::IsScreenOff(void) {
+	return blanked;
+}
+
 void blanktimer::setTimer(void) {
 	pthread_mutex_trylock(&timermutex);
 	clock_gettime(CLOCK_MONOTONIC, &btimer);
