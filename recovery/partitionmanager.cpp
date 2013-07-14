@@ -3028,3 +3028,26 @@ void TWPartitionManager::Get_Partition_List(string ListType, std::vector<Partiti
 		LOGERR("Unknown list type '%s' requested for TWPartitionManager::Get_Partition_List\n", ListType.c_str());
 	}
 }
+
+void TWPartitionManager::Output_Storage_Fstab(void) {
+	std::vector<TWPartition*>::iterator iter;
+	char storage_partition[255];
+	string Temp;
+	FILE *fp = fopen("/cache/recovery/storage.fstab", "w");
+
+	if (fp == NULL) {
+		LOGERR("Unable to open '/cache/recovery/storage.fstab'.\n");
+		return;
+	}
+
+	// Iterate through all partitions
+	for (iter = Partitions.begin(); iter != Partitions.end(); iter++) {
+		if ((*iter)->Is_Storage) {
+			Temp = (*iter)->Storage_Path + ";" + (*iter)->Storage_Name + ";\n";
+			strcpy(storage_partition, Temp.c_str());
+			fwrite(storage_partition, sizeof(storage_partition[0]), strlen(storage_partition) / sizeof(storage_partition[0]), fp);
+		}
+	}
+	fclose(fp);
+}
+
