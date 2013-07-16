@@ -701,6 +701,15 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			return 0;
 		}
 
+		if (function == "emptystr") {
+			operation_start("StrLenChk");
+			if (arg.size() == 0)
+				operation_end(0, simulate);				
+			else
+				operation_end(1, simulate);
+			return 0;
+		}
+
 		if (function == "fileexists") {
 			struct stat st;
 			string newpath = arg + "/.";
@@ -710,6 +719,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				operation_end(0, simulate);
 			else
 				operation_end(1, simulate);
+			return 0;
 		}
 
 		if (function == "validbootimg") {
@@ -736,7 +746,6 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				ret = 1;
 			}
 		   	operation_end(ret, simulate);
-
 			return 0;
 		}
 		if (function == "flash") {

@@ -3936,6 +3936,13 @@
 		<page name="nativekernel">
 			<object type="template" name="header" />
 
+			<object type="text" color="%text_fail_color%">
+				<!--<condition var1="emptystr" var2="%tw_sdboot_partition%" />-->
+				<font resource="font" />
+				<placement x="%center_x%" y="%row1_header_y%" placement="5" />
+				<text>Select a 'boot' partition FIRST.</text>
+			</object>
+
 			<object type="fileselector">
 				<placement x="%fileselector_x%" y="%row1_y%" w="495" h="%fileselector_full_height%" />
 				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
@@ -3973,9 +3980,17 @@
 			</object>
 
 			<object type="text" color="%text_color%">
+				<condition var1="notemptystr" var2="%tw_sdboot_partition%" />
 				<font resource="font" />
 				<placement x="%col6_medium_x%" y="%row1_text_y%" />
-				<text>Selected boot partition</text>
+				<text>Selected 'boot' partition</text>
+			</object>
+
+			<object type="text" color="%text_fail_color%">
+				<condition var1="emptystr" var2="%tw_sdboot_partition%" />
+				<font resource="font" />
+				<placement x="%col6_medium_x%" y="%row1_text_y%" />
+				<text>Selected 'boot' partition</text>
 			</object>
 
 			<object type="text" color="%text_color%">
