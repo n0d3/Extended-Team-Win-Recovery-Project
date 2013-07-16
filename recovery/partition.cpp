@@ -2050,6 +2050,10 @@ int TWPartition::Backup_Tar(string backup_folder) {
 	Backup_FileName = back_name;
 	Full_FileName = backup_folder + Backup_FileName;
 	tar.has_data_media = Has_Data_Media;
+	if (Backup_Path == "/data" && Backup_Size < 2097152) {
+		gui_print("Skipping Data (Empty partition).\n", Backup_Name.c_str());
+		return -1;
+	}
 	if (Backup_Size > MAX_ARCHIVE_SIZE) {
 		// This backup needs to be split into multiple archives
 		gui_print("Breaking backup file into multiple archives...\n");
