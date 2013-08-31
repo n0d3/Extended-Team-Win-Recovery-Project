@@ -52,42 +52,42 @@ class TWPartition {
 
 	public:
 		// Checks mount to see if the partition is currently mounted
-		virtual bool Is_Mounted();
+		bool Is_Mounted();
 		// Mounts the partition if it is not mounted
-		virtual bool Mount(bool Display_Error);
+		bool Mount(bool Display_Error);
 		// Unmounts the partition if it is mounted
-		virtual bool UnMount(bool Display_Error);
+		bool UnMount(bool Display_Error);
 		// Wipes the partition
-		virtual bool Wipe(string New_File_System);
+		bool Wipe(string New_File_System);
 		// Wipes the partition
-		virtual bool Wipe();
+		bool Wipe();
 		// Wipes android secure
-		virtual bool Wipe_AndSec();
+		bool Wipe_AndSec();
 		// Backs up the partition to the folder specified
-		virtual int Backup(string backup_folder);
+		int Backup(string backup_folder);
 		// Checks MD5 of a backup
-		virtual bool Check_MD5(string restore_folder);
+		bool Check_MD5(string restore_folder);
 		// Restores the partition using the backup folder provided
-		virtual bool Restore(string restore_folder);
+		bool Restore(string restore_folder);
 		// Returns a string of the backup method for human readable output
-		virtual string Backup_Method_By_Name();
+		string Backup_Method_By_Name();
 		// Decrypts the partition, return 0 for failure and -1 for success
-		virtual bool Decrypt(string Password);
+		bool Decrypt(string Password);
 		// Ignores wipe commands for /data/media devices and formats the original block device
-		virtual bool Wipe_Encryption();
+		bool Wipe_Encryption();
 		// Checks the fs type using blkid, does not do anything on MTD / yaffs2 because this crashes on some devices
-		virtual bool Check_FS_Type();
+		bool Check_FS_Type();
 		// Updates size information
-		virtual bool Update_Size(bool Display_Error);
+		bool Update_Size(bool Display_Error);
 		// Recreates the /data/media folder
-		virtual void Recreate_Media_Folder();
+		void Recreate_Media_Folder();
 
 		// Extended functions
-		virtual unsigned int FS_Type_Via_statfs();
+		unsigned int FS_Type_Via_statfs();
 		// When formatting card's partitions to different fs
-		virtual void Change_FS_Type(string type);
-		virtual void Change_Restore_Display_Name(string name);
-		virtual int Setup_Extra_Boot(string name, string mtd_num);
+		void Change_FS_Type(string type);
+		void Change_Restore_Display_Name(string name);
+		int Setup_Extra_Boot(string name, string mtd_num);
 
 	public:
 		// Indicates if the partition is a swap partition
@@ -125,13 +125,13 @@ class TWPartition {
 		// For skipping a partition if size check returns error					  
 		bool Skip_From_Restore;
 	
-	protected:
+	private:
 		// Processes a fstab line
 		bool Process_Fstab_Line(string Line, bool Display_Error);
 		// Determines the correct block device and stores it in Actual_Block_Device
 		void Find_Actual_Block_Device();
 
-	protected:
+	private:
 		// Indicates that the partition can be mounted
 		bool Can_Be_Mounted;
 		// Indicates that the partition can be wiped
@@ -308,37 +308,37 @@ class TWPartition {
 class TWPartitionManager {
 	public:
 		TWPartitionManager() {}
-		virtual ~TWPartitionManager() {}
+		~TWPartitionManager() {}
 
 	public:
 		// Parses the fstab and populates the partitions
-		virtual int Process_Fstab(string Fstab_Filename, bool Display_Error);
+		int Process_Fstab(string Fstab_Filename, bool Display_Error);
 		// Creates /etc/fstab file that's used by the command line for mount commands
-		virtual int Write_Fstab();
+		int Write_Fstab();
 		// Outputs partition information to the log
-		virtual void Output_Partition_Logging();
+		void Output_Partition_Logging();
 		// Mounts partition based on path (e.g. /system)
-		virtual int Mount_By_Path(string Path, bool Display_Error);
+		int Mount_By_Path(string Path, bool Display_Error);
 		// Mounts partition based on block device (e.g. /dev/block/mmcblk1p1)
-		virtual int Mount_By_Block(string Block, bool Display_Error);
+		int Mount_By_Block(string Block, bool Display_Error);
 		// Mounts partition based on display name (e.g. System)
-		virtual int Mount_By_Name(string Name, bool Display_Error);
+		int Mount_By_Name(string Name, bool Display_Error);
 		// Unmounts partition based on path
-		virtual int UnMount_By_Path(string Path, bool Display_Error);
+		int UnMount_By_Path(string Path, bool Display_Error);
 		// Unmounts partition based on block device
-		virtual int UnMount_By_Block(string Block, bool Display_Error);
+		int UnMount_By_Block(string Block, bool Display_Error);
 		// Unmounts partition based on display name
-		virtual int UnMount_By_Name(string Name, bool Display_Error);
+		int UnMount_By_Name(string Name, bool Display_Error);
 		// Checks if partition is mounted based on path
-		virtual int Is_Mounted_By_Path(string Path);
+		int Is_Mounted_By_Path(string Path);
 		// Checks if partition is mounted based on block device
-		virtual int Is_Mounted_By_Block(string Block);
+		int Is_Mounted_By_Block(string Block);
 		// Checks if partition is mounted based on display name
-		virtual int Is_Mounted_By_Name(string Name);
+		int Is_Mounted_By_Name(string Name);
 		// Mounts the current storage location
-		virtual int Mount_Current_Storage(bool Display_Error);
+		int Mount_Current_Storage(bool Display_Error);
 		// Mounts the settings file storage location (usually internal)
-		virtual int Mount_Settings_Storage(bool Display_Error);
+		int Mount_Settings_Storage(bool Display_Error);
 		// Returns a pointer to a partition based on path
 		TWPartition* Find_Partition_By_Path(string Path);
 		// Returns a pointer to a partition based on block device
@@ -346,67 +346,67 @@ class TWPartitionManager {
 		// Returns a pointer to a partition based on name
 		TWPartition* Find_Partition_By_Name(string Name);
 		// Checks the current backup name to ensure that it is valid
-		virtual int Check_Backup_Name(bool Display_Error);
+		int Check_Backup_Name(bool Display_Error);
 		// Initiates a backup in the current storage
-		virtual bool Run_Backup();
+		bool Run_Backup();
 		// Restores a backup
-		virtual int Run_Restore(string Restore_Name);
+		int Run_Restore(string Restore_Name);
 		// Used to gather a list of available backup partitions for the user to select for a restore
-		virtual void Set_Restore_Files(string Restore_Name);
+		void Set_Restore_Files(string Restore_Name);
 		// Wipes a partition based on path
-		virtual int Wipe_By_Path(string Path);
+		int Wipe_By_Path(string Path);
 		// Wipes a partition based on block device
-		virtual int Wipe_By_Block(string Block);
+		int Wipe_By_Block(string Block);
 		// Wipes a partition based on display name
-		virtual int Wipe_By_Name(string Name);
+		int Wipe_By_Name(string Name);
 		// Performs a factory reset
-		virtual int Factory_Reset();
+		int Factory_Reset();
 		// Wipes dalvik cache
-		virtual int Wipe_Dalvik_Cache();
+		int Wipe_Dalvik_Cache();
 		// Wipes rotation data -- 
-		virtual int Wipe_Rotate_Data();
+		int Wipe_Rotate_Data();
 		// Wipe battery stats -- /data/system/batterystats.bin
-		virtual int Wipe_Battery_Stats();
+		int Wipe_Battery_Stats();
 		// Wipes android secure
-		virtual int Wipe_Android_Secure();
+		int Wipe_Android_Secure();
 		// Really formats data on /data/media devices -- also removes encryption
-		virtual int Format_Data();
+		int Format_Data();
 		// Removes and recreates the media folder on /data/media devices
-		virtual int Wipe_Media_From_Data();
+		int Wipe_Media_From_Data();
 		// Refreshes size data of partitions
-		virtual void Refresh_Sizes(bool Display_Msg);
+		void Refresh_Sizes(bool Display_Msg);
 		// Updates fstab, file systems, sizes, etc.
-		virtual void Update_System_Details(bool Display_Msg);
+		void Update_System_Details(bool Display_Msg);
 		// Attempt to decrypt any encrypted partitions
-		virtual int Decrypt_Device(string Password);
+		int Decrypt_Device(string Password);
 		// Enable USB storage mode
-		virtual int usb_storage_enable(void);
+		int usb_storage_enable(void);
 		// Disable USB storage mode
-		virtual int usb_storage_disable(void);
+		int usb_storage_disable(void);
 		// Mounts all storage locations
-		virtual void Mount_All_Storage(void);
+		void Mount_All_Storage(void);
 		// Unmounts system and data if not data/media and boot if boot is mountable
-		virtual void UnMount_Main_Partitions(void);
+		void UnMount_Main_Partitions(void);
 		// Repartitions the sdcard
-		virtual int Partition_SDCard(void);
-		virtual int Format_SDCard(string cmd);
-		virtual int Fix_Permissions();
+		int Partition_SDCard(void);
+		int Format_SDCard(string cmd);
+		int Fix_Permissions();
 		// Generates an MD5 after a backup is made
-		virtual bool Make_MD5(bool generate_md5, string Backup_Folder, string Backup_Filename);
-		virtual void Get_Partition_List(string ListType, std::vector<PartitionList> *Partition_List);
+		bool Make_MD5(bool generate_md5, string Backup_Folder, string Backup_Filename);
+		void Get_Partition_List(string ListType, std::vector<PartitionList> *Partition_List);
 		// Creates a /cache/recovery/storage.fstab file with a list of all potential storage locations for app use
-		virtual void Output_Storage_Fstab();
+		void Output_Storage_Fstab();
 
 	// Extended functions
 		static int Fstab_Proc_Done;
 		static int SD_Partitioning_Done_Once;
 		// Wipe all partitions except /sdcard
-		virtual int Wipe_All_But_SDCARD(void);
+		int Wipe_All_But_SDCARD(void);
 		// Check filesystem of SD Card's partitions
-		virtual int Check_SDCard(void);
+		int Check_SDCard(void);
 		// Set filesystem on ext
-		virtual int FSConvert_SDEXT(string extpath);
-		virtual void Process_Extra_Boot_Partitions(void);
+		int FSConvert_SDEXT(string extpath);
+		void Process_Extra_Boot_Partitions(void);
 
 	private:
 		int Backup_Partition(TWPartition* Part, string Backup_Folder, bool generate_md5,
