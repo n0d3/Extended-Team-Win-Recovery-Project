@@ -138,6 +138,8 @@ class TWPartition {
 		bool Can_Be_Wiped;
 		// Indicates that the partition will show up in the backup list
 		bool Can_Be_Backed_Up;
+		// Indicates that the partition will always be formatted w/ "rm -rf *"
+		bool Use_Rm_Rf;
 		// Indicates that this partition is wiped during a factory reset
 		bool Wipe_During_Factory_Reset;
 		// Indicates that the wipe can be user initiated in the GUI system
