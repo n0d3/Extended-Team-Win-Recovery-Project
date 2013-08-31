@@ -649,6 +649,9 @@ bool TWPartition::Is_File_System(string File_System) {
 	|| File_System == "ext4"
 	|| File_System == "vfat"
 	|| File_System == "yaffs2"
+#ifdef TW_INCLUDE_F2FS
+	|| File_System == "f2fs"
+#endif
 #ifdef TW_INCLUDE_NILFS2
 	|| File_System == "nilfs2"
 #endif
@@ -1586,6 +1589,10 @@ bool TWPartition::Wipe(string New_File_System) {
 			wiped = Wipe_FAT();
 		else if (New_File_System == "yaffs2")
 			wiped = Wipe_YAFFS2();
+#ifdef TW_INCLUDE_F2FS
+		else if (New_File_System == "f2fs")
+			wiped = Wipe_F2FS();
+#endif
 #ifdef TW_INCLUDE_EXFAT
 		else if (New_File_System == "exfat")
 			wiped = Wipe_EXFAT();	
@@ -1841,6 +1848,31 @@ bool TWPartition::Wipe_EXFAT() {
 		gui_print("Formatting %s using mkexfatfs...\n", Display_Name.c_str());
 		Find_Actual_Block_Device();
 		command = "mkexfatfs " + Actual_Block_Device;
+		if (TWFunc::Exec_Cmd(command, result) == 0) {
+			Recreate_AndSec_Folder();
+			gui_print("[%s wipe done]\n", Display_Name.c_str());
+			return true;
+		} else {
+			LOGERR("Unable to wipe '%s'.\n", Mount_Point.c_str());
+			return false;
+		}
+		return true;
+	} else
+		return Wipe_RMRF();
+
+	return false;
+}
+
+bool TWPartition::Wipe_F2FS() {
+	string command, result;
+
+	if (TWFunc::Path_Exists("/sbin/mkfs.f2fs")) {
+		if (!UnMount(true))
+			return false;
+
+		gui_print("Formatting %s using mkfs.f2fs...\n", Display_Name.c_str());
+		Find_Actual_Block_Device();
+		command = "mkfs.f2fs " + Actual_Block_Device;
 		if (TWFunc::Exec_Cmd(command, result) == 0) {
 			Recreate_AndSec_Folder();
 			gui_print("[%s wipe done]\n", Display_Name.c_str());

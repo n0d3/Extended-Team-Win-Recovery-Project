@@ -250,6 +250,8 @@ class TWPartition {
 		bool Wipe_MTD();
 		// Uses rm -rf to wipe
 		bool Wipe_RMRF();
+		// Uses mkfs.f2fs to wipe
+		bool Wipe_F2FS();
 		// Uses rm -rf to wipe but does not wipe /data/media
 		bool Wipe_Data_Without_Wiping_Media();
 		// Backs up using tar for file systems
