@@ -2037,6 +2037,7 @@ int TWPartitionManager::Decrypt_Device(string Password) {
 					sdcard->Mount(false);
 				}
 			} else {
+				LOGINFO("External storage '%s' is not encrypted.\n", sdcard->Mount_Point.c_str());
 				sdcard->Is_Decrypted = false;
 				sdcard->Decrypted_Block_Device = "";
 			}
