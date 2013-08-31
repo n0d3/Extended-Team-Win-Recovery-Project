@@ -583,40 +583,42 @@ int twrpTar::Generate_Multiple_Archives(string Path) {
 		else if (de->d_type == DT_REG || de->d_type == DT_LNK)
 		{
 			stat(FileName.c_str(), &st);
-
-			if (Archive_Current_Size != 0 && Archive_Current_Size + st.st_size > MAX_ARCHIVE_SIZE) {
+			if (de->d_type != DT_LNK) {
+				if (Archive_Current_Size != 0 && Archive_Current_Size + st.st_size > MAX_ARCHIVE_SIZE) {
 #ifdef TAR_DEBUG_VERBOSE
-				LOGINFO("Closing tar '%s', ", tarfn.c_str());
+					LOGINFO("Closing tar '%s', ", tarfn.c_str());
 #endif
-				closeTar();
-				if (TWFunc::Get_File_Size(tarfn) == 0) {
-					LOGERR("Backup file size for '%s' is 0 bytes.\n", tarfn.c_str());
-					return -1;
+					closeTar();
+					if (TWFunc::Get_File_Size(tarfn) == 0) {
+						LOGERR("Backup file size for '%s' is 0 bytes.\n", tarfn.c_str());
+						return -1;
+					}
+					Archive_File_Count++;
+					if (Archive_File_Count > 999) {
+						LOGERR("Archive count is too large!\n");
+						return -1;
+					}
+					string temp = basefn + "%03i";
+					sprintf(actual_filename, temp.c_str(), Archive_File_Count);
+					tarfn = actual_filename;
+					Archive_Current_Size = 0;
+					LOGINFO("Creating tar '%s'\n", tarfn.c_str());
+					gui_print("Creating archive %i...\n", Archive_File_Count + 1);
+					if (createTar() != 0)
+						return -1;
 				}
-				Archive_File_Count++;
-				if (Archive_File_Count > 999) {
-					LOGERR("Archive count is too large!\n");
-					return -1;
-				}
-				string temp = basefn + "%03i";
-				sprintf(actual_filename, temp.c_str(), Archive_File_Count);
-				tarfn = actual_filename;
-				Archive_Current_Size = 0;
-				LOGINFO("Creating tar '%s'\n", tarfn.c_str());
-				gui_print("Creating archive %i...\n", Archive_File_Count + 1);
-				if (createTar() != 0)
-					return -1;
 			}
 #ifndef TAR_DEBUG_SUPPRESS
 			LOGINFO("Adding file: '%s'... ", FileName.c_str());
 #endif
 			if (addFile(FileName, true) < 0)
 				return -1;
-			Archive_Current_Size += st.st_size;
+			if (de->d_type != DT_LNK)
+				Archive_Current_Size += st.st_size;
 #ifdef TAR_DEBUG_VERBOSE
 			LOGINFO("added successfully, archive size: %llu\n", Archive_Current_Size);
 #endif
-			if (st.st_size > 2147483648LL)
+			if (de->d_type != DT_LNK && st.st_size > 2147483648LL)
 				LOGERR("There is a file that is larger than 2GB in the file system\n'%s'\nThis file may not restore properly\n", FileName.c_str());
 		}
 	}
