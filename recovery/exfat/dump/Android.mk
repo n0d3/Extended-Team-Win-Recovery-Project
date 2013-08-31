@@ -10,7 +10,7 @@ LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE_CLASS := RECOVERY_EXECUTABLES
 LOCAL_MODULE_PATH := $(TARGET_RECOVERY_ROOT_OUT)/sbin
 LOCAL_SHARED_LIBRARIES += libz libc libexfat libdl 
-LOCAL_STATIC_LIBRARIES += libfuse
+LOCAL_STATIC_LIBRARIES += libfusetwrp
 include $(BUILD_EXECUTABLE)
 # We need this so that the installed files could be picked up based on the
 # local module name

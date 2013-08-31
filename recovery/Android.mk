@@ -67,7 +67,7 @@ ifeq ($(BUILD_ID), GINGERBREAD)
     TW_INCLUDE_EXFAT := false
 endif
 ifeq ($(TW_INCLUDE_EXFAT), true)
-    LOCAL_STATIC_LIBRARIES += libfuse
+    LOCAL_STATIC_LIBRARIES += libfusetwrp
 endif
 ifneq ($(wildcard system/core/libsparse/Android.mk),)
     LOCAL_SHARED_LIBRARIES += libsparse
