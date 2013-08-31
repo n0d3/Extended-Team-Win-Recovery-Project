@@ -895,10 +895,10 @@ void* twrpTar::extractMulti(void *cookie) {
 int twrpTar::addFilesToExistingTar(vector <string> files, string fn) {
 	char* charTarFile = (char*) fn.c_str();
 
-	if (tar_open(&t, charTarFile, NULL, O_RDONLY | O_LARGEFILE, 0644, TAR_GNU) == -1)
+	if (tar_open(&t, charTarFile, NULL, O_RDONLY | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, TAR_GNU) == -1)
 		return -1;
 	removeEOT(charTarFile);
-	if (tar_open(&t, charTarFile, NULL, O_WRONLY | O_APPEND | O_LARGEFILE, 0644, TAR_GNU) == -1)
+	if (tar_open(&t, charTarFile, NULL, O_WRONLY | O_APPEND | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, TAR_GNU) == -1)
 		return -1;
 	for (unsigned int i = 0; i < files.size(); ++i) {
 		char* file = (char*) files.at(i).c_str();
@@ -974,7 +974,7 @@ int twrpTar::createTar() {
 				return -1;
 			} else if (oaes_pid == 0) {
 				// openaes Child
-				int output_fd = open(tarfn.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_LARGEFILE);
+				int output_fd = open(tarfn.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
 				if (output_fd < 0) {
 	#ifdef TAR_DEBUG_VERBOSE
 					LOGERR("Failed to open '%s'\n", tarfn.c_str());
@@ -1004,7 +1004,7 @@ int twrpTar::createTar() {
 				close(pipes[2]);
 				close(pipes[3]);
 				fd = pipes[1];
-				if(tar_fdopen(&t, fd, charRootDir, NULL, O_WRONLY | O_CREAT | O_EXCL | O_LARGEFILE, 0644, TAR_GNU) != 0) {
+				if(tar_fdopen(&t, fd, charRootDir, NULL, O_WRONLY | O_CREAT | O_EXCL | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, TAR_GNU) != 0) {
 					close(fd);
 	#ifdef TAR_DEBUG_VERBOSE
 					LOGERR("tar_fdopen failed\n");
@@ -1039,7 +1039,7 @@ int twrpTar::createTar() {
 		} else if (pigz_pid == 0) {
 			// Child
 			close(pigzfd[1]);   // close unused output pipe
-			int output_fd = open(tarfn.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+			int output_fd = open(tarfn.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
 			if (output_fd < 0) {
 #ifdef TAR_DEBUG_VERBOSE
 				LOGERR("Failed to open '%s'\n", tarfn.c_str());
@@ -1061,7 +1061,7 @@ int twrpTar::createTar() {
 			// Parent
 			close(pigzfd[0]); // close parent input
 			fd = pigzfd[1];   // copy parent output
-			if(tar_fdopen(&t, fd, charRootDir, NULL, O_WRONLY | O_CREAT | O_EXCL | O_LARGEFILE, 0644, TAR_GNU) != 0) {
+			if(tar_fdopen(&t, fd, charRootDir, NULL, O_WRONLY | O_CREAT | O_EXCL | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, TAR_GNU) != 0) {
 				close(fd);
 #ifdef TAR_DEBUG_VERBOSE
 				LOGERR("tar_fdopen failed\n");
@@ -1092,7 +1092,7 @@ int twrpTar::createTar() {
 		} else if (oaes_pid == 0) {
 			// Child
 			close(oaesfd[1]);   // close unused
-			int output_fd = open(tarfn.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_LARGEFILE);
+			int output_fd = open(tarfn.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
 			if (output_fd < 0) {
 	#ifdef TAR_DEBUG_VERBOSE
 				LOGERR("Failed to open '%s'\n", tarfn.c_str());
@@ -1113,7 +1113,7 @@ int twrpTar::createTar() {
 			// Parent
 			close(oaesfd[0]); // close parent input
 			fd = oaesfd[1];   // copy parent output
-			if(tar_fdopen(&t, fd, charRootDir, NULL, O_WRONLY | O_CREAT | O_EXCL | O_LARGEFILE, 0644, TAR_GNU) != 0) {
+			if(tar_fdopen(&t, fd, charRootDir, NULL, O_WRONLY | O_CREAT | O_EXCL | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, TAR_GNU) != 0) {
 				close(fd);
 	#ifdef TAR_DEBUG_VERBOSE
 				LOGERR("tar_fdopen failed\n");
@@ -1127,7 +1127,7 @@ int twrpTar::createTar() {
 		LOGINFO("Creating uncompressed archive...\n");
 		// Not compressed or encrypted
 		init_libtar_buffer(0);
-		if (tar_open(&t, charTarFile, &type, O_WRONLY | O_CREAT | O_LARGEFILE, 0644, TAR_GNU) == -1) {
+		if (tar_open(&t, charTarFile, &type, O_WRONLY | O_CREAT | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, TAR_GNU) == -1) {
 #ifdef TAR_DEBUG_VERBOSE
 			LOGERR("tar_open error opening '%s'\n", tarfn.c_str());
 #endif
@@ -1224,7 +1224,7 @@ int twrpTar::openTar() {
 				close(pipes[1]);
 				close(pipes[3]);
 				fd = pipes[2];
-				if(tar_fdopen(&t, fd, charRootDir, NULL, O_RDONLY | O_LARGEFILE, 0644, TAR_GNU) != 0) {
+				if(tar_fdopen(&t, fd, charRootDir, NULL, O_RDONLY | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, TAR_GNU) != 0) {
 					close(fd);
 	#ifdef TAR_DEBUG_VERBOSE
 					LOGERR("tar_fdopen failed\n");
@@ -1276,7 +1276,7 @@ int twrpTar::openTar() {
 			// Parent
 			close(oaesfd[1]); // close parent output
 			fd = oaesfd[0];   // copy parent input
-			if(tar_fdopen(&t, fd, charRootDir, NULL, O_RDONLY | O_LARGEFILE, 0644, TAR_GNU) != 0) {
+			if(tar_fdopen(&t, fd, charRootDir, NULL, O_RDONLY | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, TAR_GNU) != 0) {
 				close(fd);
 	#ifdef TAR_DEBUG_VERBOSE
 				LOGERR("tar_fdopen failed\n");
@@ -1332,7 +1332,7 @@ int twrpTar::openTar() {
 			// Parent
 			close(pigzfd[1]); // close parent output
 			fd = pigzfd[0];   // copy parent input
-			if(tar_fdopen(&t, fd, charRootDir, NULL, O_RDONLY | O_LARGEFILE, 0644, TAR_GNU) != 0) {
+			if(tar_fdopen(&t, fd, charRootDir, NULL, O_RDONLY | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, TAR_GNU) != 0) {
 				close(fd);
 #ifdef TAR_DEBUG_VERBOSE
 				LOGERR("tar_fdopen failed\n");
@@ -1340,7 +1340,7 @@ int twrpTar::openTar() {
 				return -1;
 			}
 		}
-	} else if (tar_open(&t, charTarFile, NULL, O_RDONLY | O_LARGEFILE, 0644, TAR_GNU) != 0) {
+	}  else if (tar_open(&t, charTarFile, NULL, O_RDONLY | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, TAR_GNU) != 0) {
 #ifdef TAR_DEBUG_VERBOSE
 		LOGERR("Unable to open tar archive '%s'\n", charTarFile);
 #endif
@@ -1404,7 +1404,6 @@ int twrpTar::closeTar() {
 			return -1;
 	}
 	free_libtar_buffer();
-	TWFunc::tw_chmod(tarfn, "644");
 	return 0;
 }
 
