@@ -35,17 +35,19 @@
 #include <string>
 
 extern "C" {
-#include "../twcommon.h"
-#include "../minuitwrp/minui.h"
+    #include "../twcommon.h"
+    #include "../minuitwrp/minui.h"
 }
 
 #include "rapidxml.hpp"
 #include "objects.hpp"
-#include "blanktimer.hpp"
-
+#ifndef TW_NO_SCREEN_TIMEOUT
+    #include "blanktimer.hpp"
+#endif
 extern int gGuiRunning;
-extern blanktimer blankTimer;
-
+#ifndef TW_NO_SCREEN_TIMEOUT
+    extern blanktimer blankTimer;
+#endif
 std::map<std::string, PageSet*> PageManager::mPageSets;
 PageSet* PageManager::mCurrentSet;
 PageSet* PageManager::mBaseSet = NULL;
@@ -912,8 +914,10 @@ int PageManager::Render(void)
 
 int PageManager::Update(void)
 {
+#ifndef TW_NO_SCREEN_TIMEOUT
     if(blankTimer.IsScreenOff())
         return 0;
+#endif
     return (mCurrentSet ? mCurrentSet->Update() : -1);
 }
 

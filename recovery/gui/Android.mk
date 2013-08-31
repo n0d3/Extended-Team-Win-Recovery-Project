@@ -21,8 +21,13 @@ LOCAL_SRC_FILES := \
     listbox.cpp \
     keyboard.cpp \
     input.cpp \
-    blanktimer.cpp \
     partitionlist.cpp
+
+ifneq ($(TW_NO_SCREEN_TIMEOUT),)
+    LOCAL_CFLAGS += -DTW_NO_SCREEN_TIMEOUT
+else
+    LOCAL_SRC_FILES += blanktimer.cpp
+endif
 
 ifneq ($(TWRP_CUSTOM_KEYBOARD),)
   LOCAL_SRC_FILES += $(TWRP_CUSTOM_KEYBOARD)

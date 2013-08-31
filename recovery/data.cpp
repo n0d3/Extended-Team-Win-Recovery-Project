@@ -40,8 +40,9 @@
 #include "data.hpp"
 #include "partitions.hpp"
 #include "twrp-functions.hpp"
-#include "gui/blanktimer.hpp"
-
+#ifndef TW_NO_SCREEN_TIMEOUT
+	#include "gui/blanktimer.hpp"
+#endif
 #ifdef TW_USE_MODEL_HARDWARE_ID_FOR_DEVICE_ID
 	#include "cutils/properties.h"
 #endif
@@ -67,8 +68,9 @@ int                                     DataManager::SettingsFileRead = 0;
 int                                     DataManager::BLDR = -1;
 int                                     DataManager::pause = -1;
 
+#ifndef TW_NO_SCREEN_TIMEOUT
 extern blanktimer blankTimer;
-
+#endif
 // Device ID functions
 void DataManager::sanitize_device_id(char* device_id) {
 	const char* whitelist ="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890-._";
@@ -493,7 +495,10 @@ int DataManager::SetValue(const string varName, string value, int persist /* = 0
 	if (pos->second.second != 0)
 		SaveValues();
 	if (varName == "tw_screen_timeout_secs") {
-		if (pause == 0) blankTimer.setTime(atoi(value.c_str()));
+		if (pause == 0)
+#ifndef TW_NO_SCREEN_TIMEOUT
+			blankTimer.setTime(atoi(value.c_str()));
+#endif
 	} else
 		gui_notifyVarChange(varName.c_str(), value.c_str());
 	return 0;
@@ -1037,7 +1042,13 @@ void DataManager::SetDefaultValues()
 	mValues.insert(make_pair("tw_terminal_state", make_pair("0", 0)));
 	mValues.insert(make_pair("tw_background_thread_running", make_pair("0", 0)));
 	mValues.insert(make_pair(TW_RESTORE_FILE_DATE, make_pair("0", 0)));
+#ifdef TW_NO_SCREEN_TIMEOUT
+	mValues.insert(make_pair("tw_screen_timeout_secs", make_pair("0", 1)));
+	mValues.insert(make_pair("tw_no_screen_timeout", make_pair("1", 1)));
+#else
 	mValues.insert(make_pair("tw_screen_timeout_secs", make_pair("60", 1)));
+	mValues.insert(make_pair("tw_no_screen_timeout", make_pair("0", 1)));
+#endif
 	mValues.insert(make_pair("tw_gui_done", make_pair("0", 0)));
 #ifdef TW_BRIGHTNESS_PATH
 	#ifndef TW_MAX_BRIGHTNESS

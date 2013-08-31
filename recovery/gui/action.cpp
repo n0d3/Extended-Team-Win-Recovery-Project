@@ -39,8 +39,9 @@
 #include "../openrecoveryscript.hpp"
 
 #include "../adb_install.h"
+#ifndef TW_NO_SCREEN_TIMEOUT
 #include "blanktimer.hpp"
-
+#endif
 extern "C" {
 #include "../twcommon.h"
 #include "../minuitwrp/minui.h"
@@ -63,7 +64,9 @@ int gui_start();
 TWNativeSDManager NativeSDManager;
 #endif
 
+#ifndef TW_NO_SCREEN_TIMEOUT
 extern blanktimer blankTimer;
+#endif
 void curtainClose(void);
 
 GUIAction::GUIAction(xml_node<>* node)
@@ -313,8 +316,10 @@ void GUIAction::operation_end(const int operation_status, const int simulate) {
 	}
 	DataManager::SetValue("tw_operation_state", 1);
 	DataManager::SetValue(TW_ACTION_BUSY, 0);
+#ifndef TW_NO_SCREEN_TIMEOUT
 	if (!DataManager::Pause_For_Battery_Charge())
 		blankTimer.resetTimerAndUnblank();
+#endif
 }
 
 // lame...
@@ -372,15 +377,19 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 	if (function == "reload") {
 		operation_start("Reload Theme");
 		gui_setRenderEnabled(0);
+#ifndef TW_NO_SCREEN_TIMEOUT
 		blankTimer.setBlank(0);
+#endif
 		usleep(1100);
 		if (TWFunc::reloadTheme()) {
 			gui_setRenderEnabled(1);
+#ifndef TW_NO_SCREEN_TIMEOUT
 			int timeout = DataManager::GetIntValue("tw_screen_timeout_secs");
 			blankTimer.setBlank(1);
 			blankTimer.setTimerThread();
 			blankTimer.setTime(timeout);
 			operation_end(0, simulate);
+#endif
 		} else
 			operation_end(1, simulate);
 	}

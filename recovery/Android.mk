@@ -105,6 +105,9 @@ endif
 LOCAL_C_INCLUDES += system/extras/ext4_utils
 
 #TWRP Build Flags
+ifneq ($(TW_NO_SCREEN_TIMEOUT),)
+    LOCAL_CFLAGS += -DTW_NO_SCREEN_TIMEOUT
+endif
 ifneq ($(TW_TAR_DEBUG_LEVEL),)
     ifeq ($(TW_TAR_DEBUG_LEVEL),"verbose")
 	LOCAL_CFLAGS += -DTAR_DEBUG_VERBOSE

@@ -47,7 +47,9 @@ extern "C" {
 #include "../variables.h"
 #include "../partitions.hpp"
 #include "../twrp-functions.hpp"
-#include "blanktimer.hpp"
+#ifndef TW_NO_SCREEN_TIMEOUT
+	#include "blanktimer.hpp"
+#endif
 
 const static int CURTAIN_FADE = 32;
 
@@ -62,7 +64,9 @@ static int gForceRender = 0;
 
 static int gNoAnimation = 1;
 static int gGuiInputRunning = 0;
+#ifndef TW_NO_SCREEN_TIMEOUT
 blanktimer blankTimer;
+#endif
 
 // Needed by pages.cpp too
 int gGuiRunning = 0;
@@ -303,7 +307,9 @@ static void *input_thread(void *cookie)
 		dontwait = 0;
 		if (!offmode_charge) {
 		    TWFunc::Vibrate(button_pressed);
+#ifndef TW_NO_SCREEN_TIMEOUT
 		    blankTimer.resetTimerAndUnblank();
+#endif
 #ifdef _EVENT_LOGGING
 		    LOGERR("Screen unblank & Timer reset.\n");
 #endif
@@ -710,10 +716,12 @@ extern "C" int gui_start()
 	    string brightness_value = DataManager::GetStrValue("tw_brightness");
 	    string brightness_path = EXPAND(TW_BRIGHTNESS_PATH);
 	    TWFunc::write_file(brightness_path, brightness_value);
+#ifndef TW_NO_SCREEN_TIMEOUT
 	    // Start the screen-off-timeout handler
 	    blankTimer.setTimerThread();
 	    // Set the desired timeout
 	    blankTimer.setTime(DataManager::GetIntValue("tw_screen_timeout_secs"));
+#endif
 	}
     }
 
