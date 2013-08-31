@@ -113,6 +113,7 @@ int blanktimer::setClockTimer(void) {
 			gr_fb_blank(1);
 #endif
 			setBrightness(0);
+			TWFunc::check_and_run_script("/sbin/postscreenblank.sh", "blank"); 
 			PageManager::ChangeOverlay("lock");
 		}
 	}	
@@ -144,6 +145,7 @@ void blanktimer::resetTimerAndUnblank(void) {
 #ifndef TW_NO_SCREEN_BLANK
 		gr_fb_blank(0);
 #endif
+		TWFunc::check_and_run_script("/sbin/postscreenunblank.sh", "unblank"); 
 		gui_forceRender();
 		setBrightness(orig_brightness);
 	} else if (dimmed) {
