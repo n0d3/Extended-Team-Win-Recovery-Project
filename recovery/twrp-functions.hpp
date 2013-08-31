@@ -89,7 +89,7 @@ class TWFunc {
 		// sets proper permissions for su binaries and superuser apk
 		static bool Fix_su_Perms(void);
 		// chmod function that converts a 4 char string into st_mode automatically
-		static int tw_chmod(string fn, string mode); 
+		static int tw_chmod(const string& fn, const string& mode);
 		// Installs su binary and apk and sets proper permissions
 		static bool Install_SuperSU(void);
 		static void Update_Intent_File(string Intent);
