@@ -47,6 +47,11 @@ extern "C" {
 #include "openrecoveryscript.hpp"
 #include "variables.h"
 
+#ifdef HAVE_SELINUX
+	#include "selinux/label.h"
+	struct selabel_handle *selinux_handle;
+#endif
+
 TWPartitionManager PartitionManager;
 int Log_Offset;
 int pause_for_battery_charge = 0;
@@ -182,6 +187,18 @@ int main(int argc, char **argv) {
 	DataManager::SetupTwrpFolder();
 	// Load up all the resources
 	gui_loadResources();
+
+#ifdef HAVE_SELINUX
+	struct selinux_opt selinux_options[] = {
+		{ SELABEL_OPT_PATH, "/file_contexts" }
+	};
+    	selinux_handle = selabel_open(SELABEL_CTX_FILE, selinux_options, 1);
+	if (!selinux_handle)
+		printf("No file contexts for SELinux\n");
+	else
+		printf("SELinux contexts loaded from /file_contexts\n");
+#endif
+
 	PartitionManager.Mount_By_Path("/cache", true);
 
 	string Zip_File, Reboot_Value, Restore_File, Partition_Cmd;

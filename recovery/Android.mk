@@ -61,7 +61,7 @@ LOCAL_STATIC_LIBRARIES :=
 LOCAL_SHARED_LIBRARIES :=
 
 LOCAL_STATIC_LIBRARIES += libcrecovery libguitwrp
-LOCAL_SHARED_LIBRARIES += libz libc libstlport libcutils libstdc++ libext4_utils libtar libblkid libminuitwrp libminadbd libmtdutils libminzip libaosprecovery
+LOCAL_SHARED_LIBRARIES += libz libc libstlport libcutils libstdc++ libtar libblkid libminuitwrp libminadbd libmtdutils libminzip libaosprecovery
 LOCAL_STATIC_LIBRARIES += libunyaffs
 ifeq ($(BUILD_ID), GINGERBREAD)
     TW_INCLUDE_EXFAT := false
@@ -76,14 +76,19 @@ endif
 ifeq ($(TARGET_USERIMAGES_USE_EXT4), true)
     LOCAL_CFLAGS += -DUSE_EXT4
     LOCAL_C_INCLUDES += system/extras/ext4_utils
-    #LOCAL_STATIC_LIBRARIES += libext4_utils
+    LOCAL_SHARED_LIBRARIES += libext4_utils
 endif
 
 ifeq ($(HAVE_SELINUX), true)
-  #LOCAL_C_INCLUDES += external/libselinux/include
-  #LOCAL_STATIC_LIBRARIES += libselinux
-  #LOCAL_CFLAGS += -DHAVE_SELINUX -g
-endif # HAVE_SELINUX
+    LOCAL_C_INCLUDES += external/libselinux/include
+    LOCAL_SHARED_LIBRARIES += libselinux
+    LOCAL_CFLAGS += -DHAVE_SELINUX -g
+    ifneq ($(TARGET_USERIMAGES_USE_EXT4), true)
+        LOCAL_CFLAGS += -DUSE_EXT4
+        LOCAL_C_INCLUDES += system/extras/ext4_utils
+        LOCAL_SHARED_LIBRARIES += libext4_utils
+    endif
+endif
 
 # This binary is in the recovery ramdisk, which is otherwise a copy of root.
 # It gets copied there in config/Makefile.  LOCAL_MODULE_TAGS suppresses
