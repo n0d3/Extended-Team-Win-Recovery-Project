@@ -121,7 +121,7 @@ void DataManager::get_device_id(void) {
 			strcat(device_id, hardware_id);
 		}
 		sanitize_device_id((char *)device_id);
-		mConstValues.insert(make_pair("device_id", device_id));
+		mConstValues.insert(make_pair("tw_device_id", device_id));
 		LOGINFO("=> using device id: '%s'\n", device_id);
 		return;
 	}
@@ -145,7 +145,7 @@ void DataManager::get_device_id(void) {
 				// We found the serial number!
 				strcpy(device_id, token + CMDLINE_SERIALNO_LEN);
 				sanitize_device_id((char *)device_id);
-				mConstValues.insert(make_pair("device_id", device_id));
+				mConstValues.insert(make_pair("tw_device_id", device_id));
 				return;
 			}
 			token = strtok(NULL, " ");
