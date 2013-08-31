@@ -1395,7 +1395,7 @@ int twrpTar::closeTar() {
 #endif
 		return -1;
 	}
-	if (Archive_Current_Type > 1) {
+	if (Archive_Current_Type > 0) {
 		close(fd);
 		int status;
 		if (pigz_pid > 0 && TWFunc::Wait_For_Child(pigz_pid, &status, "pigz") != 0)
