@@ -117,7 +117,7 @@
 #define TW_CPU_GOV			"tw_cpu_gov"
 
 // Default definitions
-#define TW_VERSION_STR			"2.6.1.0"
+#define TW_VERSION_STR			"2.6.1.2"
 
 #define TW_USE_COMPRESSION_VAR      	"tw_use_compression"
 #define TW_SKIP_MD5_CHECK_VAR       	"tw_skip_md5_check"
