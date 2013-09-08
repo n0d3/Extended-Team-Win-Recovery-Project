@@ -303,12 +303,12 @@ static int vk_tp_to_screen(struct position *p, int *x, int *y)
 #endif
 
 #ifndef RECOVERY_TOUCHSCREEN_SWAP_XY
-    int fb_width = gr_fb_width();
-    int fb_height = gr_fb_height();
+    int fb_width = gr_screen_width();
+    int fb_height = gr_screen_height();
 #else
     // We need to swap the scaling sizes, too
-    int fb_width = gr_fb_height();
-    int fb_height = gr_fb_width();
+    int fb_width = gr_screen_height();
+    int fb_height = gr_screen_width();
 #endif
 
     *x = (p->x - p->xi.minimum) * (fb_width - 1) / (p->xi.maximum - p->xi.minimum);
