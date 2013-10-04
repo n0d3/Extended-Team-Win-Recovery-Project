@@ -72,8 +72,8 @@ static const int MISC_COMMAND_PAGE = 1;  // bootloader command is this page
 static int get_bootloader_message_mtd(struct bootloader_message *out,
                                       const TWPartition* Partition) {
     size_t write_size;
-    mtd_scan_partitions();
-    const MtdPartition *part = mtd_find_partition_by_name(Partition->MTD_Name.c_str());
+    const MtdPartition* part;
+    part = mtd_find_partition_by_name(Partition->MTD_Name.c_str());
     if (part == NULL || mtd_partition_info(part, NULL, NULL, &write_size)) {
         LOGE("Can't find %s\n", Partition->MTD_Name.c_str());
         return -1;
@@ -98,8 +98,8 @@ static int get_bootloader_message_mtd(struct bootloader_message *out,
 static int set_bootloader_message_mtd(const struct bootloader_message *in,
                                       const TWPartition* Partition) {
     size_t write_size;
-    mtd_scan_partitions();
-    const MtdPartition *part = mtd_find_partition_by_name(Partition->MTD_Name.c_str());
+    const MtdPartition* part;
+    part = mtd_find_partition_by_name(Partition->MTD_Name.c_str());
     if (part == NULL || mtd_partition_info(part, NULL, NULL, &write_size)) {
         LOGE("Can't find %s\n", Partition->MTD_Name.c_str());
         return -1;
