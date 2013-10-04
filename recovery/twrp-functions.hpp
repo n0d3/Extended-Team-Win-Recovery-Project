@@ -132,6 +132,7 @@ class TWFunc {
 		static vector<string> split_string(const string &in, char del, bool skip_empty);
 		static int Split_NandroidMD5(string File);
 		static int cat_file(string fn, int print_line_length);
+		static int DataOnExt_Indicator(void);
 		// Used in restoring tar
 		static int TarExtract(string tarfn, string tardir);
 		static int TarEntryExists(string tarfn, string entry);

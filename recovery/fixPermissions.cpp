@@ -49,7 +49,10 @@ int fixPermissions::fixPerms(bool enable_debug, bool remove_data_for_missing_app
 		} else {
 			gui_print("Possible reasons:\n");
 			gui_print("(a)TWRP detected /data but it's empty.\n");
-			gui_print("(b)TWRP can't mount /data properly.\n\n");
+			gui_print("(b)TWRP can't mount /data properly.\n");
+			if (TWFunc::DataOnExt_Indicator())
+				gui_print("(c)DataOnExt path requires setting up.\n");
+			gui_print("\n");
 		}
 		return -1;
 	}

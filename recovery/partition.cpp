@@ -2585,6 +2585,7 @@ void TWPartition::Check_BuildProp(void) {
 			LOGINFO("Checking /system/build.prop...\n");
 			if (system("grep -Fxqi \"DataOnExt\" /system/build.prop") == 0) {
 				LOGINFO("DataOnExt method is probably used by the installed Rom\n");
+				DataManager::SetValue("tw_doe", 1);
 				// Automatically set the TWRP values
 				// BUT we need the data_path too... :/
 				/*int dataonext;

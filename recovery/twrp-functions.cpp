@@ -121,6 +121,10 @@ string TWFunc::Get_Root_Path(string Path) {
 	return Local_Path;
 }
 
+int TWFunc::DataOnExt_Indicator(void) {
+	return DataManager::GetIntValue("tw_doe");
+}
+
 void TWFunc::install_htc_dumlock(void) {
 	int need_libs = 0;
 
