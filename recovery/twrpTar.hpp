@@ -30,6 +30,7 @@ extern "C" {
 
 using namespace std;
 
+#ifndef TW_EXCLUDE_ENCRYPTED_BACKUPS
 struct TarListStruct {
 	std::string fn;
 	unsigned thread_id;
@@ -39,30 +40,36 @@ struct thread_data_struct {
 	std::vector<TarListStruct> *TarList;
 	unsigned thread_id;
 };
-
+#endif
 class twrpTar {
 	public:
+#ifndef TW_EXCLUDE_ENCRYPTED_BACKUPS
 		twrpTar();
 		virtual ~twrpTar();
+#else
+		int createTarGZFork();
+#endif
 		int createTarFork();
 		int extractTarFork();
 		int splitArchiveFork();
 		int entryExists(string entry);
 		void setexcl(string exclude);
-		void setfn(string fn);
-		void setdir(string dir);
+                void setfn(string fn);
+                void setdir(string dir);
 		unsigned long long uncompressedSize();
-		
+
 	public:
+		int has_data_media;
+#ifndef TW_EXCLUDE_ENCRYPTED_BACKUPS
 		int use_encryption;
 		int userdata_encryption;
 		int use_compression;
 		int split_archives;
-		int has_data_media;
+#endif
 
 	private:
 		int extract();
-		int addFilesToExistingTar(vector <string> files, string tarFile);
+                int addFilesToExistingTar(vector <string> files, string tarFile);
 		int createTar();
 		int addFile(string fn, bool include_root);
 		int closeTar();
@@ -75,14 +82,21 @@ class twrpTar {
 		string Strip_Root_Dir(string Path);
 		int openTar();
 		int Archive_File_Count;
-		int Archive_Current_Type;
 		unsigned long long Archive_Current_Size;
+		int Archive_Current_Type;
 		int skip(char* name, char* type);
 
+
 		TAR *t;
+		FILE* p;
 		int fd;
+#ifndef TW_EXCLUDE_ENCRYPTED_BACKUPS
 		pid_t pigz_pid;
 		pid_t oaes_pid;
+#else
+		FILE* rp;	
+		int rfd;
+#endif
 
 		string tardir;
 		string tarfn;
@@ -90,10 +104,16 @@ class twrpTar {
 		string tarexclude;
 		vector<string> Excluded;
 
+#ifndef TW_EXCLUDE_ENCRYPTED_BACKUPS
 		int Generate_TarList(string Path, std::vector<TarListStruct> *TarList, unsigned long long *Target_Size, unsigned *thread_id);
 		static void* createList(void *cookie);
 		static void* extractMulti(void *cookie);
 		int tarList(bool include_root, std::vector<TarListStruct> *TarList, unsigned thread_id);
 		std::vector<TarListStruct> *ItemList;
 		unsigned thread_id;
+#else
+		int extractTGZ();
+		int createTGZ();
+#endif
+
 }; 

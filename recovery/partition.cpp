@@ -2093,8 +2093,8 @@ int TWPartition::Backup_Tar(string backup_folder) {
 
 	// Use Compression?
 	DataManager::GetValue(TW_USE_COMPRESSION_VAR, use_compression);
-	tar.use_compression = use_compression;
 #ifndef TW_EXCLUDE_ENCRYPTED_BACKUPS
+	tar.use_compression = use_compression;
 	DataManager::GetValue("tw_encrypt_backup", use_encryption);
 	if (Can_Encrypt_Backup && use_encryption) {
 		tar.use_encryption = use_encryption;
@@ -2138,13 +2138,24 @@ int TWPartition::Backup_Tar(string backup_folder) {
 #endif
 			tar.setdir(Backup_Path);
 		tar.setfn(Full_FileName);
+#ifndef TW_EXCLUDE_ENCRYPTED_BACKUPS
 		if (tar.createTarFork() != 0)
 			return 0;
 		if (use_compression && !use_encryption) {
+#else
+		if (use_compression) {
+			if (tar.createTarGZFork() != 0)
+				return -1;
+#endif
 			string gzname = Full_FileName + ".gz";
 			rename(gzname.c_str(), Full_FileName.c_str());
 		}
-#ifndef TW_EXCLUDE_ENCRYPTED_BACKUPS
+#ifdef TW_EXCLUDE_ENCRYPTED_BACKUPS
+		else {
+			if (tar.createTarFork() != 0)
+				return -1;
+		}
+#else
 		if (Can_Encrypt_Backup && use_encryption)
 			Full_FileName += "000";
 #endif

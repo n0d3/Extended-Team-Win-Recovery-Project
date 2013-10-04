@@ -1447,8 +1447,8 @@ int TWFunc::Check_Rotation_File() {
 	return TW_DEFAULT_ROTATION;
 }
 
-int TWFunc::Try_Decrypting_File(string fn, string password) {
 #ifndef TW_EXCLUDE_ENCRYPTED_BACKUPS
+int TWFunc::Try_Decrypting_File(string fn, string password) {
 	OAES_CTX * ctx = NULL;
 	uint8_t _key_data[32] = "";
 	FILE *f;
@@ -1534,14 +1534,9 @@ int TWFunc::Try_Decrypting_File(string fn, string password) {
 	free(buffer_out);
 	LOGINFO("No errors decrypting '%s' but no known file format.\n", fn.c_str());
 	return 1; // Decrypted successfully
-#else
-	LOGERR("Encrypted backup support not included.\n");
-	return -1;
-#endif
 }
 
 bool TWFunc::Try_Decrypting_Backup(string Restore_Path, string password) {
-#ifndef TW_EXCLUDE_ENCRYPTED_BACKUPS
 	DIR* d;
 
 	string Filename;
@@ -1567,11 +1562,8 @@ bool TWFunc::Try_Decrypting_Backup(string Restore_Path, string password) {
 	}
 	closedir(d);
 	return true;
-#else
-	LOGERR("Encrypted backup support not included.\n");
-	return false;
-#endif
 }
+#endif
 
 int TWFunc::Wait_For_Child(pid_t pid, int *status, string Child_Name) {
 	pid_t rc_pid;

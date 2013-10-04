@@ -1431,7 +1431,7 @@
 				<listtype name="backup" />
 			</object>
 
-			<object type="button">
+			<!--object type="button">
 				<condition var1="tw_include_encrypted_backup" var2="0" />
 				<highlight color="%highlight_color%" />
 				<placement x="%ext_col1_x%" y="%backup_button_row1%" />
@@ -1439,7 +1439,7 @@
 				<text>No Encryption</text>
 				<image resource="ext_main_button_small2" />
 				<action function="page">backup</action>
-			</object>
+			</object-->
 
 			<object type="button">
 				<conditions>

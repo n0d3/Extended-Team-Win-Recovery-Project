@@ -103,8 +103,10 @@ class TWFunc {
 		static bool reloadTheme();
 		static string getUIxml(int rotation);
 		static int Get_File_Type(string fn);
+#ifndef TW_EXCLUDE_ENCRYPTED_BACKUPS
 		static int Try_Decrypting_File(string fn, string password);
 		static bool Try_Decrypting_Backup(string Restore_Path, string password);
+#endif
 		static int Wait_For_Child(pid_t pid, int *status, string Child_Name);
 		// Returns the current date in ccyy-m-dd--hh-nn-ss format
 		static string Get_Current_Date(void);

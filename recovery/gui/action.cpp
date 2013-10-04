@@ -1724,6 +1724,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			operation_end(op_status, simulate);
 			return 0;
 		}
+#ifndef TW_EXCLUDE_ENCRYPTED_BACKUPS
 		if (function == "decrypt_backup")
 		{
 			int op_status = 0;
@@ -1745,6 +1746,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			operation_end(op_status, simulate);
 			return 0;
 		}
+#endif
 	} else {
 		pthread_t t;
 		pthread_attr_t tattr;

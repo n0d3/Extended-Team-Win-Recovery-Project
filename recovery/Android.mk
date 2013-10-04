@@ -19,8 +19,13 @@ TARGET_RECOVERY_GUI := true
 LOCAL_SRC_FILES := \
     twrp.cpp \
     fixPermissions.cpp \
-    twrpTar.cpp \
     twrpDigest.cpp
+
+ifeq ($(TW_EXCLUDE_ENCRYPTED_BACKUPS), true)
+    LOCAL_SRC_FILES += twrpTarold.cpp
+else
+    LOCAL_SRC_FILES += twrpTar.cpp
+endif
 
 LOCAL_SRC_FILES += \
     data.cpp \

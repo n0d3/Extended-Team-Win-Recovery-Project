@@ -35,12 +35,16 @@ else
   LOCAL_SRC_FILES += hardwarekeyboard.cpp
 endif
 
-LOCAL_SHARED_LIBRARIES += libminuitwrp libc libstdc++
-LOCAL_MODULE := libguitwrp
+ifeq ($(TW_EXCLUDE_ENCRYPTED_BACKUPS), true)
+    LOCAL_CFLAGS += -DTW_EXCLUDE_ENCRYPTED_BACKUPS
+endif
 
 ifeq ($(TARGET_DEVICE),leo)
-	LOCAL_CFLAGS += -DTW_DEVICE_IS_HTC_LEO
+    LOCAL_CFLAGS += -DTW_DEVICE_IS_HTC_LEO
 endif
+
+LOCAL_SHARED_LIBRARIES += libminuitwrp libc libstdc++
+LOCAL_MODULE := libguitwrp
 
 # Use this flag to create a build that simulates threaded actions like installing zips, backups, restores, and wipes for theme testing
 #TWRP_SIMULATE_ACTIONS := true

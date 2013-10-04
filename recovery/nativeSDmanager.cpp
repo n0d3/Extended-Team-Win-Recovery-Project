@@ -137,7 +137,9 @@ int TWNativeSDManager::Backup(string RomPath) {
 			gui_print("Breaking backup file into multiple archives...\n");
 			sprintf(back_name, "%s/system", RomPath.c_str());
 			twrpTar tar;
+#ifndef TW_EXCLUDE_ENCRYPTED_BACKUPS
 			tar.use_compression = use_compression;
+#endif
 			tar.setexcl("");
 			tar.setdir(back_name);
 			tar.setfn(Full_FileName);
@@ -150,15 +152,27 @@ int TWNativeSDManager::Backup(string RomPath) {
 			Full_FileName = Full_Backup_Path + SYS_Backup_FileName;
 			twrpTar tar;
 			tar.setexcl("");
-			tar.use_compression = use_compression;
 			tar.setdir(extpath + "/" + Rom_Name + "/system");
 			tar.setfn(Full_FileName);
+#ifndef TW_EXCLUDE_ENCRYPTED_BACKUPS
+			tar.use_compression = use_compression;
 			if (tar.createTarFork() != 0)
 				return false;
 			if (use_compression) {
+#else
+			if (use_compression) {
+				if (tar.createTarGZFork() != 0)
+					return -1;
+#endif
 				string gzname = Full_FileName + ".gz";
 				rename(gzname.c_str(), Full_FileName.c_str());
 			}
+#ifdef TW_EXCLUDE_ENCRYPTED_BACKUPS
+			else {
+				if (tar.createTarFork() != 0)
+					return -1;
+			}
+#endif
 			if (TWFunc::Get_File_Size(Full_FileName) == 0) {
 				LOGERR("Backup file size for '%s' is 0 bytes.\n", Full_FileName.c_str());
 				return false;
@@ -192,7 +206,9 @@ int TWNativeSDManager::Backup(string RomPath) {
 			gui_print("Breaking backup file into multiple archives...\n");
 			sprintf(back_name, "%s/data", RomPath.c_str());
 			twrpTar tar;
+#ifndef TW_EXCLUDE_ENCRYPTED_BACKUPS
 			tar.use_compression = use_compression;
+#endif
 			tar.setexcl(Tar_Excl);
 			tar.setdir(back_name);
 			tar.setfn(Full_FileName);
@@ -204,16 +220,28 @@ int TWNativeSDManager::Backup(string RomPath) {
 		} else {
 			Full_FileName = Full_Backup_Path + DATA_Backup_FileName;
 			twrpTar tar;
-			tar.use_compression = use_compression;
 			tar.setexcl(Tar_Excl);
 			tar.setdir(extpath + "/" + Rom_Name + "/data");
 			tar.setfn(Full_FileName);
+#ifndef TW_EXCLUDE_ENCRYPTED_BACKUPS
+			tar.use_compression = use_compression;
 			if (tar.createTarFork() != 0)
-				return -1;
+				return false;
 			if (use_compression) {
+#else
+			if (use_compression) {
+				if (tar.createTarGZFork() != 0)
+					return -1;
+#endif
 				string gzname = Full_FileName + ".gz";
 				rename(gzname.c_str(), Full_FileName.c_str());
 			}
+#ifdef TW_EXCLUDE_ENCRYPTED_BACKUPS
+			else {
+				if (tar.createTarFork() != 0)
+					return -1;
+			}
+#endif
 			if (TWFunc::Get_File_Size(Full_FileName) == 0) {
 				LOGERR("Backup file size for '%s' is 0 bytes.\n", Full_FileName.c_str());
 				return false;
@@ -240,16 +268,28 @@ int TWNativeSDManager::Backup(string RomPath) {
 		DataManager::ShowProgress(pos, section_time);
 		Full_FileName = Full_Backup_Path + BOOT_Backup_FileName;
 		twrpTar tar;
-		tar.use_compression = use_compression;
 		tar.setexcl("");
 		tar.setdir("/sdcard/NativeSD/" + Rom_Name);
 		tar.setfn(Full_FileName);
+#ifndef TW_EXCLUDE_ENCRYPTED_BACKUPS
+		tar.use_compression = use_compression;
 		if (tar.createTarFork() != 0)
-			return -1;
+			return false;
 		if (use_compression) {
+#else
+		if (use_compression) {
+			if (tar.createTarGZFork() != 0)
+				return -1;
+#endif
 			string gzname = Full_FileName + ".gz";
 			rename(gzname.c_str(), Full_FileName.c_str());
 		}
+#ifdef TW_EXCLUDE_ENCRYPTED_BACKUPS
+		else {
+			if (tar.createTarFork() != 0)
+				return -1;
+		}
+#endif
 		if (TWFunc::Get_File_Size(Full_FileName) == 0) {
 			LOGERR("Backup file size for '%s' is 0 bytes.\n", Full_FileName.c_str());
 			return false;
