@@ -21,5 +21,11 @@ else
 	LOCAL_CFLAGS += -DTAR_DEBUG_SUPPRESS
 endif
 
+ifeq ($(TWHAVE_SELINUX), true)
+	LOCAL_C_INCLUDES += external/libselinux/include
+	LOCAL_SHARED_LIBRARIES += libselinux
+	LOCAL_CFLAGS += -DHAVE_SELINUX
+endif
+
 include $(BUILD_SHARED_LIBRARY)
 
