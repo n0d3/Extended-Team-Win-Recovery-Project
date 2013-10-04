@@ -32,18 +32,14 @@ extern "C" {
 
 Resource::Resource(xml_node<>* node, ZipArchive* pZip)
 {
-    if (node && node->first_attribute("name"))
-        mName = node->first_attribute("name")->value();
+	if (node && node->first_attribute("name"))
+		mName = node->first_attribute("name")->value();
 }
 
-
-int Resource::ExtractResource(ZipArchive* pZip, 
-                              std::string folderName, 
-                              std::string fileName, 
-                              std::string fileExtn, 
-                              std::string destFile)
+int Resource::ExtractResource(ZipArchive* pZip, std::string folderName, std::string fileName, std::string fileExtn, std::string destFile)
 {
-    if (!pZip)  return -1;
+	if (!pZip)
+		return -1;
 
     std::string src;
 /*
@@ -54,12 +50,12 @@ int Resource::ExtractResource(ZipArchive* pZip,
     /landscape.xml	<= ui.xml for landscape
  */
     if (folderName == "fonts")
-	src = folderName + "/" + fileName + fileExtn;
+		src = folderName + "/" + fileName + fileExtn;
     else {
-	if (gr_get_rotation() % 180 == 0)
-	    src = "portrait/" + fileName + fileExtn;
-	else
-	    src = "landscape/" + fileName + fileExtn;
+		if (gr_get_rotation() % 180 == 0)
+	    	src = "portrait/" + fileName + fileExtn;
+		else
+	    	src = "landscape/" + fileName + fileExtn;
     }
     const ZipEntry* binary = mzFindZipEntry(pZip, src.c_str());
     if (binary == NULL)
@@ -81,23 +77,24 @@ int Resource::ExtractResource(ZipArchive* pZip,
 FontResource::FontResource(xml_node<>* node, ZipArchive* pZip)
  : Resource(node, pZip)
 {
-    std::string file;
+	std::string file;
 
-    mFont = NULL;
-    if (!node)  return;
+	mFont = NULL;
+	if (!node)
+		return;
 
-    if (node->first_attribute("filename"))
-        file = node->first_attribute("filename")->value();
+	if (node->first_attribute("filename"))
+		file = node->first_attribute("filename")->value();
 
-    if (ExtractResource(pZip, "fonts", file, ".dat", TMP_RESOURCE_NAME) == 0)
-    {
-        mFont = gr_loadFont(TMP_RESOURCE_NAME);
-        unlink(TMP_RESOURCE_NAME);
-    }
-    else
-    {
-        mFont = gr_loadFont(file.c_str());
-    }
+	if (ExtractResource(pZip, "fonts", file, ".dat", TMP_RESOURCE_NAME) == 0)
+	{
+		mFont = gr_loadFont(TMP_RESOURCE_NAME);
+		unlink(TMP_RESOURCE_NAME);
+	}
+	else
+	{
+		mFont = gr_loadFont(file.c_str());
+	}
 }
 
 FontResource::~FontResource()
@@ -107,19 +104,21 @@ FontResource::~FontResource()
 ImageResource::ImageResource(xml_node<>* node, ZipArchive* pZip)
  : Resource(node, pZip)
 {
-    std::string file;
+	std::string file;
 
-    mSurface = NULL;
-    if (!node)  return;
+	mSurface = NULL;
+	if (!node)
+		return;
 
-    if (node->first_attribute("filename"))
-        file = node->first_attribute("filename")->value();
+	if (node->first_attribute("filename"))
+		file = node->first_attribute("filename")->value();
 
     if (ExtractResource(pZip, "images", file, ".png", TMP_RESOURCE_NAME) == 0)
     {
         res_create_surface(TMP_RESOURCE_NAME, &mSurface);
         unlink(TMP_RESOURCE_NAME);
-    } else if (ExtractResource(pZip, "images", file, "", TMP_RESOURCE_NAME) == 0)
+    }
+	else if (ExtractResource(pZip, "images", file, "", TMP_RESOURCE_NAME) == 0)
     {
         // JPG includes the .jpg extension in the filename so extension should be blank
 		res_create_surface(TMP_RESOURCE_NAME, &mSurface);
@@ -131,91 +130,92 @@ ImageResource::ImageResource(xml_node<>* node, ZipArchive* pZip)
 
 ImageResource::~ImageResource()
 {
-    if (mSurface)
-        res_free_surface(mSurface);
+	if (mSurface)
+		res_free_surface(mSurface);
 }
 
 AnimationResource::AnimationResource(xml_node<>* node, ZipArchive* pZip)
  : Resource(node, pZip)
 {
-    std::string file;
-    int fileNum = 1;
+	std::string file;
+	int fileNum = 1;
 
-    if (!node)  return;
+	if (!node)
+		return;
 
-    if (node->first_attribute("filename"))
-        file = node->first_attribute("filename")->value();
+	if (node->first_attribute("filename"))
+		file = node->first_attribute("filename")->value();
 
-    for ( ; ; )
-    {
-        std::ostringstream fileName;
-        fileName << file << std::setfill ('0') << std::setw (3) << fileNum;
+	for (;;)
+	{
+		std::ostringstream fileName;
+		fileName << file << std::setfill ('0') << std::setw (3) << fileNum;
 
-        gr_surface surface;
-        if (pZip)
-        {
-            if (ExtractResource(pZip, "images", fileName.str(), ".png", TMP_RESOURCE_NAME) != 0)
-                break;
-    
-            if (res_create_surface(TMP_RESOURCE_NAME, &surface))
-                break;
+		gr_surface surface;
+		if (pZip)
+		{
+			if (ExtractResource(pZip, "images", fileName.str(), ".png", TMP_RESOURCE_NAME) != 0)
+				break;
+	
+			if (res_create_surface(TMP_RESOURCE_NAME, &surface))
+				break;
 
-            unlink(TMP_RESOURCE_NAME);
-        }
-        else
-        {
-            if (res_create_surface(fileName.str().c_str(), &surface))
-                break;
-        }
-        mSurfaces.push_back(surface);
-        fileNum++;
-    }
+			unlink(TMP_RESOURCE_NAME);
+		}
+		else
+		{
+			if (res_create_surface(fileName.str().c_str(), &surface))
+				break;
+		}
+		mSurfaces.push_back(surface);
+		fileNum++;
+	}
 }
 
 AnimationResource::~AnimationResource()
 {
-    std::vector<gr_surface>::iterator it;
+	std::vector<gr_surface>::iterator it;
 
-    for (it = mSurfaces.begin(); it != mSurfaces.end(); ++it)
-    {
-        res_free_surface(*it);
-    }
-    mSurfaces.clear();
+	for (it = mSurfaces.begin(); it != mSurfaces.end(); ++it)
+		res_free_surface(*it);
+
+	mSurfaces.clear();
 }
 
 Resource* ResourceManager::FindResource(std::string name)
 {
-    std::vector<Resource*>::iterator iter;
+	std::vector<Resource*>::iterator iter;
 
-    for (iter = mResources.begin(); iter != mResources.end(); iter++)
-    {
-        if (name == (*iter)->GetName())
-            return (*iter);
-    }
-    return NULL;
+	for (iter = mResources.begin(); iter != mResources.end(); iter++)
+	{
+		if (name == (*iter)->GetName())
+			return (*iter);
+	}
+	return NULL;
 }
 
 ResourceManager::ResourceManager(xml_node<>* resList, ZipArchive* pZip)
 {
-    xml_node<>* child;
+	xml_node<>* child;
 
-    if (!resList)       return;
+	if (!resList)
+		return;
 
-    child = resList->first_node("resource");
-    while (child != NULL)
-    {
-        xml_attribute<>* attr = child->first_attribute("type");
-        if (!attr)
-            break;
+	child = resList->first_node("resource");
+	while (child != NULL)
+	{
+		xml_attribute<>* attr = child->first_attribute("type");
+		if (!attr)
+			break;
 
 		std::string type = attr->value();
 
-        if (type == "font")
-        {
-            FontResource* res = new FontResource(child, pZip);
-            if (res == NULL || res->GetResource() == NULL)
-            {
-                xml_attribute<>* attr_name = child->first_attribute("name");
+		if (type == "font")
+		{
+			FontResource* res = new FontResource(child, pZip);
+			if (res == NULL || res->GetResource() == NULL)
+			{
+				xml_attribute<>* attr_name = child->first_attribute("name");
 
 				if (!attr_name) {
 					std::string res_name = attr_name->value();
@@ -223,39 +223,19 @@ ResourceManager::ResourceManager(xml_node<>* resList, ZipArchive* pZip)
 				} else
 					LOGERR("Resource type (%s) failed to load\n", type.c_str());
 
-                delete res;
-            }
-            else
-            {
-                mResources.push_back((Resource*) res);
-            }
-        }
-        else if (type == "image")
-        {
-			ImageResource* res = new ImageResource(child, pZip);
-            if (res == NULL || res->GetResource() == NULL)
-            {
-                xml_attribute<>* attr_name = child->first_attribute("name");
-
-				if (!attr_name) {
-					std::string res_name = attr_name->value();
-					LOGERR("Resource (%s)-(%s) failed to load\n", type.c_str(), res_name.c_str());
-				} else
-					LOGERR("Resource type (%s) failed to load\n", type.c_str());
-
-                delete res;
-            }
-            else
-            {
+				delete res;
+			}
+			else
+			{
 				mResources.push_back((Resource*) res);
-            }
-        }
-        else if (type == "animation")
-        {
-            AnimationResource* res = new AnimationResource(child, pZip);
-            if (res == NULL || res->GetResource() == NULL)
-            {
-                xml_attribute<>* attr_name = child->first_attribute("name");
+			}
+		}
+		else if (type == "image")
+		{
+			ImageResource* res = new ImageResource(child, pZip);
+			if (res == NULL || res->GetResource() == NULL)
+			{
+				xml_attribute<>* attr_name = child->first_attribute("name");
 
 				if (!attr_name) {
 					std::string res_name = attr_name->value();
@@ -263,30 +243,48 @@ ResourceManager::ResourceManager(xml_node<>* resList, ZipArchive* pZip)
 				} else
 					LOGERR("Resource type (%s) failed to load\n", type.c_str());
 
-                delete res;
-            }
-            else
-            {
-                mResources.push_back((Resource*) res);
-            }
-        }
-        else
-        {
-            LOGERR("Resource type (%s) not supported.\n", type.c_str());
-        }
+				delete res;
+			}
+			else
+			{
+				mResources.push_back((Resource*) res);
+			}
+		}
+		else if (type == "animation")
+		{
+			AnimationResource* res = new AnimationResource(child, pZip);
+			if (res == NULL || res->GetResource() == NULL)
+			{
+				xml_attribute<>* attr_name = child->first_attribute("name");
 
-        child = child->next_sibling("resource");
-    }
+				if (!attr_name) {
+					std::string res_name = attr_name->value();
+					LOGERR("Resource (%s)-(%s) failed to load\n", type.c_str(), res_name.c_str());
+				} else
+					LOGERR("Resource type (%s) failed to load\n", type.c_str());
+
+				delete res;
+			}
+			else
+			{
+				mResources.push_back((Resource*) res);
+			}
+		}
+		else
+		{
+			LOGERR("Resource type (%s) not supported.\n", type.c_str());
+		}
+
+		child = child->next_sibling("resource");
+	}
 }
 
 ResourceManager::~ResourceManager()
 {
-    std::vector<Resource*>::iterator iter;
+	std::vector<Resource*>::iterator iter;
 
-    for (iter = mResources.begin(); iter != mResources.end(); iter++)
-    {
-        delete *iter;
-    }
-    mResources.clear();
+	for (iter = mResources.begin(); iter != mResources.end(); iter++)
+		delete *iter;
+
+	mResources.clear();
 }
-

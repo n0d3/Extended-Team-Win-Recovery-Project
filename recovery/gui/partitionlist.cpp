@@ -83,25 +83,29 @@ GUIPartitionList::GUIPartitionList(xml_node<>* node)
 
 	// Load header text
 	child = node->first_node("header");
-	if (child) {
+	if (child)
+	{
 		attr = child->first_attribute("icon");
 		if (attr)
 			mHeaderIcon = PageManager::FindResource(attr->value());
 
 		attr = child->first_attribute("background");
-		if (attr) {
+		if (attr)
+		{
 			std::string color = attr->value();
 			ConvertStrToColor(color, &mHeaderBackgroundColor);
 			header_background_color_specified = -1;
 		}
 		attr = child->first_attribute("textcolor");
-		if (attr) {
+		if (attr)
+		{
 			std::string color = attr->value();
 			ConvertStrToColor(color, &mHeaderFontColor);
 			header_text_color_specified = -1;
 		}
 		attr = child->first_attribute("separatorcolor");
-		if (attr) {
+		if (attr)
+		{
 			std::string color = attr->value();
 			ConvertStrToColor(color, &mHeaderSeparatorColor);
 			header_separator_color_specified = -1;
@@ -135,7 +139,8 @@ GUIPartitionList::GUIPartitionList(xml_node<>* node)
 		mHeaderIsStatic = -1;
 
 	child = node->first_node("icon");
-	if (child) {
+	if (child)
+	{
 		attr = child->first_attribute("selected");
 		if (attr)
 			mIconSelected = PageManager::FindResource(attr->value());
@@ -144,12 +149,14 @@ GUIPartitionList::GUIPartitionList(xml_node<>* node)
 			mIconUnselected = PageManager::FindResource(attr->value());
 	}
 	child = node->first_node("background");
-	if (child) {
+	if (child)
+	{
 		attr = child->first_attribute("resource");
 		if (attr)
 			mBackground = PageManager::FindResource(attr->value());
 		attr = child->first_attribute("color");
-		if (attr) {
+		if (attr)
+		{
 			std::string color = attr->value();
 			ConvertStrToColor(color, &mBackgroundColor);
 			if (!header_background_color_specified)
@@ -163,13 +170,15 @@ GUIPartitionList::GUIPartitionList(xml_node<>* node)
 
 	// Load the font, and possibly override the color
 	child = node->first_node("font");
-	if (child) {
+	if (child)
+	{
 		attr = child->first_attribute("resource");
 		if (attr)
 			mFont = PageManager::FindResource(attr->value());
 
 		attr = child->first_attribute("color");
-		if (attr) {
+		if (attr)
+		{
 			std::string color = attr->value();
 			ConvertStrToColor(color, &mFontColor);
 			if (!header_text_color_specified)
@@ -184,18 +193,21 @@ GUIPartitionList::GUIPartitionList(xml_node<>* node)
 
 		attr = child->first_attribute("highlightcolor");
 		memset(&mFontHighlightColor, 0, sizeof(COLOR));
-		if (attr) {
-           		std::string color = attr->value();
+		if (attr)
+		{
+			std::string color = attr->value();
 			ConvertStrToColor(color, &mFontHighlightColor);
 			hasFontHighlightColor = true;
-        	}
+		}
 	}
 
 	// Load the separator if it exists
 	child = node->first_node("separator");
-	if (child) {
+	if (child)
+	{
 		attr = child->first_attribute("color");
-		if (attr) {
+		if (attr)
+		{
 			std::string color = attr->value();
 			ConvertStrToColor(color, &mSeparatorColor);
 			if (!header_separator_color_specified)
@@ -213,7 +225,8 @@ GUIPartitionList::GUIPartitionList(xml_node<>* node)
 
 	// Handle the result variable
 	child = node->first_node("data");
-	if (child) {
+	if (child)
+	{
 		attr = child->first_attribute("name");
 		if (attr)
 			mVariable = attr->value();
@@ -224,7 +237,8 @@ GUIPartitionList::GUIPartitionList(xml_node<>* node)
 
 	// Fast scroll colors
 	child = node->first_node("fastscroll");
-	if (child) {
+	if (child)
+	{
 		attr = child->first_attribute("linecolor");
 		if(attr)
 			ConvertStrToColor(attr->value(), &mFastScrollLineColor);
@@ -263,7 +277,8 @@ GUIPartitionList::GUIPartitionList(xml_node<>* node)
 	mLineHeight = mFontHeight;
 	mHeaderH = mFontHeight;
 
-	if (mIconSelected && mIconSelected->GetResource()) {
+	if (mIconSelected && mIconSelected->GetResource())
+	{
 		mSelectedIconWidth = gr_get_width(mIconSelected->GetResource());
 		mSelectedIconHeight = gr_get_height(mIconSelected->GetResource());
 		if (mSelectedIconHeight > (int)mLineHeight)
@@ -271,7 +286,8 @@ GUIPartitionList::GUIPartitionList(xml_node<>* node)
 		mIconWidth = mSelectedIconWidth;
 	}
 
-	if (mIconUnselected && mIconUnselected->GetResource()) {
+	if (mIconUnselected && mIconUnselected->GetResource())
+	{
 		mUnselectedIconWidth = gr_get_width(mIconUnselected->GetResource());
 		mUnselectedIconHeight = gr_get_height(mIconUnselected->GetResource());
 		if (mUnselectedIconHeight > (int)mLineHeight)
@@ -280,7 +296,8 @@ GUIPartitionList::GUIPartitionList(xml_node<>* node)
 			mIconWidth = mUnselectedIconWidth;
 	}
 
-	if (mHeaderIcon && mHeaderIcon->GetResource()) {
+	if (mHeaderIcon && mHeaderIcon->GetResource())
+	{
 		mHeaderIconWidth = gr_get_width(mHeaderIcon->GetResource());
 		mHeaderIconHeight = gr_get_height(mHeaderIcon->GetResource());
 		if (mHeaderIconHeight > mHeaderH)
@@ -297,7 +314,8 @@ GUIPartitionList::GUIPartitionList(xml_node<>* node)
 	if (actualLineHeight / 3 > 6)
 		touchDebounce = actualLineHeight / 3;
 
-	if (mBackground && mBackground->GetResource()) {
+	if (mBackground && mBackground->GetResource())
+	{
 		mBackgroundW = gr_get_width(mBackground->GetResource());
 		mBackgroundH = gr_get_height(mBackground->GetResource());
 	}
@@ -331,7 +349,8 @@ int GUIPartitionList::Render(void)
 	gr_fill(mRenderX, mRenderY + mHeaderH, mRenderW, mRenderH - mHeaderH);
 
 	// Next, render the background resource (if it exists)
-	if (mBackground && mBackground->GetResource()) {
+	if (mBackground && mBackground->GetResource())
+	{
 		mBackgroundX = mRenderX + ((mRenderW - mBackgroundW) / 2);
 		mBackgroundY = mRenderY + ((mRenderH - mBackgroundH) / 2);
 		gr_blit(mBackground->GetResource(), 0, 0, mBackgroundW, mBackgroundH, mBackgroundX, mBackgroundY);
@@ -396,7 +415,8 @@ int GUIPartitionList::Render(void)
 		}
 	}
 
-	for (line = 0; line < lines; line++) {
+	for (line = 0; line < lines; line++)
+	{
 		Resource* icon;
 		std::string label;
 
@@ -412,21 +432,25 @@ int GUIPartitionList::Render(void)
 			gr_color(mFontColor.red, mFontColor.green, mFontColor.blue, 255);
 		}
 
-		if (mList.at(line + mStart).selected != 0) {
-            		icon = mIconSelected;
+		if (mList.at(line + mStart).selected != 0)
+		{
+			icon = mIconSelected;
 			currentIconHeight = mSelectedIconHeight;
 			currentIconWidth = mSelectedIconWidth;
 			currentIconOffsetY = SelectedIconOffsetY;
 			currentIconOffsetX = SelectedIconOffsetX;
-        	} else {
-            		icon = mIconUnselected;
+		}
+		else
+		{
+			icon = mIconUnselected;
 			currentIconHeight = mSelectedIconHeight;
 			currentIconWidth = mSelectedIconWidth;
 			currentIconOffsetY = SelectedIconOffsetY;
 			currentIconOffsetX = SelectedIconOffsetX;
-        	}
+		}
 
-		if (icon && icon->GetResource()) {
+		if (icon && icon->GetResource())
+		{
 			int rect_y = 0, image_y = (yPos + currentIconOffsetY);
 			if (image_y + currentIconHeight > mRenderY + mRenderH)
 				rect_y = mRenderY + mRenderH - image_y;
@@ -476,7 +500,8 @@ int GUIPartitionList::Render(void)
 
 	// render fast scroll
 	lines = (mRenderH - mHeaderH) / (actualLineHeight);
-	if(mFastScrollW > 0 && listSize > lines) {
+	if(mFastScrollW > 0 && listSize > lines)
+	{
 		int startX = listW + mRenderX;
 		int fWidth = mRenderW - listW;
 		int fHeight = mRenderH - mHeaderH;
@@ -523,7 +548,8 @@ int GUIPartitionList::Update(void)
 	} else if (ListType == "backup")
 		MatchList();
 
-	if (mUpdate) {
+	if (mUpdate)
+	{
 		mUpdate = 0;
 		if (Render() == 0)
 			return 2;
@@ -597,7 +623,8 @@ int GUIPartitionList::NotifyTouch(TOUCH_STATE state, int x, int y)
 	static int lastY = 0, last2Y = 0;
 	int selection = 0;
 
-	switch (state) {
+	switch (state)
+	{
 		case TOUCH_START:
 			if (scrollingSpeed != 0)
 				startSelection = -1;
@@ -799,8 +826,9 @@ int GUIPartitionList::NotifyVarChange(std::string varName, std::string value)
 			mUpdate = 1;
 		}
 	}
-	if (varName == mVariable && !mUpdate) {
-        	if (ListType == "storage") {
+	if (varName == mVariable && !mUpdate)
+	{
+		if (ListType == "storage") {
 			int i, listSize = mList.size(), selected_index = 0;
 
 			currentValue = value;
@@ -828,8 +856,8 @@ int GUIPartitionList::NotifyVarChange(std::string varName, std::string value)
 		}
 
 		mUpdate = 1;
-        	return 0;
-    	}
+		return 0;
+	}
 	return 0;
 }
 
@@ -837,7 +865,8 @@ int GUIPartitionList::SetRenderPos(int x, int y, int w /* = 0 */, int h /* = 0 *
 {
 	mRenderX = x;
 	mRenderY = y;
-	if (w || h) {
+	if (w || h)
+	{
 		mRenderW = w;
 		mRenderH = h;
 	}
@@ -882,6 +911,7 @@ void GUIPartitionList::MatchList(void) {
 	size_t pos;
 
 	DataManager::GetValue(mVariable, variablelist);
+
 	for (i=0; i<listSize; i++) {
 		searchvalue = mList.at(i).Mount_Point;
 		TWPartition* Part = PartitionManager.Find_Partition_By_Path(searchvalue);

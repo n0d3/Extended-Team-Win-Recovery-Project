@@ -96,101 +96,99 @@ extern "C" void gr_write_frame_to_file(int fd);
 
 void flip(void)
 {
-    if (gRecorder != -1)
-    {
-        timespec time;
-        clock_gettime(CLOCK_MONOTONIC, &time);
-        write(gRecorder, &time, sizeof(timespec));
-        gr_write_frame_to_file(gRecorder);
-    }
-    gr_flip();
-    return;
+	if (gRecorder != -1)
+	{
+		timespec time;
+		clock_gettime(CLOCK_MONOTONIC, &time);
+		write(gRecorder, &time, sizeof(timespec));
+		gr_write_frame_to_file(gRecorder);
+	}
+	gr_flip();
 }
 
 void rapidxml::parse_error_handler(const char *what, void *where)
 {
-    fprintf(stderr, "Parser error: %s\n", what);
-    fprintf(stderr, "  Start of string: %s\n", (char*) where);
-    LOGERR("Error parsing XML file.\n");
-    //abort();
+	fprintf(stderr, "Parser error: %s\n", what);
+	fprintf(stderr, "  Start of string: %s\n",(char *) where);
+	LOGERR("Error parsing XML file.\n");
+	//abort();
 }
 
 static void curtainSet()
 {
-    gr_color(0, 0, 0, 255);
-    gr_fill(0, 0, gr_fb_width(), gr_fb_height());
-    gr_blit(gCurtain, 0, 0, gr_get_width(gCurtain), gr_get_height(gCurtain), 0, 0);
-    gr_flip();
-    return;
+	gr_color(0, 0, 0, 255);
+	gr_fill(0, 0, gr_fb_width(), gr_fb_height());
+	gr_blit(gCurtain, 0, 0, gr_get_width(gCurtain), gr_get_height(gCurtain), 0, 0);
+	gr_flip();
 }
 
 static void curtainRaise(gr_surface surface)
 {
-    int sy = 0;
-    int h = gr_get_height(gCurtain) - 1;
-    int w = gr_get_width(gCurtain);
-    int fy = 1;
+	int sy = 0;
+	int h = gr_get_height(gCurtain) - 1;
+	int w = gr_get_width(gCurtain);
+	int fy = 1;
 
-    int msw = gr_get_width(surface);
-    int msh = gr_get_height(surface);
-    int CURTAIN_RATE = msh / 30;
+	int msw = gr_get_width(surface);
+	int msh = gr_get_height(surface);
+	int CURTAIN_RATE = msh / 30;
 
-    if (gNoAnimation == 0)
-    {
-        for (; h > 0; h -= CURTAIN_RATE, sy += CURTAIN_RATE, fy += CURTAIN_RATE)
-        {
-            gr_blit(surface, 0, 0, msw, msh, 0, 0);
-            gr_blit(gCurtain, 0, sy, w, h, 0, 0);
-            gr_flip();
-        }
-    }
-    gr_blit(surface, 0, 0, msw, msh, 0, 0);
-    flip();
-    return;
+	if (gNoAnimation == 0)
+	{
+		for (; h > 0; h -= CURTAIN_RATE, sy += CURTAIN_RATE, fy += CURTAIN_RATE)
+		{
+			gr_blit(surface, 0, 0, msw, msh, 0, 0);
+			gr_blit(gCurtain, 0, sy, w, h, 0, 0);
+			gr_flip();
+		}
+	}
+	gr_blit(surface, 0, 0, msw, msh, 0, 0);
+	flip();
 }
 
 void curtainClose()
 {
 #if 0
-    int w = gr_get_width(gCurtain);
-    int h = 1;
-    int sy = gr_get_height(gCurtain) - 1;
-    int fbh = gr_fb_height();
+	int w = gr_get_width(gCurtain);
+	int h = 1;
+	int sy = gr_get_height(gCurtain) - 1;
+	int fbh = gr_fb_height();
 	int CURTAIN_RATE = fbh / 30;
 
-    if (gNoAnimation == 0)
-    {
-        for (; h < fbh; h += CURTAIN_RATE, sy -= CURTAIN_RATE)
-        {
-            gr_blit(gCurtain, 0, sy, w, h, 0, 0);
-            gr_flip();
-        }
-        gr_blit(gCurtain, 0, 0, gr_get_width(gCurtain), gr_get_height(gCurtain), 0, 0);
-        gr_flip();
+	if (gNoAnimation == 0)
+	{
+		for (; h < fbh; h += CURTAIN_RATE, sy -= CURTAIN_RATE)
+		{
+			gr_blit(gCurtain, 0, sy, w, h, 0, 0);
+			gr_flip();
+		}
+		gr_blit(gCurtain, 0, 0, gr_get_width(gCurtain),
+		gr_get_height(gCurtain), 0, 0);
+		gr_flip();
 
-        if (gRecorder != -1)
-            close(gRecorder);
+		if (gRecorder != -1)
+			close(gRecorder);
 
-        int fade;
-        for (fade = 16; fade < 255; fade += CURTAIN_FADE)
-        {
-            gr_blit(gCurtain, 0, 0, gr_get_width(gCurtain), gr_get_height(gCurtain), 0, 0);
-            gr_color(0, 0, 0, fade);
-            gr_fill(0, 0, gr_fb_width(), gr_fb_height());
-            gr_flip();
-        }
-        gr_color(0, 0, 0, 255);
-        gr_fill(0, 0, gr_fb_width(), gr_fb_height());
-        gr_flip();
-    }
+		int fade;
+		for (fade = 16; fade < 255; fade += CURTAIN_FADE)
+		{
+			gr_blit(gCurtain, 0, 0, gr_get_width(gCurtain),
+			gr_get_height(gCurtain), 0, 0);
+			gr_color(0, 0, 0, fade);
+			gr_fill(0, 0, gr_fb_width(), gr_fb_height());
+			gr_flip();
+		}
+		gr_color(0, 0, 0, 255);
+		gr_fill(0, 0, gr_fb_width(), gr_fb_height());
+		gr_flip();
+	}
 #else
-    gr_blit(gCurtain, 0, 0, gr_get_width(gCurtain), gr_get_height(gCurtain), 0, 0);
-    gr_flip();
+	gr_blit(gCurtain, 0, 0, gr_get_width(gCurtain), gr_get_height(gCurtain), 0, 0);
+	gr_flip();
 #endif
-    return;
 }
 
-static void *input_thread(void *cookie)
+static void * input_thread(void *cookie)
 {
     int drag = 0;
     static int touch_and_hold = 0, dontwait = 0, touch_repeat = 0, x = 0, y = 0, lshift = 0, rshift = 0, key_repeat = 0, power_key = 0;
@@ -336,35 +334,34 @@ static void *input_thread(void *cookie)
 // the last time it was called
 static void loopTimer(void)
 {
-    static timespec lastCall;
-    static int initialized = 0;
+	static timespec lastCall;
+	static int initialized = 0;
 
-    if (!initialized)
-    {
-        clock_gettime(CLOCK_MONOTONIC, &lastCall);
-        initialized = 1;
-        return;
-    }
+	if (!initialized)
+	{
+		clock_gettime(CLOCK_MONOTONIC, &lastCall);
+		initialized = 1;
+		return;
+	}
 
-    do
-    {
-        timespec curTime;
-        clock_gettime(CLOCK_MONOTONIC, &curTime);
+	do
+	{
+		timespec curTime;
+		clock_gettime(CLOCK_MONOTONIC, &curTime);
 
-        timespec diff = TWFunc::timespec_diff(lastCall, curTime);
+		timespec diff = TWFunc::timespec_diff(lastCall, curTime);
 
-        // This is really 30 times per second
-        if (diff.tv_sec || diff.tv_nsec > 33333333)
-        {
-            lastCall = curTime;
-            return;
-        }
+		// This is really 30 times per second
+		if (diff.tv_sec || diff.tv_nsec > 33333333)
+		{
+			lastCall = curTime;
+			return;
+		}
 
-        // We need to sleep some period time microseconds
-        unsigned int sleepTime = 33333 - (diff.tv_nsec / 1000);
-        usleep(sleepTime);
-    } while(1);
-    return;
+		// We need to sleep some period time microseconds
+		unsigned int sleepTime = 33333 -(diff.tv_nsec / 1000);
+		usleep(sleepTime);
+	} while (1);
 }
 
 static inline void doRenderIteration(void)
@@ -755,9 +752,9 @@ extern "C" int gui_startPage(const char* page_name)
     return runPage(page_name);
 }
 
-static void *console_thread(void *cookie)
+static void * console_thread(void *cookie)
 {
-    PageManager::SwitchToConsole();
+	PageManager::SwitchToConsole();
 
     while (!gGuiConsoleTerminate)
         doRenderIteration();
