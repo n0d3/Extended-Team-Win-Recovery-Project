@@ -33,11 +33,15 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-
-extern "C" {
+extern "C"
+{
 #include "../twcommon.h"
 #include "../minuitwrp/minui.h"
+#ifdef HAVE_SELINUX
 #include "../minzip/Zip.h"
+#else
+#include "../minzipold/Zip.h"
+#endif
 #include <pixelflinger/pixelflinger.h>
 }
 
@@ -48,7 +52,7 @@ extern "C" {
 #include "../partitions.hpp"
 #include "../twrp-functions.hpp"
 #ifndef TW_NO_SCREEN_TIMEOUT
-	#include "blanktimer.hpp"
+#include "blanktimer.hpp"
 #endif
 
 const static int CURTAIN_FADE = 32;

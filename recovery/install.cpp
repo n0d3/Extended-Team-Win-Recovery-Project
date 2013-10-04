@@ -26,8 +26,13 @@
 #include "install.h"
 #include "mincrypt/rsa.h"
 #include "minui/minui.h"
+#ifdef HAVE_SELINUX
 #include "minzip/SysUtil.h"
 #include "minzip/Zip.h"
+#else
+#include "minzipold/SysUtil.h"
+#include "minzipold/Zip.h"
+#endif
 #include "mtdutils/mounts.h"
 #include "mtdutils/mtdutils.h"
 #include "roots.h"

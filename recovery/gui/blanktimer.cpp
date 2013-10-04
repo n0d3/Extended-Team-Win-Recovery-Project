@@ -20,9 +20,7 @@ using namespace std;
 #include "rapidxml.hpp"
 using namespace rapidxml;
 extern "C" {
-	#include "../minzip/Zip.h"
 	#include "../minuitwrp/minui.h"
-	#include "../twcommon.h"
 }
 #include <string>
 #include <vector>
@@ -38,9 +36,17 @@ extern "C" {
 #include <sstream>
 #include "pages.hpp"
 #include "blanktimer.hpp"
+#include "objects.hpp"
+extern "C" {
+	#include "../twcommon.h"
+#ifdef HAVE_SELINUX
+	#include "../minzip/Zip.h"
+#else
+	#include "../minzipold/Zip.h"
+#endif
+}
 #include "../twrp-functions.hpp"
 #include "../variables.h"
-#include "../data.hpp"
 
 blanktimer::blanktimer(void) {
 	dimmed = 0;
