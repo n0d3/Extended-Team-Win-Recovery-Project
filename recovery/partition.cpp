@@ -1924,10 +1924,9 @@ bool TWPartition::Wipe_YAFFS2() {
 	if (!UnMount(true))
 		return false;
 
+	const MtdPartition* mtd;
+	mtd = mtd_find_partition_by_name(MTD_Name.c_str());
 	gui_print("YAFFS2 Formatting \"%s\"...\n", MTD_Name.c_str());
-
-	mtd_scan_partitions();
-	const MtdPartition* mtd = mtd_find_partition_by_name(MTD_Name.c_str());
 	if (mtd == NULL) {
 		LOGERR("No mtd partition named '%s'", MTD_Name.c_str());
         	return false;
@@ -1958,9 +1957,6 @@ bool TWPartition::Wipe_MTD() {
 	const MtdPartition* mtd;
 	mtd = mtd_find_partition_by_name(MTD_Name.c_str());
 	gui_print("MTD Formatting \"%s\"...\n", MTD_Name.c_str());
-
-	mtd_scan_partitions();
-	const MtdPartition* mtd = mtd_find_partition_by_name(MTD_Name.c_str());
 	if (mtd == NULL) {
 		LOGERR("No mtd partition named '%s'", MTD_Name.c_str());
         	return false;
