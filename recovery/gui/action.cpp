@@ -211,12 +211,11 @@ int GUIAction::flash_zip(std::string filename, std::string pageName, const int s
 
 		// Now, check if we need to ensure TWRP remains installed...
 		struct stat st;
-		string result;
 		if (stat("/sbin/installTwrp", &st) == 0) {
 			DataManager::SetValue("tw_operation", "Configuring TWRP");
 			DataManager::SetValue("tw_partition", "");
 			gui_print("Configuring TWRP...\n");
-			if (TWFunc::Exec_Cmd("/sbin/installTwrp reinstall", result) < 0) {
+			if (TWFunc::Exec_Cmd("/sbin/installTwrp reinstall") < 0) {
 				gui_print("Unable to configure TWRP with this kernel.\n");
 			}
 		}
@@ -782,13 +781,13 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				if (simulate) {
 					simulate_progress_bar();
 				} else {
+					string injectcmd = "";
 					TWPartition* Boot = PartitionManager.Find_Partition_By_Path("/boot");
 					if (Boot == NULL || Boot->Current_File_System != "emmc")
-						TWFunc::Exec_Cmd("injecttwrp --dump /tmp/backup_recovery_ramdisk.img /tmp/injected_boot.img --flash", result);
-					else {
-						string injectcmd = "injecttwrp --dump /tmp/backup_recovery_ramdisk.img /tmp/injected_boot.img --flash bd=" + Boot->Actual_Block_Device;
-						TWFunc::Exec_Cmd(injectcmd, result);
-					}
+						injectcmd = "injecttwrp --dump /tmp/backup_recovery_ramdisk.img /tmp/injected_boot.img --flash";
+					else
+						injectcmd = "injecttwrp --dump /tmp/backup_recovery_ramdisk.img /tmp/injected_boot.img --flash bd=" + Boot->Actual_Block_Device;
+					TWFunc::Exec_Cmd(injectcmd);
 					gui_print("TWRP injection complete.\n");
 				}
 			}
@@ -1299,9 +1298,8 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			if (simulate) {
 				simulate_progress_bar();
 			} else {
-				string result;
 				string cmd = "dd " + arg;
-				TWFunc::Exec_Cmd(cmd, result);
+				TWFunc::Exec_Cmd(cmd);
 			}
 			operation_end(0, simulate);
 			return 0;
@@ -1485,7 +1483,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 			if (simulate) {
 				simulate_progress_bar();
 			} else {
-				TWFunc::Exec_Cmd("injecttwrp --dump /tmp/backup_recovery_ramdisk.img /tmp/injected_boot.img --flash", result);
+				TWFunc::Exec_Cmd("injecttwrp --dump /tmp/backup_recovery_ramdisk.img /tmp/injected_boot.img --flash");
 				gui_print("TWRP injection complete.\n");
 			}
 
@@ -1535,7 +1533,6 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 							int storage_mounted = 0;
 							std::string theme_path;
 							std::string cmd;
-							std::string res;
 							std::string base_xml;
 							// Get the pre-selected theme
 							base_xml = TWFunc::getUIxml(gr_get_rotation());
@@ -1565,7 +1562,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 										else
 											cmd = "echo " + theme_path + ">" + DataManager::GetSettingsStoragePath() + "/TWRP/theme/.use_external_l";
 									}
-									TWFunc::Exec_Cmd(cmd, res);
+									TWFunc::Exec_Cmd(cmd);
 								}		
 							}
 						}
@@ -1616,13 +1613,13 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 					if (simulate) {
 						simulate_progress_bar();
 					} else {
+						string injectcmd = "";
 						TWPartition* Boot = PartitionManager.Find_Partition_By_Path("/boot");
 						if (Boot == NULL || Boot->Current_File_System != "emmc")
-							TWFunc::Exec_Cmd("injecttwrp --dump /tmp/backup_recovery_ramdisk.img /tmp/injected_boot.img --flash", result);
-						else {
-							string injectcmd = "injecttwrp --dump /tmp/backup_recovery_ramdisk.img /tmp/injected_boot.img --flash bd=" + Boot->Actual_Block_Device;
-							TWFunc::Exec_Cmd(injectcmd, result);
-						}
+							injectcmd = "injecttwrp --dump /tmp/backup_recovery_ramdisk.img /tmp/injected_boot.img --flash";
+						else
+							injectcmd = "injecttwrp --dump /tmp/backup_recovery_ramdisk.img /tmp/injected_boot.img --flash bd=" + Boot->Actual_Block_Device;
+						TWFunc::Exec_Cmd(injectcmd);
 						gui_print("TWRP injection complete.\n");
 					}
 				}

@@ -69,6 +69,8 @@ class TWFunc {
 		static void check_and_run_script(const char* script_file, const char* display_name);
 		//execute a command and return the result as a string by reference
 		static int Exec_Cmd(string cmd, string &result);
+		//execute a command
+		static int Exec_Cmd(const string& cmd);
 		//recursively remove a directory
 		static int removeDir(const string path, bool removeParent);
 		//copy file from src to dst with mode permissions

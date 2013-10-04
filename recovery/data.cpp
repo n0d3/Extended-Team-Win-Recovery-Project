@@ -236,21 +236,20 @@ int DataManager::Pause_For_Battery_Charge() {
 
 int DataManager::Detect_BLDR() {
 	if (BLDR == -1) {
-		string result;
 		string cmd = "grep -Fxq \"clk=\" /proc/cmdline";
 
-		if (TWFunc::Exec_Cmd(cmd, result) == 0) {
+		if (TWFunc::Exec_Cmd(cmd) == 0) {
 			BLDR = 1; // cLK
 			SetValue("tw_bldr_is_clk", 1);
 		} else {
 			SetValue("tw_bldr_is_clk", 0);
 			cmd = "grep -Fxq \"haret\" /proc/cmdline";
-			if (TWFunc::Exec_Cmd(cmd, result) == 0)
+			if (TWFunc::Exec_Cmd(cmd) == 0)
 				BLDR = 0; // Haret
 			else {
 				BLDR = 2; // MAGLDR
 				cmd = "grep -Fxq \"rel_path=\" /proc/cmdline";
-				if (TWFunc::Exec_Cmd(cmd, result) == 0)
+				if (TWFunc::Exec_Cmd(cmd) == 0)
 					SetValue("tw_bldr_is_magldr", 0); // SD
 				else
 					SetValue("tw_bldr_is_magldr", 1); // NAND

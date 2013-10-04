@@ -2265,20 +2265,20 @@ int TWPartitionManager::Check_SDCard(void) {
 	if (!SDCard->UnMount(true))
 		return false;
 
-	string Command, result, sd_format;
+	string Command, sd_format;
 	sd_format = SDCard->Current_File_System;
 	if (sd_format == "vfat" && TWFunc::Path_Exists("/sbin/dosfsck")) {
 			gui_print("Checking vfat filesystem @/sdcard...\n");	
 			Command = "dosfsck -avw " + SDCard->Primary_Block_Device;
 			LOGINFO("Command is: '%s'\n", Command.c_str());
-			TWFunc::Exec_Cmd(Command, result);
+			TWFunc::Exec_Cmd(Command);
 	}
 #ifdef TW_INCLUDE_MKNTFS
 	else if (sd_format == "ntfs" && TWFunc::Path_Exists("/sbin/ntfsck")) {
 		gui_print("Checking ntfs filesystem @/sdcard...\n");
 		Command = "ntfsck " + SDCard->Primary_Block_Device;
 		LOGINFO("Command is: '%s'\n", Command.c_str());
-		TWFunc::Exec_Cmd(Command, result);
+		TWFunc::Exec_Cmd(Command);
 	} 
 #endif
 #ifdef TW_INCLUDE_EXFAT
@@ -2286,7 +2286,7 @@ int TWPartitionManager::Check_SDCard(void) {
 			gui_print("Checking vfat filesystem @/sdcard...\n");	
 			Command = "exfatfsck -v " + SDCard->Primary_Block_Device;
 			LOGINFO("Command is: '%s'\n", Command.c_str());
-			TWFunc::Exec_Cmd(Command, result);
+			TWFunc::Exec_Cmd(Command);
 	}
 #endif
 	TWPartition* SDext = Find_Partition_By_Path("/sd-ext");
@@ -2297,7 +2297,7 @@ int TWPartitionManager::Check_SDCard(void) {
 			gui_print("Checking %s filesystem @/sd-ext...\n", SDext->Current_File_System.c_str());
 			Command = "e2fsck -f -p -v " + SDext->Primary_Block_Device;
 			LOGINFO("Command is: '%s'\n", Command.c_str());
-			TWFunc::Exec_Cmd(Command, result);
+			TWFunc::Exec_Cmd(Command);
 		}
 	}
 	
@@ -2309,7 +2309,7 @@ int TWPartitionManager::Check_SDCard(void) {
 			gui_print("Checking %s filesystem @/sdext2...\n", SDext2->Current_File_System.c_str());
 			Command = "e2fsck -f -p -v " + SDext2->Primary_Block_Device;
 			LOGINFO("Command is: '%s'\n", Command.c_str());
-			TWFunc::Exec_Cmd(Command, result);
+			TWFunc::Exec_Cmd(Command);
 		}
 	}
 	SDCard->Mount(true);
@@ -2318,7 +2318,7 @@ int TWPartitionManager::Check_SDCard(void) {
 }
 
 int TWPartitionManager::Partition_SDCard(void) {
-	string Command, result, mkntfs_arg;
+	string Command, mkntfs_arg;
 	string Device;
 	int quick_format = 0, n_mounts, reboot_needed = 0;
 	string sdcard_fs, sdext_fs, sdext2_fs;
@@ -2335,7 +2335,7 @@ int TWPartitionManager::Partition_SDCard(void) {
 	gui_print("Partitioning SD Card...\n");
 	// Find present card's partitions and unmount all of them
 	Command = "swapoff -a";
-	TWFunc::Exec_Cmd(Command, result);
+	TWFunc::Exec_Cmd(Command);
 	TWPartition* Cache = Find_Partition_By_Path("/cache");
 	TWPartition* SDext2 = Find_Partition_By_Path("/sdext2");
 	if (SDext2 != NULL) {
@@ -2361,11 +2361,11 @@ int TWPartitionManager::Partition_SDCard(void) {
 			if (TWFunc::Path_Exists("/cache/recovery/.")) {
 				unsigned long long l = TWFunc::Get_File_Size("/sdcard/TWRP/.twrps");
 				if (Cache->Size - Cache->Backup_Size <= l) {
-					string rm, res;
+					string rm;
 					rm = "rm -f /cache/recovery/last_log";
-					TWFunc::Exec_Cmd(rm, res);
+					TWFunc::Exec_Cmd(rm);
 					rm = "rm -f /cache/recovery/last_install";
-					TWFunc::Exec_Cmd(rm, res);
+					TWFunc::Exec_Cmd(rm);
 				}
 				TWFunc::copy_file("/sdcard/TWRP/.twrps", "/cache/recovery/.twrps", 0755);
 				LOGINFO("Saved a copy of settings file to /cache/recovery.\n");
@@ -2398,6 +2398,7 @@ int TWPartitionManager::Partition_SDCard(void) {
 	// Use 'parted print' to check present ptable
 	Command = "parted " + Device + " unit MB print";
 	LOGINFO("Command is: '%s'\n", Command.c_str());
+	string result;
 	TWFunc::Exec_Cmd(Command, result);
 	LOGINFO("%s", result.c_str());
 	if (!result.empty()) {
@@ -2590,7 +2591,7 @@ int TWPartitionManager::Partition_SDCard(void) {
 	gui_print("Removing current partition table...\n");
 	Command = "parted -s " + Device + " mklabel msdos";
 	LOGINFO("Command is: '%s'\n", Command.c_str());
-	if (TWFunc::Exec_Cmd(Command, result) != 0) {
+	if (TWFunc::Exec_Cmd(Command) != 0) {
 		LOGERR("Unable to remove partition table.\n");
 		Update_System_Details(false);
 		return false;
@@ -2602,13 +2603,13 @@ int TWPartitionManager::Partition_SDCard(void) {
 	if (sdcard_fs == "vfat") {
 		Command = "parted -s " + Device + " mkpartfs primary fat32 0 " + sdcard_end + "MB";
 		LOGINFO("Command is: '%s'\n", Command.c_str());
-		TWFunc::Exec_Cmd(Command, result);
+		TWFunc::Exec_Cmd(Command);
 	}
 #ifdef TW_INCLUDE_MKNTFS
 	else if (sdcard_fs == "ntfs") {
 		Command = "parted -s " + Device + " mkpart primary 0 " + sdcard_end + "MB";
 		LOGINFO("Command is: '%s'\n", Command.c_str());
-		TWFunc::Exec_Cmd(Command, result);
+		TWFunc::Exec_Cmd(Command);
 		if (quick_format)
 			mkntfs_arg = "-vIf ";
 		else {
@@ -2617,7 +2618,7 @@ int TWPartitionManager::Partition_SDCard(void) {
 		}
 		Command = "mkntfs " + mkntfs_arg + SDCard->Actual_Block_Device;
 		LOGINFO("Command is: '%s'\n", Command.c_str());
-		TWFunc::Exec_Cmd(Command, result);
+		TWFunc::Exec_Cmd(Command);
 	}
 #endif
 #ifdef TW_INCLUDE_EXFAT
@@ -2627,7 +2628,7 @@ int TWPartitionManager::Partition_SDCard(void) {
 		TWFunc::Exec_Cmd(Command, result);
 		Command = "mkexfatfs " + SDCard->Actual_Block_Device;
 		LOGINFO("Command is: '%s'\n", Command.c_str());
-		TWFunc::Exec_Cmd(Command, result);
+		TWFunc::Exec_Cmd(Command);
 	}
 #endif
 	else {
@@ -2645,7 +2646,7 @@ int TWPartitionManager::Partition_SDCard(void) {
 		Command = "ntfs-3g -o rw,umask=0 " + SDCard->Actual_Block_Device + " " + SDCard->Mount_Point;
 	else if (sdcard_fs == "exfat")
 		Command = "exfat-fuse -o nonempty,big_writes,max_read=131072,max_write=131072 " + SDCard->Actual_Block_Device + " " + SDCard->Mount_Point;
-	TWFunc::Exec_Cmd(Command, result);
+	TWFunc::Exec_Cmd(Command);
 	if (Is_Mounted_By_Path(SDCard->Mount_Point)) {
 		SDCard->Recreate_AndSec_Folder();
 		DataManager::SetupTwrpFolder();
@@ -2661,7 +2662,7 @@ int TWPartitionManager::Partition_SDCard(void) {
 			DataManager::SetValue(TW_ZIP_LOCATION_VAR, "/sdcard");
 #endif
 		Command = "umount " + SDCard->Mount_Point;
-		TWFunc::Exec_Cmd(Command, result);
+		TWFunc::Exec_Cmd(Command);
 		Cache->Mount(false);
 		if (TWFunc::Path_Exists("/cache/recovery/.twrps")) {
 			LOGINFO("Removing copy of settings file from /cache/recovery.\n");
@@ -2688,7 +2689,7 @@ int TWPartitionManager::Partition_SDCard(void) {
 		strcat(boot_recovery, "/dev/block/mmcblk0p2:");
 		strcat(boot_recovery, sdext_fs.c_str());
 		strcat(boot_recovery, " ");
-		if (TWFunc::Exec_Cmd(Command, result) != 0)
+		if (TWFunc::Exec_Cmd(Command) != 0)
 			reboot_needed = 1;
 	}
 	// Create third primary partition
@@ -2704,7 +2705,7 @@ int TWPartitionManager::Partition_SDCard(void) {
 		strcat(boot_recovery, "/dev/block/mmcblk0p3:");
 		strcat(boot_recovery, sdext2_fs.c_str());
 		strcat(boot_recovery, " ");
-		if (TWFunc::Exec_Cmd(Command, result) != 0)
+		if (TWFunc::Exec_Cmd(Command) != 0)
 			reboot_needed = 1;
 	}
 	// Create swap partition
@@ -2724,7 +2725,7 @@ int TWPartitionManager::Partition_SDCard(void) {
 		}
 		Command = "parted -s " + Device + " mkpartfs primary linux-swap " + sdext2_end + "MB " + sdswap_end + "MB";
 		LOGINFO("Command is: '%s'\n", Command.c_str());
-		TWFunc::Exec_Cmd(Command, result);
+		TWFunc::Exec_Cmd(Command);
 	}
 
 	if (reboot_needed) {
@@ -2748,7 +2749,7 @@ int TWPartitionManager::Partition_SDCard(void) {
 			Command = "mke2fs -t " + sdext_fs + " -m 0 " + SDext->Primary_Block_Device; //dev/block/mmcblk0p2";
 		gui_print("Formatting %s as %s...\n", SDext->Primary_Block_Device.c_str(), sdext_fs.c_str());
 		LOGINFO("Formatting sd-ext after partitioning, command: '%s'\n", Command.c_str());
-		if (TWFunc::Exec_Cmd(Command, result) != 0)
+		if (TWFunc::Exec_Cmd(Command) != 0)
 			reboot_needed = 1;
 		DataManager::SetValue(TW_HAS_SDEXT_PARTITION, 1);
 	} else
@@ -2762,7 +2763,7 @@ int TWPartitionManager::Partition_SDCard(void) {
 			Command = "mke2fs -t " + sdext2_fs + " -m 0 " + SDext2->Primary_Block_Device; //dev/block/mmcblk0p3";
 		gui_print("Formatting %s as %s...\n", SDext2->Primary_Block_Device.c_str(), sdext2_fs.c_str());
 		LOGINFO("Formatting sdext2 after partitioning, command: '%s'\n", Command.c_str());
-		if (TWFunc::Exec_Cmd(Command, result) != 0)
+		if (TWFunc::Exec_Cmd(Command) != 0)
 			reboot_needed = 1;
 		DataManager::SetValue(TW_HAS_SDEXT2_PARTITION, 1);
 	} else if (sdext2_size == 0)
@@ -2773,11 +2774,11 @@ int TWPartitionManager::Partition_SDCard(void) {
 	// Run tune2fs to set user selected number of mounts
 	if (sdext_size > 0) {
 		Command = "tune2fs -c " + TWFunc::to_string(n_mounts) + " " + SDext->Primary_Block_Device; //dev/block/mmcblk0p2";
-		TWFunc::Exec_Cmd(Command, result);
+		TWFunc::Exec_Cmd(Command);
 	}
 	if ((sdext_size > 0) && (sdext2_size > 0)) {
 		Command = "tune2fs -c " + TWFunc::to_string(n_mounts) + " " + SDext2->Primary_Block_Device; //dev/block/mmcblk0p3";
-		TWFunc::Exec_Cmd(Command, result);
+		TWFunc::Exec_Cmd(Command);
 	}
 
 	gui_print("Partitioning complete.\n\n");
@@ -2797,9 +2798,9 @@ int TWPartitionManager::Format_SDCard(string cmd) {
 
 	vector<string> split;
 	split = TWFunc::split_string(cmd, ' ', true);
-	string Command, result, mkfs_cmd, tune2fs_cmd;
+	string Command, mkfs_cmd, tune2fs_cmd;
 	Command = "swapoff -a";
-	TWFunc::Exec_Cmd(Command, result);
+	TWFunc::Exec_Cmd(Command);
 	TWFunc::Update_Log_File();
 
 	LOGINFO("Finishing storage formatting...\n");
@@ -2833,10 +2834,10 @@ int TWPartitionManager::Format_SDCard(string cmd) {
 					}
 				} else
 					continue;
-				ret = TWFunc::Exec_Cmd(mkfs_cmd, result);
+				ret = TWFunc::Exec_Cmd(mkfs_cmd);
 				ptn->Change_FS_Type(fs);
 				if (ret == 0 && !tune2fs_cmd.empty())
-					TWFunc::Exec_Cmd(tune2fs_cmd, result);
+					TWFunc::Exec_Cmd(tune2fs_cmd);
 			}
 		}
 	}
@@ -2868,7 +2869,7 @@ int TWPartitionManager::FSConvert_SDEXT(string extpath) {
 	}
 
 	unsigned long long ext_size = TWFunc::Get_Folder_Size(extpath, true);
-	string temp_dir, Command, result, ext_format, n_mounts;
+	string temp_dir, Command, ext_format, n_mounts;
 	int rescue_ext, c_var, restore_needed = 0;
 	DataManager::GetValue("tw_rescue_ext_contents", rescue_ext);	
 	DataManager::GetValue("tw_num_of_mounts_for_fs_check", c_var);
@@ -2895,7 +2896,7 @@ int TWPartitionManager::FSConvert_SDEXT(string extpath) {
 				LOGERR("Failed to make temp folder.\n");
 			gui_print("Saving %s's contents on storage...\n", extpath.c_str());
 			Command = "busybox cp -a " + extpath + "/* " + temp_dir;
-			if (TWFunc::Exec_Cmd(Command, result) == 0)
+			if (TWFunc::Exec_Cmd(Command) == 0)
 				restore_needed = 1;
 		}
 		if (ext_format == "nilfs2")
@@ -2904,18 +2905,18 @@ int TWPartitionManager::FSConvert_SDEXT(string extpath) {
 			Command = "mke2fs -t " + ext_format + " -m 0 " + SDext->Primary_Block_Device;
 		gui_print("Formatting %s as %s...\n", SDext->Primary_Block_Device.c_str(), ext_format.c_str());
 		SDext->Change_FS_Type(ext_format);
-		TWFunc::Exec_Cmd(Command, result);
+		TWFunc::Exec_Cmd(Command);
 		Command = "tune2fs -c " + n_mounts + " " + SDext->Primary_Block_Device;
-		TWFunc::Exec_Cmd(Command, result);
+		TWFunc::Exec_Cmd(Command);
 		Update_System_Details(false);
 
 		if (restore_needed) {
 			SDext->Mount(true);
 			gui_print("Restoring %s's contents from storage...\n", extpath.c_str());
 			Command = "busybox cp -a " + temp_dir + "/* " + extpath;
-			TWFunc::Exec_Cmd(Command, result);
+			TWFunc::Exec_Cmd(Command);
 			Command = "rm -rf " + temp_dir;
-			TWFunc::Exec_Cmd(Command, result);
+			TWFunc::Exec_Cmd(Command);
 		}
 		gui_print("EXT formatting completed.\n");
 		Update_System_Details(true);

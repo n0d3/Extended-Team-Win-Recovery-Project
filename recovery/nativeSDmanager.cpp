@@ -438,17 +438,17 @@ int TWNativeSDManager::Restore(string RomPath) {
 		gui_print("Done verifying MD5.\n");
 	}
 
-	string Full_FileName, Command, result;
+	string Full_FileName, Command;
 	int index = 0;
 	char split_index[5];
 	
 	Command = "cd " + extpath + " && busybox mkdir "+ Rom_Name;
-	TWFunc::Exec_Cmd(Command, result);
+	TWFunc::Exec_Cmd(Command);
 	if (inc_system) {
 		gui_print(" * Restoring %s's system...\n", Rom_Name.c_str());
 		if (TWFunc::Path_Exists(Sys_Restore_Path)) {			
 			Command = "rm -rf " + Sys_Restore_Path;
-			TWFunc::Exec_Cmd(Command, result);
+			TWFunc::Exec_Cmd(Command);
 		}
 		Full_FileName = Full_Backup_Path + "/system.tar";
 		if (!TWFunc::Path_Exists(Full_FileName)) {
@@ -477,7 +477,7 @@ int TWNativeSDManager::Restore(string RomPath) {
 		gui_print(" * Restoring %s's data...\n", Rom_Name.c_str());
 		if (TWFunc::Path_Exists(Data_Restore_Path)) {			
 			Command = "rm -rf " + Data_Restore_Path;
-			TWFunc::Exec_Cmd(Command, result);
+			TWFunc::Exec_Cmd(Command);
 		}
 		Full_FileName = Full_Backup_Path + "/data.tar";
 		if (!TWFunc::Path_Exists(Full_FileName)) {
@@ -511,7 +511,7 @@ int TWNativeSDManager::Restore(string RomPath) {
 			}
 		} else {
 			Command = "rm -rf " + Boot_Restore_Path;
-			TWFunc::Exec_Cmd(Command, result);
+			TWFunc::Exec_Cmd(Command);
 		}
 		Full_FileName = Full_Backup_Path + "/boot.tar";
 		if (!TWFunc::TarExtract(Full_FileName, "/sdcard"))
@@ -529,17 +529,17 @@ int TWNativeSDManager::Restore(string RomPath) {
 }
 
 int TWNativeSDManager::Prep_Rom_To_Boot(string RomPath) {
-	string storage_path, Command, result;
+	string storage_path, Command;
 
 	storage_path = DataManager::GetSettingsStoragePath();
 	if (!PartitionManager.Is_Mounted_By_Path(storage_path.c_str()))
 		PartitionManager.Mount_By_Path(storage_path.c_str(), 0);
 	
 	Command = "cp -f " + RomPath + "/zImage /sdcard/NativeSD/zImage";
-	if (TWFunc::Exec_Cmd(Command, result) != 0)
+	if (TWFunc::Exec_Cmd(Command) != 0)
 		return false;
 	Command = "cp -f " + RomPath + "/initrd.gz /sdcard/NativeSD/initrd.gz";
-	if (TWFunc::Exec_Cmd(Command, result) != 0)
+	if (TWFunc::Exec_Cmd(Command) != 0)
 		return false;
 
 	return true;
@@ -548,7 +548,7 @@ int TWNativeSDManager::Prep_Rom_To_Boot(string RomPath) {
 int TWNativeSDManager::Delete(string RomPath) {
 	struct stat st;
 	int z, removed = 0;
-	string extpath, Command, result, storage_path;
+	string extpath, Command, storage_path;
 	DataManager::GetValue(TW_USE_SDEXT2_PARTITION, z);
 	if (z == 0)
 		extpath = "/sd-ext";
@@ -561,7 +561,7 @@ int TWNativeSDManager::Delete(string RomPath) {
 				unsigned long long deleted_bytes = TWFunc::Get_Folder_Size(RomPath, true);
 				sdext->NativeSD_Size -= deleted_bytes;
 				Command = "rm -rf " + RomPath;
-				removed = TWFunc::Exec_Cmd(Command, result);
+				removed = TWFunc::Exec_Cmd(Command);
     	    		}
         	}
 	}
@@ -569,11 +569,11 @@ int TWNativeSDManager::Delete(string RomPath) {
 	if (!PartitionManager.Is_Mounted_By_Path(storage_path.c_str()))
 		PartitionManager.Mount_By_Path(storage_path.c_str(), 0);
 	Command = "rm -f /sdcard/NativeSD/initrd.gz";
-	TWFunc::Exec_Cmd(Command, result);
+	TWFunc::Exec_Cmd(Command);
 	Command = "rm -f /sdcard/NativeSD/zImage";
-	TWFunc::Exec_Cmd(Command, result);
+	TWFunc::Exec_Cmd(Command);
 	Command = "rm -rf /sdcard/NativeSD/" + RomPath.substr(8, RomPath.size() - 1);
-	removed += TWFunc::Exec_Cmd(Command, result);
+	removed += TWFunc::Exec_Cmd(Command);
 	if (removed == 0) {
 		gui_print("Selected NativeSD Rom deleted.\n");
 		return true;
@@ -583,7 +583,7 @@ int TWNativeSDManager::Delete(string RomPath) {
 }
 
 int TWNativeSDManager::Kernel_Update(string ptn, string RomPath) {
-	string storage_path, Rom_Name, mkbootimg, eraseimg, flashimg, clean, result;
+	string storage_path, Rom_Name, mkbootimg, eraseimg, flashimg, clean;
 	Rom_Name = RomPath.substr(17, RomPath.size() - 1);
 
 	storage_path = DataManager::GetSettingsStoragePath();
@@ -593,17 +593,17 @@ int TWNativeSDManager::Kernel_Update(string ptn, string RomPath) {
 	gui_print("\n[NATIVESD KERNEL RESTORE STARTED]\n\n");
 	gui_print("Building img-file...\n");
 	mkbootimg = "mkbootimg --kernel " + RomPath + "/zImage --ramdisk " + RomPath + "/initrd.gz --cmdline \"rel_path=\"" + Rom_Name + " --base 0x11800000 --output /sdcard/" + ptn + ".img";
-	if (TWFunc::Exec_Cmd(mkbootimg, result) != 0)
+	if (TWFunc::Exec_Cmd(mkbootimg) != 0)
 		return false;
 	eraseimg = "erase_image " + ptn;
-	if (TWFunc::Exec_Cmd(eraseimg, result) != 0)
+	if (TWFunc::Exec_Cmd(eraseimg) != 0)
 		return false;
 	gui_print("Flashing img-file...\n");
 	flashimg = "flash_image " + ptn + " /sdcard/" + ptn + ".img";
-	if (TWFunc::Exec_Cmd(flashimg, result) != 0)
+	if (TWFunc::Exec_Cmd(flashimg) != 0)
 		return false;
 	clean = "rm -f /sdcard/" + ptn + ".img";
-	TWFunc::Exec_Cmd(clean, result);
+	TWFunc::Exec_Cmd(clean);
 	gui_print("\n[NATIVESD KERNEL RESTORE COMPLETED]\n\n");
 	
 	return true;
@@ -612,7 +612,7 @@ int TWNativeSDManager::Kernel_Update(string ptn, string RomPath) {
 int TWNativeSDManager::Fix_Perm(string RomPath) {
 	struct stat st;
 	int z;
-	string extpath, Command, result;
+	string extpath, Command;
 	DataManager::GetValue(TW_USE_SDEXT2_PARTITION, z);
 	if (z == 0)
 		extpath = "/sd-ext";
@@ -629,18 +629,18 @@ int TWNativeSDManager::Fix_Perm(string RomPath) {
 				PartitionManager.UnMount_By_Path("/data", false);
 			//sleep(2);
 			Command = "busybox mount -o bind " + RomPath + "/system /system";
-			TWFunc::Exec_Cmd(Command, result);
+			TWFunc::Exec_Cmd(Command);
 			Command = "busybox mount -o bind " + RomPath + "/data /data";
-			TWFunc::Exec_Cmd(Command, result);
+			TWFunc::Exec_Cmd(Command);
 			//sleep(2);
 			fixPermissions perms;
 			perms.fixPerms(true, true);
 			//sleep(2);
 			Command = "umount /system";
-			TWFunc::Exec_Cmd(Command, result);
+			TWFunc::Exec_Cmd(Command);
 			//sleep(2);
 			Command = "umount /data";
-			TWFunc::Exec_Cmd(Command, result);
+			TWFunc::Exec_Cmd(Command);
 			gui_print("\n[NATIVESD PERM-FIX COMPLETED]\n\n");
 			return true;
 		}
@@ -652,7 +652,7 @@ int TWNativeSDManager::Fix_Perm(string RomPath) {
 int TWNativeSDManager::Wipe_Data(string RomPath) {
 	struct stat st;
 	int z, removed = 0;
-	string extpath, Command, result;
+	string extpath, Command;
 	DataManager::GetValue(TW_USE_SDEXT2_PARTITION, z);
 	if (z == 0)
 		extpath = "/sd-ext";
@@ -664,9 +664,9 @@ int TWNativeSDManager::Wipe_Data(string RomPath) {
 			if (stat((RomPath + "/data").c_str(), &st) == 0) {
 				unsigned long long deleted_bytes = TWFunc::Get_Folder_Size(RomPath + "/data", true);
 				Command = "rm -rf " + RomPath + "/data/*";
-				removed = TWFunc::Exec_Cmd(Command, result);
+				removed = TWFunc::Exec_Cmd(Command);
 				Command = "rm -rf " + RomPath + "/data/.*";
-				removed += TWFunc::Exec_Cmd(Command, result);
+				removed += TWFunc::Exec_Cmd(Command);
 				if (removed == 0) {
 					sdext->NativeSD_Size -= deleted_bytes;
                 			gui_print("NativeSD Rom's data wiped.\n");
@@ -682,7 +682,7 @@ int TWNativeSDManager::Wipe_Data(string RomPath) {
 int TWNativeSDManager::Wipe_Dalvik(string RomPath) {
 	struct stat st;
 	int z;
-	string extpath, Command, result;
+	string extpath, Command;
 	DataManager::GetValue(TW_USE_SDEXT2_PARTITION, z);
 	if (z == 0)
 		extpath = "/sd-ext";
@@ -694,7 +694,7 @@ int TWNativeSDManager::Wipe_Dalvik(string RomPath) {
 			if (stat((RomPath + "/data/dalvik-cache").c_str(), &st) == 0) {
                 		Command = "rm -rf " + RomPath + "/data/dalvik-cache/*";
 				unsigned long long deleted_bytes = TWFunc::Get_Folder_Size(RomPath + "/data/dalvik-cache", true);
-				if (TWFunc::Exec_Cmd(Command, result) == 0) {
+				if (TWFunc::Exec_Cmd(Command) == 0) {
 					sdext->NativeSD_Size -= deleted_bytes;
         	    			gui_print("NativeSD Rom's dalvik-cache wiped.\n");
 					return true;

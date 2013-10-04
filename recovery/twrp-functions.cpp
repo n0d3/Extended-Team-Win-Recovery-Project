@@ -62,6 +62,27 @@ int TWFunc::Exec_Cmd(string cmd, string &result) {
 	return ret;
 }
 
+int TWFunc::Exec_Cmd(const string& cmd) {
+	pid_t pid;
+	int status;
+	switch (pid = fork()) {
+		case -1:
+			LOGERR("Exec_Cmd(): vfork failed!\n");
+			return -1;
+		case 0: // child
+			execl("/sbin/sh", "sh", "-c", cmd.c_str(), NULL);
+			_exit(127);
+			break;
+		default:
+		{
+			if (TWFunc::Wait_For_Child(pid, &status, cmd) != 0)
+				return -1;
+			else
+				return 0;
+		}
+	}
+}
+
 // Returns "file.name" from a full /path/to/file.name
 string TWFunc::Get_Filename(string Path) {
 	size_t pos = Path.find_last_of("/");
@@ -149,11 +170,10 @@ void TWFunc::htc_dumlock_restore_original_boot(void) {
 }
 
 void TWFunc::htc_dumlock_reflash_recovery_to_boot(void) {
-	string status;
 	if (!PartitionManager.Mount_By_Path("/sdcard", true))
 		return;
 	gui_print("Reflashing recovery to boot...\n");
-	Exec_Cmd("htcdumlock recovery noreboot", status);
+	Exec_Cmd("htcdumlock recovery noreboot");
 	gui_print("Recovery is flashed to boot.\n");
 }
 
@@ -348,11 +368,10 @@ int TWFunc::set_bootloader_msg(const struct bootloader_message *in) {
 int TWFunc::tw_reboot(RebootCommand command) {
 	// Always force a sync before we reboot
 	sync();
-	string tmpbuf;
 
     	switch (command) {
     		case rb_hot:        		
-			Exec_Cmd("busybox killall recovery", tmpbuf);
+			Exec_Cmd("busybox killall recovery");
         		return 0;
     		case rb_current:
     		case rb_system:
@@ -399,11 +418,10 @@ int TWFunc::tw_reboot(RebootCommand command) {
 void TWFunc::check_and_run_script(const char* script_file, const char* display_name) {
 	// Check for and run startup script if script exists
 	struct stat st;
-	string result;
 	if (stat(script_file, &st) == 0) {
 		gui_print("Running %s script...\n", display_name);
 		chmod(script_file, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
-		Exec_Cmd(script_file, result);
+		Exec_Cmd(script_file);
 		gui_print("Finished running %s script.\n", display_name);
 	}
 }
@@ -623,22 +641,22 @@ int TWFunc::drop_caches(string drop) {
 
 // Button backlight control
 void TWFunc::toggle_keybacklight(unsigned int usec) {
-	string cmd, res;
+	string cmd;
 	switch (usec) {
 		case 0: // just turn off button-backlight
 			cmd = "echo \"0\" > /sys/class/leds/button-backlight/brightness";
-			Exec_Cmd(cmd, res);
+			Exec_Cmd(cmd);
 			break;
 		case 1: // just turn on button-backlight
 			cmd = "echo \"1\" > /sys/class/leds/button-backlight/brightness";
-			Exec_Cmd(cmd, res);
+			Exec_Cmd(cmd);
 			break;
 		default: // toggle button-backlight
 			cmd = "echo \"1\" > /sys/class/leds/button-backlight/brightness";
-			Exec_Cmd(cmd, res);
+			Exec_Cmd(cmd);
 			usleep(usec);
 			cmd = "echo \"0\" > /sys/class/leds/button-backlight/brightness";
-			Exec_Cmd(cmd, res);
+			Exec_Cmd(cmd);
 			break;
 	}
 	return;
@@ -717,7 +735,7 @@ void TWFunc::apply_system_tweaks(int charge_mode) {
 		return;
 
 	int set_drop_caches = 0, set_io_sched = 0, set_cpu_gov = 0, set_cpu_f = 0;
-	string default_io_sched, default_gov, max_power_freq, low_power_freq, cmd, res;
+	string default_io_sched, default_gov, max_power_freq, low_power_freq, cmd;
 	
 	set_io_sched = DataManager::GetIntValue(TW_SET_IO_SCHED_AT_BOOT);
 	set_cpu_gov = DataManager::GetIntValue(TW_SET_CPU_GOV_AT_BOOT);
@@ -729,7 +747,7 @@ void TWFunc::apply_system_tweaks(int charge_mode) {
 		string io_scheduler = "/sys/block/mmcblk0/queue/scheduler";
 		default_io_sched = DataManager::GetStrValue(TW_IO_SCHED);
 		cmd = "echo \"" + default_io_sched + "\" > " + io_scheduler;
-		Exec_Cmd(cmd, res);
+		Exec_Cmd(cmd);
 		LOGINFO("I/O Scheduler: %s\n", default_io_sched.c_str());
 	} else {
 		DataManager::SetValue(TW_IO_SCHED, "deadline");
@@ -1263,12 +1281,10 @@ int TWFunc::tw_chmod(const string& fn, const string& mode) {
 }
 
 bool TWFunc::Install_SuperSU(void) {
-	string status;
-
 	if (!PartitionManager.Mount_By_Path("/system", true))
 		return false;
 
-	TWFunc::Exec_Cmd("/sbin/chattr -i /system/xbin/su", status);
+	TWFunc::Exec_Cmd("/sbin/chattr -i /system/xbin/su");
 	if (copy_file("/supersu/su", "/system/xbin/su", 0755) != 0) {
 		LOGERR("Failed to copy su binary to /system/bin\n");
 		return false;
@@ -1276,24 +1292,24 @@ bool TWFunc::Install_SuperSU(void) {
 	if (!Path_Exists("/system/bin/.ext")) {
 		mkdir("/system/bin/.ext", 0777);
 	}
-	TWFunc::Exec_Cmd("/sbin/chattr -i /system/bin/.ext/su", status);
+	TWFunc::Exec_Cmd("/sbin/chattr -i /system/bin/.ext/su");
 	if (copy_file("/supersu/su", "/system/bin/.ext/su", 0755) != 0) {
 		LOGERR("Failed to copy su binary to /system/bin/.ext/su\n");
 		return false;
 	}
-	TWFunc::Exec_Cmd("/sbin/chattr -i /system/xbin/daemonsu", status);
+	TWFunc::Exec_Cmd("/sbin/chattr -i /system/xbin/daemonsu");
 	if (copy_file("/supersu/su", "/system/xbin/daemonsu", 0755) != 0) {
 		LOGERR("Failed to copy su binary to /system/xbin/daemonsu\n");
 		return false;
 	}
 	if (Path_Exists("/system/etc/init.d")) {
-		TWFunc::Exec_Cmd("/sbin/chattr -i /system/etc/init.d/99SuperSUDaemon", status);
+		TWFunc::Exec_Cmd("/sbin/chattr -i /system/etc/init.d/99SuperSUDaemon");
 		if (copy_file("/supersu/99SuperSUDaemon", "/system/etc/init.d/99SuperSUDaemon", 0755) != 0) {
 			LOGERR("Failed to copy 99SuperSUDaemon to /system/etc/init.d/99SuperSUDaemon\n");
 			return false;
 		}
 	} else {
-		TWFunc::Exec_Cmd("/sbin/chattr -i /system/etc/install-recovery.sh", status);
+		TWFunc::Exec_Cmd("/sbin/chattr -i /system/etc/install-recovery.sh");
 		if (copy_file("/supersu/install-recovery.sh", "/system/etc/install-recovery.sh", 0755) != 0) {
 			LOGERR("Failed to copy install-recovery.sh to /system/etc/install-recovery.sh\n");
 			return false;
@@ -1361,7 +1377,7 @@ bool TWFunc::loadTheme() {
 
 bool TWFunc::reloadTheme() {
 	int storage_mounted = 0;
-	string cmd, res;
+	string cmd;
 	string base_xml = getUIxml(gr_get_rotation());
 	string theme_path = DataManager::GetStrValue(TW_SEL_THEME_PATH);
 	if (theme_path.empty()) {
@@ -1389,7 +1405,7 @@ bool TWFunc::reloadTheme() {
 				else
 					cmd = "echo " + theme_path + ">" + DataManager::GetSettingsStoragePath() + "/TWRP/theme/.use_external_l";
 			}
-			Exec_Cmd(cmd, res);
+			Exec_Cmd(cmd);
 		}		
 	}
 	return true;
