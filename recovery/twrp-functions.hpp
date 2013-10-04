@@ -106,6 +106,10 @@ class TWFunc {
 		static int Try_Decrypting_File(string fn, string password);
 		static bool Try_Decrypting_Backup(string Restore_Path, string password);
 		static int Wait_For_Child(pid_t pid, int *status, string Child_Name);
+		// Returns the current date in ccyy-m-dd--hh-nn-ss format
+		static string Get_Current_Date(void);
+		// Populates TW_BACKUP_NAME with a backup name based on current date and ro.build.display.id from /system/build.prop
+		static void Auto_Generate_Backup_Name();
 
 		// Extended functions
 		static void Update_Rotation_File(int r);

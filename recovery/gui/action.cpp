@@ -667,6 +667,26 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 		}
 		return 0;
 	}
+	if (function == "appenddatetobackupname")
+	{
+		operation_start("AppendDateToBackupName");
+		string Backup_Name;
+		DataManager::GetValue(TW_BACKUP_NAME, Backup_Name);
+		Backup_Name += TWFunc::Get_Current_Date();
+		if (Backup_Name.size() > MAX_BACKUP_NAME_LEN)
+			Backup_Name.resize(MAX_BACKUP_NAME_LEN);
+		DataManager::SetValue(TW_BACKUP_NAME, Backup_Name);
+		operation_end(0, simulate);
+		return 0;
+	}
+	if (function == "generatebackupname")
+	{
+		operation_start("GenerateBackupName");
+		TWFunc::Auto_Generate_Backup_Name();
+		operation_end(0, simulate);
+		return 0;
+	}
+
 //Threaded functions
 	if (isThreaded)	{
 		if (function == "getfilesize") {
@@ -939,7 +959,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				if (arg == "backup") {
 					string Backup_Name;
 					DataManager::GetValue(TW_BACKUP_NAME, Backup_Name);
-					if (Backup_Name == "(Current Date)" || Backup_Name == "0" || Backup_Name == "(" || PartitionManager.Check_Backup_Name(true) == 0) {
+					if (Backup_Name == "(Auto Generate)" || Backup_Name == "(Current Date)" || Backup_Name == "0" || Backup_Name == "(" || PartitionManager.Check_Backup_Name(true) == 0) {
 						ret = PartitionManager.Run_Backup();
 					}
 					else {
