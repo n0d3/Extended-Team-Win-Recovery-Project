@@ -14,7 +14,8 @@
 
 static unsigned partition_size(char* mtd_name) {
 	size_t total_size;
-	const MtdPartition *part = mtd_find_partition_by_name(mtd_name);
+	const MtdPartition* part;
+	part = mtd_find_partition_by_name(mtd_name);
 	if (part == NULL || mtd_partition_info(part, &total_size, NULL, NULL))
         	total_size = 0;
 	else
@@ -28,7 +29,8 @@ static const int MISC_COMMAND_PAGE = 1;  // bootloader command is this page
 
 static int set_bootloader_msg(const struct bootloader_message *in) {
 	size_t write_size;
-	const MtdPartition *part = mtd_find_partition_by_name("misc");
+	const MtdPartition* part;
+	part = mtd_find_partition_by_name("misc");
 	if (part == NULL || mtd_partition_info(part, NULL, NULL, &write_size)) {
         	printf("  Can't find misc\n");
         	return -1;
@@ -75,8 +77,8 @@ int main(int argc, char** argv) {
 	char buff[130], mtd_name[32], boot_recovery[1024], tmp[896], cmd_arg[64], parts[64];
 	char* tmp_buff;
 	unsigned min_ptn_size, ptn_size;
-	mtd_scan_partitions();
-	const MtdPartition *part = mtd_find_partition_by_name("lk");
+	const MtdPartition* part;
+	part = mtd_find_partition_by_name("lk");
 	if (part == NULL) {
         	printf("  cLK bootloader was not detected.\n");
         	return -1;
