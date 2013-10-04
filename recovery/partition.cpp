@@ -1567,6 +1567,34 @@ bool TWPartition::Wipe(string New_File_System) {
 	else
 		unlink("/.layout_version");
 
+#ifdef TW_DEVICE_IS_HTC_LEO
+	if (Mount_Point == "/sd-ext") {
+		int dataonext;
+		string data_pth;
+		dataonext = DataManager::GetIntValue(TW_DATA_ON_EXT);
+		DataManager::GetValue(TW_DATA_PATH, data_pth);
+		if (dataonext && data_pth != "/sd-ext") {
+			if (!Mount(true))
+				return false;
+			struct stat st;
+			LOGINFO("data_pth = '%s'\n", data_pth.c_str());
+			if (stat(data_pth.c_str(), &st) == 0) {
+				gui_print("Wiping %s\n", Alternate_Display_Name.c_str());
+				string Command;
+				Command = "rm -rf " + data_pth+ "/*";
+				TWFunc::Exec_Cmd(Command);
+				Command = "rm -rf " + data_pth + "/.*";
+				TWFunc::Exec_Cmd(Command);
+				gui_print("[%s wipe done]\n", Alternate_Display_Name.c_str());
+    	    		} else
+				gui_print("[%s was not detected]\n", Alternate_Display_Name.c_str());
+			UnMount(true);
+			wiped = true;
+			goto done;
+		}
+	}
+#endif
+
 	if (Has_Data_Media) {
 		wiped = Wipe_Data_Without_Wiping_Media();
 	} else {
@@ -1628,7 +1656,10 @@ bool TWPartition::Wipe(string New_File_System) {
 			DataManager::Output_Version();
 			TWFunc::Update_Rotation_File(DataManager::GetIntValue(TW_ROTATION));
 		}
+	}
 
+done:
+	if (wiped) {
 		if (TWFunc::Path_Exists("/.layout_version") && Mount(false))
 			TWFunc::copy_file("/.layout_version", Layout_Filename, 0600);
 
