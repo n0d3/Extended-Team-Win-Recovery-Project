@@ -919,7 +919,12 @@ void GUIPartitionList::MatchList(void) {
 			continue;
 		char backup_size[255];
 		sprintf(backup_size, "%llu", Part->Backup_Size / 1024 / 1024);
-		mList.at(i).Display_Name = Part->Backup_Display_Name + " (";
+		if (DataManager::GetIntValue("tw_data_on_ext"))
+			mList.at(i).Display_Name = Part->Alternate_Display_Name + " (";
+		else
+			mList.at(i).Display_Name = Part->Backup_Display_Name + " (";
+		if (Part->Has_Android_Secure)
+			mList.at(i).Display_Name = Part->Backup_Display_Name + " (";
 		mList.at(i).Display_Name += backup_size;
 		mList.at(i).Display_Name += "MB)";
 		searchvalue += ";";

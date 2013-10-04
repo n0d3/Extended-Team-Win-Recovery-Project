@@ -2971,7 +2971,12 @@ void TWPartitionManager::Get_Partition_List(string ListType, std::vector<Partiti
 					}
 				}
 				sprintf(backup_size, "%llu", Backup_Size / 1024 / 1024);
-				part.Display_Name = (*iter)->Backup_Display_Name + " (";
+				if (DataManager::GetIntValue(TW_DATA_ON_EXT))
+					part.Display_Name = (*iter)->Alternate_Display_Name + " (";
+				else
+					part.Display_Name = (*iter)->Backup_Display_Name + " (";
+				if ((*iter)->Has_Android_Secure)
+					part.Display_Name = (*iter)->Backup_Display_Name + " (";
 				part.Display_Name += backup_size;
 				part.Display_Name += "MB)";
 				part.Mount_Point = (*iter)->Backup_Path;
@@ -3014,7 +3019,10 @@ void TWPartitionManager::Get_Partition_List(string ListType, std::vector<Partiti
 		for (iter = Partitions.begin(); iter != Partitions.end(); iter++) {
 			if ((*iter)->Wipe_Available_in_GUI && !(*iter)->Is_SubPartition) {
 				struct PartitionList part;
-				part.Display_Name = (*iter)->Display_Name;
+				if (DataManager::GetIntValue(TW_DATA_ON_EXT))
+					part.Display_Name = (*iter)->Alternate_Display_Name;
+				else
+					part.Display_Name = (*iter)->Display_Name;
 				part.Mount_Point = (*iter)->Mount_Point;
 				part.selected = 0;
 				Partition_List->push_back(part);

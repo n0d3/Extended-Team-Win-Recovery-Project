@@ -100,6 +100,7 @@ TWPartition::TWPartition(void) {
 	Display_Name = "";
 	Backup_Display_Name = "";
 	Restore_Display_Name = "";
+	Alternate_Display_Name = "";
 	Storage_Name = "";
 	Backup_Name = "";
 	Backup_FileName = "";
@@ -153,6 +154,7 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 	Display_Name = full_line + 1;
 	Backup_Display_Name = Display_Name;
 	Restore_Display_Name = Display_Name;
+	Alternate_Display_Name = Display_Name;
 	Storage_Name = Display_Name;
 	index = Mount_Point.size();
 	while (index < line_len) {
@@ -236,6 +238,7 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 				Display_Name = "System";
 				Backup_Display_Name = Display_Name;
 				Restore_Display_Name = Display_Name;
+				Alternate_Display_Name = Display_Name;
 				Storage_Name = Display_Name;
 				Wipe_Available_in_GUI = true;
 				Can_Be_Backed_Up = true;
@@ -247,11 +250,9 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 			if (Is_Present) {
 				ORS_Mark = "D";
 				Display_Name = "Data";
+				Backup_Display_Name = Display_Name;
 				Restore_Display_Name = Display_Name;
-				if (DataManager::GetIntValue(TW_DATA_ON_EXT))
-					Backup_Display_Name = "DataOnNand";
-				else
-					Backup_Display_Name = Display_Name;
+				Alternate_Display_Name = "DataOnNand";
 				Storage_Name = Display_Name;
 				Wipe_Available_in_GUI = true;
 				Wipe_During_Factory_Reset = true;
@@ -324,6 +325,7 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 				Display_Name = "Cache";
 				Backup_Display_Name = Display_Name;
 				Restore_Display_Name = Display_Name;
+				Alternate_Display_Name = Display_Name;
 				Storage_Name = Display_Name;
 				Wipe_Available_in_GUI = true;
 				Wipe_During_Factory_Reset = true;
@@ -337,6 +339,7 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 				Display_Name = "DataData";
 				Backup_Display_Name = Display_Name;
 				Restore_Display_Name = Display_Name;
+				Alternate_Display_Name = Display_Name;
 				Storage_Name = Display_Name;
 				Is_SubPartition = true;
 				SubPartition_Of = "/data";
@@ -353,11 +356,9 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 				ORS_Mark = "E";
 				Wipe_During_Factory_Reset = true;
 				Display_Name = "SD-Ext";
+				Backup_Display_Name = Display_Name;
 				Restore_Display_Name = Display_Name;
-				if (DataManager::GetIntValue(TW_DATA_ON_EXT))
-					Backup_Display_Name = "DataOnExt";
-				else
-					Backup_Display_Name = Display_Name;
+				Alternate_Display_Name = "DataOnExt";
 				Storage_Name = Display_Name;
 				Wipe_Available_in_GUI = true;
 				Removable = true;
@@ -391,6 +392,7 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 				Display_Name = "SDExt2";
 				Backup_Display_Name = Display_Name;
 				Restore_Display_Name = Display_Name;
+				Alternate_Display_Name = Display_Name;
 				Storage_Name = Display_Name;
 				Wipe_Available_in_GUI = true;
 				Removable = true;
@@ -411,6 +413,7 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 			Display_Name = "Boot";
 			Backup_Display_Name = Display_Name;
 			Restore_Display_Name = Display_Name;
+			Alternate_Display_Name = Display_Name;
 			Wipe_Available_in_GUI = true;
 			DataManager::SetValue("tw_boot_is_mountable", 1);
 			Can_Be_Backed_Up = true;
@@ -433,6 +436,7 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 				Is_Storage = true;
 				Is_Settings_Storage = true;
 				Storage_Path = "/sdcard";
+				Display_Name = "SDCard";
 				Removable = true;
 				Wipe_Available_in_GUI = true;
 				DataManager::SetValue(TW_HAS_EXTERNAL, 1);
@@ -480,6 +484,7 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 			Display_Name = "Boot";
 			Backup_Display_Name = Display_Name;
 			Restore_Display_Name = Display_Name;
+			Alternate_Display_Name = Display_Name;
 			Can_Be_Backed_Up = true;
 			Wipe_Available_in_GUI = true;
 			DataManager::SetValue("tw_boot_is_mountable", 0);
@@ -488,6 +493,7 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 			Display_Name = "Recovery";
 			Backup_Display_Name = Display_Name;
 			Restore_Display_Name = Display_Name;
+			Alternate_Display_Name = Display_Name;
 			Can_Be_Backed_Up = true;
 		}
 	} else if (Is_Swap(Current_File_System)) {
@@ -733,6 +739,7 @@ int TWPartition::Setup_Extra_Boot(string name, string mtd_num) {
 	Display_Name = x + "Boot";
 	Backup_Display_Name = Display_Name;
 	Restore_Display_Name = Display_Name;
+	Alternate_Display_Name = Display_Name;
 
 	Mount_Point = "/" + name;
 	Backup_Path = Mount_Point;
@@ -767,6 +774,7 @@ int TWPartition::Setup_Extra_Boot(string name, string mtd_num) {
 void TWPartition::Setup_AndSec(void) {
 	Backup_Display_Name = "Android Secure";
 	Restore_Display_Name = Backup_Display_Name;
+	Alternate_Display_Name = Display_Name;
 	Backup_Name = "and-sec";
 	Can_Be_Backed_Up = true;
 	Has_Android_Secure = true;
@@ -1086,7 +1094,6 @@ bool TWPartition::Get_Size_Via_statfs(bool Display_Error) {
 		}
 		if (dataonext) {
 			//LOGINFO("TW_DATA_PATH: '%s'\n", data_pth.c_str());
-			Backup_Display_Name = "DataOnExt";
 			if (!Is_Mounted())
 				system(("mount " + Primary_Block_Device + " " + Mount_Point).c_str());
 				//Mount(Display_Error);
@@ -1101,24 +1108,16 @@ bool TWPartition::Get_Size_Via_statfs(bool Display_Error) {
 #else
 			CheckFor_Dalvik_Cache();
 #endif
-			Backup_Display_Name = "SD-Ext";
 			Backup_Size = Used;
 #ifdef TW_DEVICE_IS_HTC_LEO
 			if (Backup_Size > 0 && skip_native)
 				Backup_Size -= NativeSD_Size;
 		}
+	} else if (Mount_Point == "/data") {
+		CheckFor_Dalvik_Cache();
+		Backup_Size = Used;
 #endif
 	} else {
-#ifdef TW_DEVICE_IS_HTC_LEO
-		if (Mount_Point == "/data") {
-			if (DataManager::GetIntValue(TW_DATA_ON_EXT))
-				Backup_Display_Name = "DataOnNand";
-			else
-				Backup_Display_Name = "Data";
-		}
-#else
-		Backup_Display_Name = "Data";
-#endif
 		Backup_Size = Used;
 	}
 	if (Backup_Size > 0 && skip_dalvik)
@@ -1199,7 +1198,6 @@ bool TWPartition::Get_Size_Via_df(bool Display_Error) {
 		}
 		if (dataonext) {
 			//LOGINFO("TW_DATA_PATH: '%s'\n", data_pth.c_str());
-			Backup_Display_Name = "DataOnExt";
 			if (!Is_Mounted())
 				system(("mount " + Primary_Block_Device + " " + Mount_Point).c_str());
 				//Mount(Display_Error);
@@ -1214,24 +1212,16 @@ bool TWPartition::Get_Size_Via_df(bool Display_Error) {
 #else
 			CheckFor_Dalvik_Cache();
 #endif
-			Backup_Display_Name = "SD-Ext";
 			Backup_Size = Used;
 #ifdef TW_DEVICE_IS_HTC_LEO
 			if (Backup_Size > 0 && skip_native)
 				Backup_Size -= NativeSD_Size;
 		}
+	} else if (Mount_Point == "/data") {
+		CheckFor_Dalvik_Cache();
+		Backup_Size = Used;
 #endif
 	} else {
-#ifdef TW_DEVICE_IS_HTC_LEO
-		if (Mount_Point == "/data") {
-			if (DataManager::GetIntValue(TW_DATA_ON_EXT))
-				Backup_Display_Name = "DataOnNand";
-			else
-				Backup_Display_Name = "Data";
-		}
-#else
-		Backup_Display_Name = "Data";
-#endif
 		Backup_Size = Used;
 	}
 	if (Backup_Size > 0 && skip_dalvik)
