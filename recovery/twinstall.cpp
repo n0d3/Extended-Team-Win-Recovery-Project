@@ -108,7 +108,7 @@ static int Run_Update_Binary(const char *path, ZipArchive *Zip, int* wipe_cache)
 	args[3] = (char*)path;
 	args[4] = NULL;
 
-	pid_t pid = fork();
+	pid_t w, pid = fork();
 	if (pid == 0) {
 		close(pipe_fd[0]);
 		execv(Temp_Binary.c_str(), (char* const*)args);
@@ -157,11 +157,19 @@ static int Run_Update_Binary(const char *path, ZipArchive *Zip, int* wipe_cache)
 	}
 	fclose(child_data);
 
-	waitpid(pid, &status, 0);
-	if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
-		LOGERR("Error executing updater binary in zip '%s'\n", path);
-		return INSTALL_ERROR;
-	}
+	do {
+		w = waitpid(pid, &status, 0);
+		if (w < 0)
+			return INSTALL_ERROR;
+
+		if (WEXITSTATUS(status) == 0)
+			return INSTALL_SUCCESS;
+		else if (WIFSIGNALED(status)/*== SIGSEGV */) {
+			LOGERR("Error executing updater binary in zip '%s'\n", path);
+			LOGINFO("Run_Update_Binary() killed by signal %d\n", WTERMSIG(status));
+			return INSTALL_ERROR;
+		}
+	} while (!WIFEXITED(status) && !WIFSIGNALED(status));
 
 	return INSTALL_SUCCESS;
 }
