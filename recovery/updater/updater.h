@@ -18,14 +18,14 @@
 #define _UPDATER_UPDATER_H_
 
 #include <stdio.h>
-#include "minzip/Zip.h"
-
 #ifdef HAVE_SELINUX
+#include "minzip/Zip.h"
+#else
+#include "minzipold/Zip.h"
+#endif
+
 #include <selinux/selinux.h>
 #include <selinux/label.h>
-#else
-struct selabel_handle;
-#endif
 
 typedef struct {
     FILE* cmd_pipe;
