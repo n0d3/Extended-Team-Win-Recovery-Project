@@ -32,6 +32,8 @@
 		<resource name="sort_button" type="image" filename="sort-button" />
 		<resource name="minus_button" type="image" filename="minus-button" />
 		<resource name="plus_button" type="image" filename="plus-button" />
+		<resource name="ext-minus_button" type="image" filename="ext-minus-button" />
+		<resource name="ext-plus_button" type="image" filename="ext-plus-button" />
 		<resource name="home_icon" type="image" filename="home-icon" />
 		<resource name="back_icon" type="image" filename="back-icon" />
 		<resource name="slider" type="image" filename="slider" />
@@ -4890,10 +4892,10 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
+				<image resource="ext-minus_button" />
 				<placement x="%col5_medium_x%" y="%row2_text_y%" w="107" />
 				<font resource="font" color="%button_text_color%" />
-				<text>- 32</text>
-				<fill color="%text_color%" />
+				<text></text>
 				<action function="addsubtract">tw_swap_size-32</action>
 			</object>
 
@@ -4913,10 +4915,10 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
+				<image resource="ext-plus_button" />
 				<placement x="%col7_medium_x%" y="%row2_text_y%" w="107" />
 				<font resource="font" color="%button_text_color%" />
-				<text>+ 32</text>
-				<fill color="%text_color%" />
+				<text></text>
 				<action function="addsubtract">tw_swap_size+32</action>
 			</object>
 
@@ -4956,10 +4958,10 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<fill color="%text_color%" />
+				<image resource="ext-minus_button" />
 				<placement x="%col1_medium_x%" y="%row9_text_y%" h="25" />
 				<font resource="font" color="%button_text_color%" />
-				<text>- 128</text>
+				<text></text>
 				<action function="addsubtract">tw_sdext_size-128</action>
 			</object>
 
@@ -4979,10 +4981,10 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<fill color="%text_color%" />
+				<image resource="ext-plus_button" />
 				<placement x="%col3_medium_x%" y="%row9_text_y%" h="25" />
 				<font resource="font" color="%button_text_color%" />
-				<text>+ 128</text>
+				<text></text>
 				<action function="addsubtract">tw_sdext_size+128</action>
 			</object>
 
@@ -5029,10 +5031,10 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_sdext_size" op="!=" var2="0" />
-				<fill color="%text_color%" />
+				<image resource="ext-minus_button" />
 				<placement x="%col5_medium_x%" y="%row9_text_y%" h="25" />
 				<font resource="font" color="%button_text_color%" />
-				<text>- 128</text>
+				<text></text>
 				<action function="addsubtract">tw_sdext2_size-128</action>
 			</object>
 
@@ -5059,10 +5061,10 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_sdext_size" op="!=" var2="0" />
-				<fill color="%text_color%" />
+				<image resource="ext-plus_button" />
 				<placement x="%col7_medium_x%" y="%row9_text_y%" h="25" />
 				<font resource="font" color="%button_text_color%" />
-				<text>+ 128</text>
+				<text></text>
 				<action function="addsubtract">tw_sdext2_size+128</action>
 			</object>
 
