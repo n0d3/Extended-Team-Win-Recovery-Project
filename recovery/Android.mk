@@ -339,7 +339,10 @@ LOCAL_MODULE := libaosprecovery
 LOCAL_MODULE_TAGS := eng
 LOCAL_MODULES_TAGS = optional
 LOCAL_CFLAGS = 
-LOCAL_SRC_FILES = adb_install.cpp bootloader.cpp mtdutils/mtdutils.c verifier.cpp
+ifneq ($(wildcard system/core/libmincrypt/rsa_e_3.c),)
+    LOCAL_CFLAGS += -DHAS_EXPONENT
+endif
+LOCAL_SRC_FILES = adb_install.cpp bootloader.cpp verifier.cpp mtdutils/mtdutils.c
 LOCAL_SHARED_LIBRARIES += libc liblog libcutils libmtdutils
 LOCAL_STATIC_LIBRARIES += libmincrypt
 
@@ -376,6 +379,10 @@ ifeq ($(TWHAVE_SELINUX), true)
     include $(commands_recovery_local_path)/minzip/Android.mk
 else
     include $(commands_recovery_local_path)/minzipold/Android.mk
+endif
+
+ifeq ($(TW_INCLUDE_F2FS), true)
+    include $(commands_recovery_local_path)/f2fs-tools/Android.mk
 endif
 
 ifeq ($(TARGET_DEVICE),leo)
