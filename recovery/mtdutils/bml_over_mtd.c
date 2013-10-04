@@ -752,8 +752,8 @@ int main(int argc, char **argv)
 				"E.g. %s dump boot 72 reservoir 2004 file.bin\n"
 				"Usage: %s scan <partition> [<partition_start_block> <reservoirpartition> <reservoir_start_block>]\n"
 				,argv[0], argv[0], argv[0]);
-	int num_partitions = mtd_scan_partitions();
-	const MtdPartition *pSrcPart = mtd_find_partition_by_name(argv[2]);
+	const MtdPartition* pSrcPart;
+	pSrcPart = mtd_find_partition_by_name(argv[2]);
 	if (pSrcPart == NULL)
 		return die("Cannot find partition %s", argv[2]);
 
@@ -765,7 +765,8 @@ int main(int argc, char **argv)
 	}
 
 	int retVal = 0;
-	const MtdPartition* pReservoirPart = mtd_find_partition_by_name(argv[4]);
+	const MtdPartition* pReservoirPart;
+	pReservoirPart = mtd_find_partition_by_name(argv[4]);
 	if (pReservoirPart == NULL)
 		return die("Cannot find partition %s", argv[4]);
 

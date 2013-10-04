@@ -64,6 +64,8 @@ static MtdState g_mtd_state = {
 
 #define MTD_PROC_FILENAME   "/proc/mtd"
 
+int mtd_partitions_scanned = 0;
+
 int
 mtd_scan_partitions()
 {
@@ -160,11 +162,13 @@ mtd_scan_partitions()
             nbytes--;
         }
     }
+    mtd_partitions_scanned = 1;
 
     return g_mtd_state.partition_count;
 
 bail:
     // keep "partitions" around so we can free the names on a rescan.
+    mtd_partitions_scanned = 0;
     g_mtd_state.partition_count = -1;
     return -1;
 }
@@ -172,6 +176,8 @@ bail:
 const MtdPartition *
 mtd_find_partition_by_name(const char *name)
 {
+    if (!mtd_partitions_scanned)
+        mtd_scan_partitions();
     if (g_mtd_state.partitions != NULL) {
         int i;
         for (i = 0; i < g_mtd_state.partitions_allocd; i++) {
@@ -606,7 +612,8 @@ int cmd_mtd_restore_raw_partition(const char *partition_name, const char *filena
         fprintf(stderr, "error scanning partitions");
         return -1;
     }
-    const MtdPartition *mtd = mtd_find_partition_by_name(partition_name);
+    const MtdPartition* mtd;
+    mtd = mtd_find_partition_by_name(partition_name);
     if (mtd == NULL)
     {
         fprintf(stderr, "can't find %s partition", partition_name);
@@ -737,7 +744,8 @@ int cmd_mtd_erase_raw_partition(const char *partition_name)
         printf("error scanning partitions");
         return -1;
     }
-    const MtdPartition *p = mtd_find_partition_by_name(partition_name);
+    const MtdPartition *p;
+    p = mtd_find_partition_by_name(partition_name);
     if (p == NULL)
     {
         printf("can't find %s partition", partition_name);

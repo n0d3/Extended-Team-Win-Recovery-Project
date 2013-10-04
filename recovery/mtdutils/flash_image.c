@@ -59,8 +59,8 @@ int main(int argc, char **argv) {
         return 2;
     }
 
-    if (mtd_scan_partitions() <= 0) die("error scanning partitions");
-    const MtdPartition *partition = mtd_find_partition_by_name(argv[1]);
+    const MtdPartition* partition;
+    partition = mtd_find_partition_by_name(argv[1]);
     if (partition == NULL) die("can't find %s partition", argv[1]);
 
     // If the first part of the file matches the partition, skip writing
