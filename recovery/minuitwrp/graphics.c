@@ -259,7 +259,7 @@ int gr_screenshot(const char* bmpName) {
     void *fbPixels = MAP_FAILED;
     int framebufferHandle = -1, mapSize = 0, ret = 0;
 
-    int screenshotHandle = open(bmpName, O_WRONLY | O_CREAT);
+    int screenshotHandle = open(bmpName, O_WRONLY | O_CREAT, 0);
     if (screenshotHandle < 0) {
 	printf("Failed to create %s.\n", bmpName);
 	goto done;
