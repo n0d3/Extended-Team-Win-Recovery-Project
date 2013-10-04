@@ -1,0 +1,3 @@
+#!/system/bin/sh
+
+/system/bin/netcfg usb0 up

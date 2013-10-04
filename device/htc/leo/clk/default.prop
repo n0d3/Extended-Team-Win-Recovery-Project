@@ -1,0 +1,3 @@
+# for PPP data connection
+rild.libpath=/system/lib/libhtc_ril_wrapper.so
+rild.libargs=-d /dev/smd0

@@ -19,12 +19,12 @@
 
 <device name="Android">
   <item name="none">0</item>
-  <item name="screen.on">110</item>
+  <item name="screen.on">100</item>
   <item name="bluetooth.active">142</item> <!-- In call -->
   <item name="bluetooth.on">0.3</item>
   <!-- CPU wakelock held for 830ms on bluetooth headset at command. 43mA * 830 -->
   <item name="bluetooth.at">35690</item>
-  <item name="screen.full">250</item>
+  <item name="screen.full">160</item>
   <item name="wifi.on">4</item>
   <item name="wifi.active">120</item>
   <item name="wifi.scan">220</item>
@@ -32,7 +32,7 @@
   <item name="dsp.video">88</item>
   <item name="radio.active">300</item>
   <item name="gps.on">170</item>
-  <item name="battery.capacity">1230</item>
+  <item name="battery.capacity">1390</item>
   <item name="radio.scanning">70</item>
   <array name="radio.on"> <!-- Strength 0 to BINS-1 -->
       <value>3</value>

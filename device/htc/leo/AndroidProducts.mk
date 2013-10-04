@@ -18,5 +18,4 @@
 #
 
 PRODUCT_MAKEFILES := \
-    $(LOCAL_DIR)/generic_leo.mk \
-    $(LOCAL_DIR)/full_leo.mk
+    $(LOCAL_DIR)/device_leo.mk

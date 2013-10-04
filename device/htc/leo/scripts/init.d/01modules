@@ -1,0 +1,8 @@
+#!/system/bin/sh
+#
+# Load MODULES
+sleep 1
+insmod /system/lib/modules/cifs.ko
+insmod /system/lib/modules/bcmdhd.ko
+insmod /system/lib/modules/kineto_gan.ko
+echo "+++ Modules Loaded +++";

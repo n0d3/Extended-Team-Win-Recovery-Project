@@ -10,3 +10,4 @@
 /sd-ext		auto		/dev/block/mmcblk0p2
 /sdext2		auto		/dev/block/mmcblk0p3
 
+
