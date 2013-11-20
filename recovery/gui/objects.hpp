@@ -1,5 +1,5 @@
 /*
-	Copyright 2013 bigbiff/Dees_Troy TeamWin
+	Copyright 2012 bigbiff/Dees_Troy TeamWin
 	This file is part of TWRP/TeamWin Recovery Project.
 
 	TWRP is free software: you can redistribute it and/or modify
@@ -15,6 +15,7 @@
 	You should have received a copy of the GNU General Public License
 	along with TWRP.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 // objects.h - Base classes for object manager of GUI
 
 #ifndef _OBJECTS_HEADER
