@@ -99,7 +99,7 @@ int LoadFileContents(const char* filename, FileContents* file,
         }
     }
 
-    SHA(file->data, file->size, file->sha1);
+    SHA_hash(file->data, file->size, file->sha1);
     return 0;
 }
 
@@ -190,6 +190,7 @@ static int LoadPartitionContents(const char* filename, FileContents* file) {
 
     switch (type) {
         case MTD:
+	{
             const MtdPartition* mtd;
 	    mtd = mtd_find_partition_by_name(partition);
             if (mtd == NULL) {
@@ -205,14 +206,16 @@ static int LoadPartitionContents(const char* filename, FileContents* file) {
                 return -1;
             }
             break;
-
+	}
         case EMMC:
+	{
             dev = fopen(partition, "rb");
             if (dev == NULL) {
                 printf("failed to open emmc partition \"%s\": %s\n",
                        partition, strerror(errno));
                 return -1;
             }
+	}
     }
 
     SHA_CTX sha_ctx;
@@ -375,6 +378,7 @@ int WriteToPartition(unsigned char* data, size_t len,
 
     switch (type) {
         case MTD:
+	{
             const MtdPartition* mtd;
 	    mtd = mtd_find_partition_by_name(partition);
             if (mtd == NULL) {
@@ -409,7 +413,7 @@ int WriteToPartition(unsigned char* data, size_t len,
                 return -1;
             }
             break;
-
+	}
         case EMMC:
         {
             size_t start = 0;

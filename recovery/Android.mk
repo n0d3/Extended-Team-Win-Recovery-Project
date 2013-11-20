@@ -102,11 +102,11 @@ ifeq ($(TWHAVE_SELINUX), true)
     LOCAL_C_INCLUDES += external/libselinux/include
     LOCAL_SHARED_LIBRARIES += libselinux
     LOCAL_CFLAGS += -DHAVE_SELINUX -g
-    ifneq ($(TARGET_USERIMAGES_USE_EXT4), true)
-        LOCAL_CFLAGS += -DUSE_EXT4
-        LOCAL_C_INCLUDES += system/extras/ext4_utils
-        LOCAL_SHARED_LIBRARIES += libext4_utils
-    endif
+#    ifneq ($(TARGET_USERIMAGES_USE_EXT4), true)
+#        LOCAL_CFLAGS += -DUSE_EXT4
+#        LOCAL_C_INCLUDES += system/extras/ext4_utils
+#        LOCAL_SHARED_LIBRARIES += libext4_utils
+#    endif
 endif
 
 # This binary is in the recovery ramdisk, which is otherwise a copy of root.
@@ -330,12 +330,13 @@ include $(CLEAR_VARS)
 LOCAL_MODULE := verifier_test
 LOCAL_FORCE_STATIC_EXECUTABLE := true
 LOCAL_MODULE_TAGS := tests
+LOCAL_C_INCLUDES := bootable/recovery/libmincrypt/includes
 LOCAL_SRC_FILES := \
     verifier_test.cpp \
     verifier.cpp \
     ui.cpp
 LOCAL_STATIC_LIBRARIES := \
-    libmincrypt \
+    libmincrypttwrp \
     libminui \
     libcutils \
     libstdc++ \
@@ -347,13 +348,13 @@ include $(CLEAR_VARS)
 LOCAL_MODULE := libaosprecovery
 LOCAL_MODULE_TAGS := eng
 LOCAL_MODULES_TAGS = optional
-LOCAL_CFLAGS = 
-ifneq ($(wildcard system/core/libmincrypt/rsa_e_3.c),)
-    LOCAL_CFLAGS += -DHAS_EXPONENT
+ifeq ($(TARGET_BOARD_PLATFORM),rk30xx)
+    LOCAL_CFLAGS += -DRK3066
 endif
+LOCAL_C_INCLUDES := bootable/recovery/libmincrypt/includes
 LOCAL_SRC_FILES = adb_install.cpp bootloader.cpp verifier.cpp mtdutils/mtdutils.c
 LOCAL_SHARED_LIBRARIES += libc liblog libcutils libmtdutils
-LOCAL_STATIC_LIBRARIES += libmincrypt
+LOCAL_STATIC_LIBRARIES += libmincrypttwrp
 
 include $(BUILD_SHARED_LIBRARY)
 
@@ -383,7 +384,8 @@ include $(commands_recovery_local_path)/injecttwrp/Android.mk \
     $(commands_recovery_local_path)/libcrecovery/Android.mk \
     $(commands_recovery_local_path)/libblkid/Android.mk \
     $(commands_recovery_local_path)/minuitwrp/Android.mk \
-    $(commands_recovery_local_path)/toolbox/Android.mk
+    $(commands_recovery_local_path)/toolbox/Android.mk \
+    $(commands_recovery_local_path)/libmincrypt/Android.mk
 
 ifeq ($(TWHAVE_SELINUX), true)
     include $(commands_recovery_local_path)/minzip/Android.mk
