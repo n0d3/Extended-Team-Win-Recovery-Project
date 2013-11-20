@@ -91,8 +91,11 @@ int tar_append_file(TAR *t, char *realname, char *savename) {
 		}
 
 		security_context_t selinux_context = NULL;
-		if(getfilecon(realname, &selinux_context) >= 0) {
+		if(lgetfilecon(realname, &selinux_context) >= 0) {
 			t->th_buf.selinux_context = strdup(selinux_context);
+	#ifdef DEBUG_APPEND
+			printf("    tar_append_file(): setting selinux context: %s\n", selinux_context);
+	#endif
 			freecon(selinux_context);
 		}
 	#ifdef DEBUG_APPEND
