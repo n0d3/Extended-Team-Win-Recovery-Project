@@ -10,17 +10,6 @@ on init
     export ANDROID_DATA /data
     export EXTERNAL_STORAGE /sdcard
 
-    symlink /system/etc /etc
-
-#    mkdir /boot
-#    mkdir /recovery
-#    mkdir /sdcard
-#    mkdir /internal_sd
-#    mkdir /external_sd
-#    mkdir /sd-ext
-#    mkdir /sdext2
-#    mkdir /datadata
-#    mkdir /emmc
     mkdir /system
     mkdir /data
     mkdir /cache
@@ -55,8 +44,8 @@ service adbd /sbin/adbd recovery
 
 # Always start adbd on userdebug and eng builds
 on property:ro.debuggable=1
-    write /sys/class/android_usb/android0/enable 1
-    start adbd
+    #write /sys/class/android_usb/android0/enable 1
+    #start adbd
     setprop service.adb.root 1
 
 # Restart adbd so it can run as root
