@@ -198,6 +198,8 @@ int main(int argc, char **argv) {
 	// Load up all the resources
 	gui_loadResources();
 
+	PartitionManager.Mount_By_Path("/cache", true);
+
 #ifdef HAVE_SELINUX
 	if (TWFunc::Path_Exists("/prebuilt_file_contexts")) {
 		if (TWFunc::Path_Exists("/file_contexts")) {
@@ -215,9 +217,28 @@ int main(int argc, char **argv) {
 		printf("No file contexts for SELinux\n");
 	else
 		printf("SELinux contexts loaded from /file_contexts\n");
-#endif
 
-	PartitionManager.Mount_By_Path("/cache", true);
+	// Check to ensure SELinux can be supported by the kernel
+	security_context_t selinux_context = NULL;
+
+	if (TWFunc::Path_Exists("/cache/recovery")) {
+		lgetfilecon("/cache/recovery", &selinux_context);
+		if (!selinux_context) {
+			lsetfilecon("/cache/recovery", "test");
+			lgetfilecon("/cache/recovery", &selinux_context);
+		}
+	} else {
+		LOGINFO("Could not check /cache/recovery SELinux contexts, using /sbin/teamwin instead which may be inaccurate.\n");
+		lgetfilecon("/sbin/teamwin", &selinux_context);
+	}
+	if (selinux_context) {
+		freecon(selinux_context);
+		gui_print("Full SELinux support is present.\n");
+	} else
+		gui_print("Kernel does not have support for reading SELinux contexts.\n");
+#else
+	gui_print("No SELinux support (no libselinux).\n");
+#endif
 
 	string Zip_File, Reboot_Value, Restore_File, Partition_Cmd;
 	bool Keep_Going = true, Cache_Wipe = false, Factory_Reset = false, Perform_Backup = false, Perform_Restore = false, Finish_SDCard_Partitioning = false;
