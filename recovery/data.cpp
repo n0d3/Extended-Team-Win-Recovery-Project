@@ -262,6 +262,35 @@ int DataManager::Detect_BLDR() {
 	return BLDR;
 }
 
+int DataManager::SetGUI_TimeZone() {
+	string SelectedZone;
+	GetValue(TW_TIME_ZONE_GUISEL, SelectedZone); // read the selected time zone into SelectedZone
+	string Zone = SelectedZone.substr(0, SelectedZone.find(';')); // parse to get time zone
+	string DSTZone = SelectedZone.substr(SelectedZone.find(';') + 1, string::npos); // parse to get DST component
+		
+	int dst;
+	GetValue(TW_TIME_ZONE_GUIDST, dst); // check wether user chose to use DST
+	
+	string offset;
+	GetValue(TW_TIME_ZONE_GUIOFFSET, offset); // pull in offset
+	string NewTimeZone = Zone;
+	string DisplayTimeZone = Zone;
+	if (dst != 0)
+		NewTimeZone = DSTZone;
+	if (offset != "0") {
+		NewTimeZone += ":" + offset;
+		DisplayTimeZone += ":" + offset;
+	}
+	if (dst != 0)
+		DisplayTimeZone += " (DST)";
+	
+	SetValue(TW_TIME_ZONE_VAR, NewTimeZone);
+	SetValue(TW_DISP_TIME_ZONE_VAR, DisplayTimeZone);
+	update_tz_environment_variables();
+
+	return 0;
+}
+
 int DataManager::ResetDefaults() {
 	string rm;
 	if (PartitionManager.Mount_Settings_Storage(false)) {
@@ -499,6 +528,8 @@ int DataManager::SetValue(const string varName, string value, int persist /* = 0
 
 	if (pos->second.second != 0)
 		SaveValues();
+	if (varName == "tw_time_zone_guidst")
+		SetGUI_TimeZone();
 	if (varName == "tw_screen_timeout_secs") {
 		if (pause == 0)
 #ifndef TW_NO_SCREEN_TIMEOUT
@@ -1388,6 +1419,11 @@ extern "C" void DataManager_ReadSettingsFile()
 extern "C" void DataManager_SetupTwrpFolder()
 {
 	return DataManager::SetupTwrpFolder();
+}
+
+extern "C" int DataManager_SetGUI_TimeZone()
+{
+	return DataManager::SetGUI_TimeZone();
 }
 
 extern "C" int DataManager_Detect_BLDR()

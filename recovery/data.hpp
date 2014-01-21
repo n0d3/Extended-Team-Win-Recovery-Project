@@ -64,6 +64,7 @@ class DataManager {
 		static string& CGetSettingsStorageMount();
 
 	// Extended functions
+		static int SetGUI_TimeZone();
 		static int Detect_BLDR();
 		static int Pause_For_Battery_Charge();
 		static void SetBackupFolder(string storage_path);

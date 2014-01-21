@@ -40,6 +40,7 @@ void DataManager_DumpValues();
 void DataManager_ReadSettingsFile();
 void DataManager_SetupTwrpFolder();
 int DataManager_Detect_BLDR();
+int DataManager_SetGUI_TimeZone();
 int DataManager_Pause_For_Battery_Charge();
 
 #endif  // _DATA_HEADER

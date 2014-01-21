@@ -533,31 +533,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 		return -1;
 	}	
 	if (function == "setguitimezone") {
-		string SelectedZone;
-		DataManager::GetValue(TW_TIME_ZONE_GUISEL, SelectedZone); // read the selected time zone into SelectedZone
-		string Zone = SelectedZone.substr(0, SelectedZone.find(';')); // parse to get time zone
-		string DSTZone = SelectedZone.substr(SelectedZone.find(';') + 1, string::npos); // parse to get DST component
-		
-		int dst;
-		DataManager::GetValue(TW_TIME_ZONE_GUIDST, dst); // check wether user chose to use DST
-		
-		string offset;
-		DataManager::GetValue(TW_TIME_ZONE_GUIOFFSET, offset); // pull in offset
-		string NewTimeZone = Zone;
-		string DisplayTimeZone = Zone;
-		if (dst != 0)
-			NewTimeZone = DSTZone;
-		if (offset != "0") {
-			NewTimeZone += ":" + offset;
-			DisplayTimeZone += ":" + offset;
-		}
-		if (dst != 0)
-			DisplayTimeZone += " (DST)";
-		
-		DataManager::SetValue(TW_TIME_ZONE_VAR, NewTimeZone);
-		DataManager::SetValue(TW_DISP_TIME_ZONE_VAR, DisplayTimeZone);
-		DataManager::update_tz_environment_variables();
-		return 0;
+		return DataManager::SetGUI_TimeZone();
 	}
 	if (function == "togglestorage") {
 		if (arg == "internal") {
