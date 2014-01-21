@@ -115,6 +115,7 @@ class TWFunc {
 
 		// Extended functions
 		static void Update_Rotation_File(int r);
+		static void Update_Curtain_File();
 		static int Check_Rotation_File();
 		static int CheckFor_ValidIMG(string mtdName);
 		static unsigned long RoundUpSize(unsigned long sz, unsigned long multiple);

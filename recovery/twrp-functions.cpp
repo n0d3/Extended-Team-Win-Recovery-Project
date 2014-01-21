@@ -1410,7 +1410,7 @@ bool TWFunc::loadTheme() {
 
 bool TWFunc::reloadTheme() {
 	int storage_mounted = 0;
-	string cmd;
+	string cmd, mark_p, mark_l;
 	string base_xml = getUIxml(gr_get_rotation());
 	string theme_path = DataManager::GetStrValue(TW_SEL_THEME_PATH);
 	if (theme_path.empty()) {
@@ -1418,10 +1418,14 @@ bool TWFunc::reloadTheme() {
 		theme_path = base_xml;
 	}
 	// Mount storage
-	if (!PartitionManager.Mount_Settings_Storage(false)) {
+	int Storage_Was_Mounted = PartitionManager.Is_Mounted_By_Path("/sdcard");
+	if (!Storage_Was_Mounted)
+		PartitionManager.Mount_Settings_Storage(false);
+
+	if (!PartitionManager.Is_Mounted_By_Path("/sdcard")) {
 		LOGERR("Unable to mount storage during theme reload.\n");
-		storage_mounted = 0;
 		theme_path = base_xml;
+		storage_mounted = 0;
 	} else
 		storage_mounted = 1;
 
@@ -1429,17 +1433,11 @@ bool TWFunc::reloadTheme() {
 		LOGERR("Failed to load base packages.\n");
 		return false;
 	} else {
-		if (storage_mounted) {
-			if (theme_path == base_xml)
-				cmd = "rm -rf " + DataManager::GetSettingsStoragePath() + "/TWRP/theme/.use_external_*";
-			else {
-				if (gr_get_rotation() % 180 == 0)
-					cmd = "echo " + theme_path + ">" + DataManager::GetSettingsStoragePath() + "/TWRP/theme/.use_external_p";
-				else
-					cmd = "echo " + theme_path + ">" + DataManager::GetSettingsStoragePath() + "/TWRP/theme/.use_external_l";
-			}
-			Exec_Cmd(cmd);
-		}		
+		if (storage_mounted)
+			Update_Curtain_File();
+
+		if (!Storage_Was_Mounted)
+			PartitionManager.UnMount_By_Path("/sdcard", false);
 	}
 	return true;
 }
@@ -1451,21 +1449,44 @@ std::string TWFunc::getUIxml(int rotation) {
 		return "/res/landscape.xml";
 }
 
+void TWFunc::Update_Curtain_File() {
+	string base_xml = getUIxml(gr_get_rotation());
+	string theme_path = DataManager::GetStrValue(TW_SEL_THEME_PATH);
+
+	if (theme_path.empty()) {
+		Exec_Cmd("rm -f /sdcard/TWRP/theme/curtain.jpg");
+	} else {
+		if (gr_get_rotation() % 180 == 0) {
+			Exec_Cmd("unzip -oq \"" + theme_path + "\" portrait/curtain.jpg -d /tmp");
+			Exec_Cmd("cp -f /tmp/portrait/curtain.jpg /sdcard/TWRP/theme/curtain.jpg");
+		} else {
+			Exec_Cmd("unzip -oq \"" + theme_path + "\" landscape/curtain.jpg -d /tmp");
+			Exec_Cmd("cp -f /tmp/landscape/curtain.jpg /sdcard/TWRP/theme/curtain.jpg");
+		}
+	}
+}
+
 void TWFunc::Update_Rotation_File(int r) {
 	string rotation_file = "/cache/recovery/rotation";
 	string angle = to_string(r);
 	int Cache_Was_Mounted = PartitionManager.Is_Mounted_By_Path("/cache");
-	if (Cache_Was_Mounted || PartitionManager.Mount_By_Path("/cache", false))
+	if (Cache_Was_Mounted || PartitionManager.Mount_By_Path("/cache", false)) {
+		if (TWFunc::Path_Exists(rotation_file))
+			unlink(rotation_file.c_str());
 		TWFunc::write_file(rotation_file, angle);
+		LOGINFO("TWFunc::Update_Rotation_File(%i).\n", r);
+		sync();
+	}
 	if (!Cache_Was_Mounted)
 		PartitionManager.UnMount_By_Path("/cache", false);
 }
 
 int TWFunc::Check_Rotation_File() {
 	string result, rotation_file = "/cache/recovery/rotation";
-	if (TWFunc::Path_Exists(rotation_file) && TWFunc::read_file(rotation_file, result) == 0)
+	if (TWFunc::Path_Exists(rotation_file) && TWFunc::read_file(rotation_file, result) == 0) {
+		LOGINFO("TWFunc::Check_Rotation_File() = '%s'.\n", result.c_str());
 		return atoi(result.c_str());
-
+	}
 	return TW_DEFAULT_ROTATION;
 }
 

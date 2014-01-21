@@ -525,13 +525,12 @@ extern "C" int gui_init()
     gr_init();
     gr_set_rotation(TWFunc::Check_Rotation_File());
     gr_update_surface_dimensions();
-    if (gr_get_rotation() % 180 == 0) {
-	alter_curtain = "/tmp/portrait/curtain.jpg";
+
+    alter_curtain = "/sdcard/TWRP/theme/curtain.jpg";
+    if (gr_get_rotation() % 180 == 0)
         default_curtain = "/res/portrait/curtain.jpg";
-    } else {
-	alter_curtain = "/tmp/landscape/curtain.jpg";
+    else
         default_curtain = "/res/landscape/curtain.jpg";
-    }
 
     // First try to use the curtain.jpg extracted from the selected theme's ui.zip to /tmp during booting up (check init.rc & prerecoveryboot.sh)
     if (res_create_surface(alter_curtain.c_str(), &gCurtain)) {

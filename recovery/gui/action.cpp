@@ -1554,6 +1554,8 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 							std::string theme_path;
 							std::string cmd;
 							std::string base_xml;
+							std::string mark_p;
+							std::string mark_l;
 							// Get the pre-selected theme
 							base_xml = TWFunc::getUIxml(gr_get_rotation());
 							theme_path = DataManager::GetStrValue(TW_SEL_THEME_PATH);
@@ -1574,13 +1576,20 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 								op_status = 1;
 							} else {
 								if (storage_mounted) {
+									mark_p = DataManager::GetSettingsStoragePath() + "/TWRP/theme/.use_external_p";
+									mark_l = DataManager::GetSettingsStoragePath() + "/TWRP/theme/.use_external_l";
 									if (theme_path == base_xml)
 										cmd = "rm -rf " + DataManager::GetSettingsStoragePath() + "/TWRP/theme/.use_external_*";
 									else {
-										if (gr_get_rotation() % 180 == 0)
-											cmd = "echo " + theme_path + ">" + DataManager::GetSettingsStoragePath() + "/TWRP/theme/.use_external_p";
-										else
-											cmd = "echo " + theme_path + ">" + DataManager::GetSettingsStoragePath() + "/TWRP/theme/.use_external_l";
+										if (gr_get_rotation() % 180 == 0) {
+											if (TWFunc::Path_Exists(mark_l))
+												unlink(mark_l.c_str());
+											cmd = "echo " + theme_path + ">" + mark_p;
+										} else {
+											if (TWFunc::Path_Exists(mark_p))
+												unlink(mark_p.c_str());
+											cmd = "echo " + theme_path + ">" + mark_l;
+										}
 									}
 									TWFunc::Exec_Cmd(cmd);
 								}		
