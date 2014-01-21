@@ -1612,6 +1612,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 				} else {
 					ret = 1; // failure
 				}
+				PartitionManager.Update_System_Details(true);
 				if (DataManager::GetIntValue(TW_HAS_INJECTTWRP) == 1 && DataManager::GetIntValue(TW_INJECT_AFTER_ZIP) == 1) {
 					operation_start("ReinjectTWRP");
 					gui_print("Injecting TWRP into boot image...\n");
