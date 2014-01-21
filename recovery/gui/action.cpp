@@ -1749,38 +1749,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */) {
 #endif
 	} else {
 		pthread_t t;
-		pthread_attr_t tattr;
-
-		if (pthread_attr_init(&tattr)) {
-			LOGERR("Unable to pthread_attr_init\n");
-			return -1;
-		}
-		if (pthread_attr_setdetachstate(&tattr, PTHREAD_CREATE_JOINABLE)) {
-			LOGERR("Error setting pthread_attr_setdetachstate\n");
-			return -1;
-		}
-		if (pthread_attr_setscope(&tattr, PTHREAD_SCOPE_SYSTEM)) {
-			LOGERR("Error setting pthread_attr_setscope\n");
-			return -1;
-		}
-		/*if (pthread_attr_setstacksize(&tattr, 524288)) {
-			LOGERR("Error setting pthread_attr_setstacksize\n");
-			return -1;
-		}
-		*/
-		int ret = pthread_create(&t, &tattr, thread_start, this);
-		if (ret) {
-			LOGERR("Unable to create more threads for actions... continuing in same thread! %i\n", ret);
-			thread_start(this);
-		} else {
-			if (pthread_join(t, NULL)) {
-				LOGERR("Error joining threads\n");
-			}
-		}
-		if (pthread_attr_destroy(&tattr)) {
-			LOGERR("Failed to pthread_attr_destroy\n");
-			return -1;
-		}
+		pthread_create(&t, NULL, thread_start, this);
 		return 0;
 	}
 	return -1;
