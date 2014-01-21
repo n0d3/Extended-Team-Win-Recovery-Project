@@ -320,44 +320,57 @@ void TWFunc::Copy_Log(string Source, string Destination) {
 }
 
 void TWFunc::Update_Log_File(void) {
-	// Copy logs to cache so the system can find out what happened.
-	if (PartitionManager.Mount_By_Path("/cache", false)) {
-		if (!TWFunc::Path_Exists("/cache/recovery/.")) {
-			LOGINFO("Recreating /cache/recovery folder.\n");
-			if (mkdir("/cache/recovery", S_IRWXU | S_IRWXG | S_IWGRP | S_IXGRP) != 0)
-				LOGINFO("Unable to create /cache/recovery folder.\n");
-		}
-		Copy_Log(TMP_LOG_FILE, "/cache/recovery/log");
-		copy_file("/cache/recovery/log", "/cache/recovery/last_log", 600);
-		chown("/cache/recovery/log", 1000, 1000);
-		chmod("/cache/recovery/log", 0600);
-		chmod("/cache/recovery/last_log", 0640);
-	} else {
-		LOGINFO("Failed to mount /cache for TWFunc::Update_Log_File\n");
-	}
-
 	// Reset bootloader message
-	TWPartition* Part = PartitionManager.Find_Partition_By_Path("/misc");
-	if (Part != NULL) {
+	TWPartition* Cache = PartitionManager.Find_Partition_By_Path("/cache");
+	if (Cache != NULL) {
+		// Copy logs to cache so the system can find out what happened.
+		if (Cache->Mount(false)) {
+			if (!TWFunc::Path_Exists("/cache/recovery/.")) {
+				LOGINFO("Recreating /cache/recovery folder.\n");
+				if (mkdir("/cache/recovery", S_IRWXU | S_IRWXG | S_IWGRP | S_IXGRP) != 0)
+					LOGINFO("Unable to create /cache/recovery folder.\n");
+			}
+			if (Cache->Size - Cache->Backup_Size < 1024) {
+				LOGINFO("Cleaning /cache/recovery logs to free some space...\n");
+				string rm;
+				unsigned long long l = 0;
+
+				if (TWFunc::Path_Exists("/cache/recovery/last_log"))
+					l = TWFunc::Get_File_Size("/cache/recovery/last_log");
+				rm = "rm -f /cache/recovery/last_log";
+				if (Exec_Cmd(rm) == 0)
+					Cache->Backup_Size -= l;
+				if (TWFunc::Path_Exists("/cache/recovery/last_install"))
+					l = TWFunc::Get_File_Size("/cache/recovery/last_install");
+				rm = "rm -f /cache/recovery/last_install";
+				if (Exec_Cmd(rm) == 0)
+					Cache->Backup_Size -= l;
+			}
+			Copy_Log(TMP_LOG_FILE, "/cache/recovery/log");
+			copy_file("/cache/recovery/log", "/cache/recovery/last_log", 600);
+			chown("/cache/recovery/log", 1000, 1000);
+			chmod("/cache/recovery/log", 0600);
+			chmod("/cache/recovery/last_log", 0640);
+		} else {
+			LOGINFO("Failed to mount /cache for TWFunc::Update_Log_File\n");
+		}
+	}
+	// Reset bootloader message
+	TWPartition* Misc = PartitionManager.Find_Partition_By_Path("/misc");
+	if (Misc != NULL) {
 		struct bootloader_message boot;
 		memset(&boot, 0, sizeof(boot));
-		if (Part->Current_File_System == "mtd") {
-			if (set_bootloader_message_mtd_name(&boot, Part->MTD_Name.c_str()) != 0)
-				LOGERR("Unable to set MTD bootloader message.\n");
-		} else if (Part->Current_File_System == "emmc") {
-			if (set_bootloader_message_block_name(&boot, Part->Actual_Block_Device.c_str()) != 0)
-				LOGERR("Unable to set emmc bootloader message.\n");
-		} else {
-			LOGERR("Unknown file system for /misc: '%s'\n", Part->Current_File_System.c_str());
+		TWFunc::set_bootloader_msg(&boot);
+	}
+
+	if (Cache != NULL) {
+		if (Cache->Mount(true)) {
+			if (unlink("/cache/recovery/command") && errno != ENOENT)
+				LOGINFO("Can't unlink %s\n", "/cache/recovery/command");
+			Cache->UnMount(true);
 		}
 	}
 
-	if (PartitionManager.Mount_By_Path("/cache", true)) {
-		if (unlink("/cache/recovery/command") && errno != ENOENT)
-			LOGINFO("Can't unlink %s\n", "/cache/recovery/command");
-	}
-
-	PartitionManager.UnMount_By_Path("/cache", true);
 	sync();
 }
 
