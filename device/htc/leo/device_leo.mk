@@ -49,10 +49,6 @@ PRODUCT_COPY_FILES += \
 PRODUCT_COPY_FILES += \
      device/htc/leo/configs/gps.conf:system/etc/gps.conf
 
-# Add the prerecoveryboot.sh so that the recovery.fstab can be changed
-PRODUCT_COPY_FILES += \
-    device/htc/leo/scripts/prerecoveryboot.sh:recovery/root/sbin/prerecoveryboot.sh
-
 # media config xml file
 PRODUCT_COPY_FILES += \
 	device/htc/leo/configs/media_profiles.xml:system/etc/media_profiles.xml

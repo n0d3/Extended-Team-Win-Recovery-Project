@@ -28,23 +28,20 @@ on init
     write /sys/class/android_usb/android0/functions adb
     write /sys/class/android_usb/android0/iManufacturer ${ro.product.manufacturer}
     write /sys/class/android_usb/android0/iProduct ${ro.product.model}
-    write /sys/class/android_usb/android0/iSerial ${ro.serialno}
+    write /sys/class/android_usb/android0/iSerial 0123456789ABCDEF
 
 on fs
+# Mount cache in order to read the rotation file and set the correct theme rotation
     mount yaffs2 mtd@cache /cache nosuid nodev
+
 # Wait to ensure SD Card is available
     wait /dev/block/mmcblk0p1
     wait /dev/block/mmcblk0p1
     wait /dev/block/mmcblk0p1
     wait /dev/block/mmcblk0p1
 
-# Run the script that will edit recovery.fstab:
-# and set the proper fs-type for 'boot' partition,
-# depending on which bootloader is installed.
-chmod 0750 /sbin/prerecoveryboot.sh
-service preboot /sbin/prerecoveryboot.sh
-    user root
-    oneshot
+# Mount SD Card in order to load the curtain.jpg
+    mount vfat /dev/block/mmcblk0p1 /sdcard
 
 on boot
     ifup lo

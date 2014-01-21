@@ -153,6 +153,8 @@ int main(int argc, char **argv) {
 	time_t StartupTime = time(NULL);
 	printf("Starting Extended TWRP %s on %s", TW_VERSION_STR, ctime(&StartupTime));
 #ifdef TW_DEVICE_IS_HTC_LEO
+	// Write correct recovery.fstab according to bootloader (replaced prerecoveryboot script)
+	TWFunc::Exec_Cmd("/sbin/bootck");
 	// Detect bootloader
 	if (DataManager::Detect_BLDR() == 1) {
 		printf("I:=> Detected bootloader: cLK\n");
@@ -167,14 +169,6 @@ int main(int argc, char **argv) {
 	// Load default values to set DataManager constants and handle ifdefs
 	DataManager::SetDefaultValues();
 
-#ifdef TW_DEVICE_IS_HTC_LEO
-	// Wait for the prerecoveryboot.sh to finish
-	char preboot_svc[PROPERTY_VALUE_MAX];
-	do {
-		property_get("init.svc.preboot", preboot_svc, "running");
-		usleep(100);
-	} while (strcmp(preboot_svc, "stopped") != 0);
-#endif
 	printf("Starting the UI...\n");
 	gui_init();
 	printf("=> Linking mtab\n");

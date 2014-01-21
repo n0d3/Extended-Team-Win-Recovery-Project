@@ -60,6 +60,7 @@ ifeq ($(TWHAVE_SELINUX), true)
 endif
 ifeq ($(TARGET_DEVICE),leo)
 	RELINK_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/sbin/clkpartmgr
+	RELINK_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/sbin/bootck
 endif
 ifeq ($(BUILD_ID), GINGERBREAD)
 	TW_INCLUDE_EXFAT := false
