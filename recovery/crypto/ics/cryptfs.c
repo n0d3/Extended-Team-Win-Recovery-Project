@@ -188,16 +188,15 @@ static int get_crypt_ftr_and_key(char *real_blk_name, struct crypt_mnt_ftr *cryp
 	} else {
 		printf("Using Samsung encryption.\n");
 		using_samsung_encryption = 1;
-		if ( (cnt = read(fd, &edk_payload, sizeof(edk_payload_t))) != sizeof(edk_payload_t)) {
-			printf("Cannot read EDK payload from real block device footer\n");
-            		goto errout;
-        	}
-        	if (lseek64(fd, sizeof(__le32), SEEK_CUR) == -1) {
-           		printf("Cannot seek past unknown data from real block device footer\n");
-            		goto errout;
-        	}
-        	memcpy(key, &edk_payload, sizeof(edk_payload_t));
-
+        if ( (cnt = read(fd, &edk_payload, sizeof(edk_payload_t))) != sizeof(edk_payload_t)) {
+            printf("Cannot read EDK payload from real block device footer\n");
+            goto errout;
+        }
+        if (lseek64(fd, sizeof(__le32), SEEK_CUR) == -1) {
+            printf("Cannot seek past unknown data from real block device footer\n");
+            goto errout;
+        }
+        memcpy(key, &edk_payload, sizeof(edk_payload_t));
 	}
 #else
     printf("Bad magic for real block device %s\n", fname);
