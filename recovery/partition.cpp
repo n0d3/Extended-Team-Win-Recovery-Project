@@ -2453,7 +2453,7 @@ bool TWPartition::Restore_Tar(string restore_folder, string Restore_File_System)
 	TWFunc::GUI_Operation_Text(TW_RESTORE_TEXT, Restore_Display_Name, "Restoring");
 	gui_print("Restoring %s...\n", Restore_Display_Name.c_str());
 	Full_FileName = restore_folder + "/" + Backup_FileName;
-	/*if (!TWFunc::Path_Exists(Full_FileName)) {
+	if (!TWFunc::Path_Exists(Full_FileName)) {
 		// Backup is multiple archives
 		LOGINFO("Backup is multiple archives.\n");
 		sprintf(split_index, "%03i", index);
@@ -2471,7 +2471,7 @@ bool TWPartition::Restore_Tar(string restore_folder, string Restore_File_System)
 			LOGERR("Error locating restore file: '%s'\n", Full_FileName.c_str());
 			return false;
 		}
-	} else {*/
+	} else {
 		string tarDir = Backup_Path;
 		if (Backup_Path == "/sd-ext") {
 			// Check needed for restoring a CWM backup of sd-ext
@@ -2484,7 +2484,7 @@ bool TWPartition::Restore_Tar(string restore_folder, string Restore_File_System)
 		}
 		if (!TWFunc::TarExtract(Full_FileName, tarDir))
 			return false;
-	//}
+	}
 	return true;
 }
 

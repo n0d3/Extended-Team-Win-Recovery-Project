@@ -72,7 +72,7 @@ int TWFunc::Exec_Cmd(string cmd, string &result) {
 		memset(&buffer, 0, sizeof(buffer));
 		if (fgets(buffer, 128, exec) != NULL) {
 			buffer[128] = '\n';
-			buffer[129] = NULL;
+			buffer[129] = '0';
 			result += buffer;
 		}
 	}
@@ -668,6 +668,7 @@ int TWFunc::drop_caches(string drop) {
 		*/
 		if (write_file(caches, drop) != 0)
 			return -1;
+		sync();
 	}
 	return 0;
 }
@@ -1613,9 +1614,9 @@ int TWFunc::Wait_For_Child(pid_t pid, int *status, string Child_Name) {
 
 	rc_pid = waitpid(pid, status, 0);
 	if (rc_pid > 0) {
-		if (WEXITSTATUS(*status) == 0)
-			LOGINFO("%s process ended with RC=%d\n", Child_Name.c_str(), WEXITSTATUS(*status)); // Success
-		else if (WIFSIGNALED(*status)) {
+		if (WEXITSTATUS(*status) == 0) {
+			//LOGINFO("%s process ended with RC=%d\n", Child_Name.c_str(), WEXITSTATUS(*status)); // Success
+		} else if (WIFSIGNALED(*status)) {
 			LOGINFO("%s process ended with signal: %d\n", Child_Name.c_str(), WTERMSIG(*status)); // Seg fault or some other non-graceful termination
 			return -1;
 		}
@@ -1669,12 +1670,7 @@ void TWFunc::Auto_Generate_Backup_Name() {
 			if (Backup_Name.size() > MAX_BACKUP_NAME_LEN)
 				Backup_Name.resize(MAX_BACKUP_NAME_LEN);
 			// Trailing spaces cause problems on some file systems, so remove them
-			string space_check, space = " ";
-			space_check = Backup_Name.substr(Backup_Name.size() - 1, 1);
-			while (space_check == space) {
-				Backup_Name.resize(Backup_Name.size() - 1);
-				space_check = Backup_Name.substr(Backup_Name.size() - 1, 1);
-			}
+			Backup_Name.erase(Backup_Name.find_last_not_of(" \n\r\t") + 1);
 			DataManager::SetValue(TW_BACKUP_NAME, Backup_Name);
 			break;
 		}

@@ -1140,7 +1140,6 @@ void DataManager::Output_Version(void) {
 	fwrite(version, sizeof(version[0]), strlen(version) / sizeof(version[0]), fp);
 	fclose(fp);
 
-	TWFunc::copy_file("/etc/recovery.fstab", "/cache/recovery/recovery.fstab", 0644);
 	PartitionManager.Output_Storage_Fstab();
 
 	sync();
