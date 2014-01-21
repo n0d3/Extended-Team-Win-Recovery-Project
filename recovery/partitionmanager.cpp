@@ -324,6 +324,8 @@ void TWPartitionManager::Output_Partition(TWPartition* Part) {
 			printf("   Backup_Display_Name: %s\n", Part->Backup_Display_Name.c_str());
 		if (!Part->MTD_Name.empty())
 			printf("   MTD_Name: %s\n", Part->MTD_Name.c_str());
+		if (Part->Mount_Flags || !Part->Mount_Options.empty())
+			printf("   Mount_Flags=0x%8x, Mount_Options=%s\n", Part->Mount_Flags, Part->Mount_Options.c_str());
 		string back_meth = Part->Backup_Method_By_Name();
 		printf("   Backup_Method: %s\n\n", back_meth.c_str());
 	} else

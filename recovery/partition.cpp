@@ -60,6 +60,31 @@ using namespace std;
 extern struct selabel_handle *selinux_handle; 
 #endif
 
+struct flag_list {
+	const char *name;
+	unsigned flag;
+};
+
+static struct flag_list mount_flags[] = {
+	{ "noatime",    MS_NOATIME },
+	{ "noexec",     MS_NOEXEC },
+	{ "nosuid",     MS_NOSUID },
+	{ "nodev",      MS_NODEV },
+	{ "nodiratime", MS_NODIRATIME },
+	{ "ro",         MS_RDONLY },
+	{ "rw",         0 },
+	{ "remount",    MS_REMOUNT },
+	{ "bind",       MS_BIND },
+	{ "rec",        MS_REC },
+	{ "unbindable", MS_UNBINDABLE },
+	{ "private",    MS_PRIVATE },
+	{ "slave",      MS_SLAVE },
+	{ "shared",     MS_SHARED },
+	{ "sync",       MS_SYNCHRONOUS },
+	{ "defaults",   0 },
+	{ 0,            0 },
+};
+
 TWPartition::TWPartition(void) {
 	Can_Be_Mounted = false;
 	Can_Be_Wiped = false;
@@ -117,6 +142,8 @@ TWPartition::TWPartition(void) {
 	Storage_Path = "";
 	Current_File_System = "";
 	Fstab_File_System = "";
+	Mount_Flags = 0;
+	Mount_Options = "";
 	Format_Block_Size = 0;
 	Ignore_Blkid = false;
 	Retain_Layout_Version = false;
@@ -525,6 +552,38 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 	return true;
 }
 
+bool TWPartition::Process_FS_Flags(string& Options, int Flags) {
+	int i;
+	char *p;
+	char *savep;
+	char fs_options[250];
+
+	strlcpy(fs_options, Options.c_str(), sizeof(fs_options));
+	Options = "";
+
+	p = strtok_r(fs_options, ",", &savep);
+	while (p) {
+		/* Look for the flag "p" in the flag list "fl"
+		* If not found, the loop exits with fl[i].name being null.
+		*/
+		for (i = 0; mount_flags[i].name; i++) {
+			if (strncmp(p, mount_flags[i].name, strlen(mount_flags[i].name)) == 0) {
+				Flags |= mount_flags[i].flag;
+				break;
+			}
+		}
+
+		if (!mount_flags[i].name) {
+			if (Options.size() > 0)
+				Options += ",";
+			Options += p;
+		}
+		p = strtok_r(NULL, ",", &savep);
+	}
+
+	return true;
+}
+
 bool TWPartition::Process_Flags(string Flags, bool Display_Error) {
 	char flags[MAX_FSTAB_LINE_LENGTH];
 	int flags_len, index = 0, ptr_len;
@@ -628,6 +687,15 @@ bool TWPartition::Process_Flags(string Flags, bool Display_Error) {
 				Use_Userdata_Encryption = false;
 			}
 #endif
+		} else if (ptr_len > 8 && strncmp(ptr, "fsflags=", 8) == 0) {
+			ptr += 8;
+			if (*ptr == '\"') ptr++;
+
+			Mount_Options = ptr;
+			if (Mount_Options.substr(Mount_Options.size() - 1, 1) == "\"") {
+				Mount_Options.resize(Mount_Options.size() - 1);
+			}
+			Process_FS_Flags(Mount_Options, Mount_Flags);
 		} else {
 			if (Display_Error)
 				LOGERR("Unhandled flag: '%s'\n", ptr);
@@ -1397,7 +1465,7 @@ bool TWPartition::Mount(bool Display_Error) {
 		}
 		return false;
 	}
-	if (mount(Actual_Block_Device.c_str(), Mount_Point.c_str(), Current_File_System.c_str(), 0, NULL) != 0) {
+	if (mount(Actual_Block_Device.c_str(), Mount_Point.c_str(), Current_File_System.c_str(), Mount_Flags, Mount_Options.c_str()) != 0) {
 		LOGINFO("Unable to natively mount:\n'%s' => '%s' as '%s'\n  Retrying using 'mount'...\n", Actual_Block_Device.c_str(), Mount_Point.c_str(), Current_File_System.c_str());
 		Command = "mount " + Actual_Block_Device + " " + Mount_Point;
 		if (TWFunc::Exec_Cmd(Command) == 0)

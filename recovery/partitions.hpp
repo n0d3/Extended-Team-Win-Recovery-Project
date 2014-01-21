@@ -206,6 +206,10 @@ class TWPartition {
 		string Fstab_File_System;
 		// Block size for formatting
 		int Format_Block_Size;
+		// File system flags from recovery.fstab
+		int Mount_Flags;                                                          
+		// File system options from recovery.fstab
+		string Mount_Options;  
 		// Ignore blkid results due to superblocks lying to us on certain devices / partitions
 		bool Ignore_Blkid;
 		// Retains the .layout_version file during a wipe (needed on devices like Sony Xperia T where /data and /data/media are separate partitions)
@@ -218,6 +222,8 @@ class TWPartition {
 	private:
 		// Process custom fstab flags
 		bool Process_Flags(string Flags, bool Display_Error);
+		// Process standard fstab fs flags
+		bool Process_FS_Flags(string& Options, int Flags);
 		// Checks to see if the file system given is considered a file system
 		bool Is_File_System(string File_System);
 		// Checks to see if the file system given is considered an image
